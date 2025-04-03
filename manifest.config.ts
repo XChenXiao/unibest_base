@@ -46,7 +46,7 @@ export default defineManifestConfig({
     distribute: {
       /* android打包配置 */
       android: {
-        minSdkVersion: 30,
+        minSdkVersion: 21,
         targetSdkVersion: 30,
         abiFilters: ['armeabi-v7a', 'arm64-v8a'],
         permissions: [
@@ -66,6 +66,7 @@ export default defineManifestConfig({
           '<uses-feature android:name="android.hardware.camera"/>',
           '<uses-permission android:name="android.permission.WRITE_SETTINGS"/>',
         ],
+        schemes : ""
       },
       /* ios打包配置 */
       ios: {},
