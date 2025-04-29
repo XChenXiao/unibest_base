@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Unibest 框架概述
+
+Unibest 是最佳的 UniApp 开发框架，基于 UniApp + Vue3 + TS + Vite5 + UnoCss + VSCode/WebStorm + 插件 + UI库（默认wot-ui）构建。
+
+## 项目结构
+
+- 该项目使用约定式路由，由 `@uni-helper/vite-plugin-uni-pages` 插件管理，不要直接修改 `pages.json`
+- 项目配置在 `pages.config.ts` 和 `manifest.config.ts` 中定义，会自动生成对应的配置文件
+- 项目默认使用 `wot-design-uni` 作为 UI 组件库
+
+## 关键特性
+
+- 支持多平台：H5、小程序和App
+- 内置约定式路由、布局、请求封装、请求拦截、登录拦截等基础功能
+- 使用 UnoCSS 进行样式处理
+- 提供代码提示、自动格式化、统一配置等辅助功能
+
+## 启动命令
+
+- `pnpm dev` - 启动 H5 开发服务器
+- `pnpm dev:mp-weixin` - 启动微信小程序开发
+- `pnpm build` - 构建 H5 生产版本
+- `pnpm build:mp-weixin` - 构建微信小程序生产版本
+
+## 最佳实践
+
+- 使用 `v3` 快捷输入在 Vue 文件中快速生成页面模板
+- 页面路由配置使用 Vue 文件中的 `route-block`
+- 首页设置：在 route-block 中设置 `type="home"`
+- 分包配置：在 `vite.config.ts` 中设置 `subPackages` 选项

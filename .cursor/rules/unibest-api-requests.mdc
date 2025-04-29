@@ -1,0 +1,142 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API 请求处理指南
+
+Unibest 框架提供了完善的 API 请求处理系统，集成了请求封装、拦截、错误处理等功能。
+
+## 请求封装
+
+Unibest 基于 `uni.request` 进行了封装，提供了更易用的 API：
+
+```ts
+// 使用封装的请求方法
+import { http } from '@/utils/request'
+
+// GET 请求示例
+const getData = async (params: any) => {
+  return await http.get('/api/data', { params })
+}
+
+// POST 请求示例
+const createData = async (data: any) => {
+  return await http.post('/api/data', data)
+}
+```
+
+## 请求配置
+
+请求配置位于 `src/config/request.ts`，可以设置：
+
+- 基础 URL
+- 超时时间
+- 请求头
+- 重试策略
+- 缓存策略
+
+## 请求拦截器
+
+系统提供了请求和响应拦截器，用于全局处理：
+
+```ts
+// 请求拦截器 - 添加认证信息
+http.interceptors.request.use((config) => {
+  const token = uni.getStorageSync('token')
+  if (token) {
+    config.header = {
+      ...config.header,
+      Authorization: `Bearer ${token}`
+    }
+  }
+  return config
+})
+
+// 响应拦截器 - 处理错误
+http.interceptors.response.use(
+  (response) => {
+    // 成功响应处理
+    const { data, statusCode } = response
+    if (statusCode === 200 && data.code === 0) {
+      return data.data
+    }
+    // 业务错误处理
+    uni.showToast({
+      title: data.message || '请求失败',
+      icon: 'none'
+    })
+    return Promise.reject(data)
+  },
+  (error) => {
+    // 网络错误处理
+    uni.showToast({
+      title: '网络错误，请稍后重试',
+      icon: 'none'
+    })
+    return Promise.reject(error)
+  }
+)
+```
+
+## 登录拦截与认证
+
+Unibest 内置了认证逻辑处理：
+
+- 检测认证状态
+- 处理未认证请求
+- 自动刷新过期 Token
+- 登录状态持久化
+
+## 请求缓存
+
+可以对特定请求进行缓存，适用于不经常变化的数据：
+
+```ts
+// 使用缓存的请求
+const getStaticData = async () => {
+  return await http.get('/api/static-data', {
+    cache: {
+      enable: true,
+      expire: 3600 // 缓存有效期 (秒)
+    }
+  })
+}
+```
+
+## 使用 Vue Query
+
+Unibest 也支持使用 @tanstack/vue-query 进行数据请求管理：
+
+```ts
+import { useQuery, useMutation } from '@tanstack/vue-query'
+
+// 定义查询
+const useUserList = (params) => {
+  return useQuery({
+    queryKey: ['users', params],
+    queryFn: () => http.get('/api/users', { params })
+  })
+}
+
+// 定义变更
+const useCreateUser = () => {
+  return useMutation({
+    mutationFn: (newUser) => http.post('/api/users', newUser)
+  })
+}
+```
+
+在组件中使用：
+
+```vue
+<script setup>
+const params = ref({ page: 1, pageSize: 10 })
+const { data, isLoading, error } = useUserList(params)
+const createUser = useCreateUser()
+
+const handleCreateUser = async (user) => {
+  await createUser.mutateAsync(user)
+}
+</script>
+```

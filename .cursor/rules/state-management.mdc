@@ -1,0 +1,135 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 状态管理最佳实践
+
+Unibest 使用 Pinia 作为状态管理解决方案，并内置了持久化支持。
+
+## Pinia 基础使用
+
+### 定义 Store
+
+在 `src/stores` 目录下创建 store 文件：
+
+```ts
+// src/stores/counter.ts
+import { defineStore } from 'pinia'
+
+export const useCounterStore = defineStore('counter', {
+  // 状态
+  state: () => ({
+    count: 0,
+    name: 'Counter'
+  }),
+  
+  // getter - 类似计算属性
+  getters: {
+    doubleCount: (state) => state.count * 2
+  },
+  
+  // action - 处理业务逻辑
+  actions: {
+    increment() {
+      this.count++
+    },
+    async fetchRemoteCount() {
+      const response = await fetch('/api/count')
+      this.count = await response.json()
+    }
+  }
+})
+```
+
+### 使用 Store
+
+在组件中使用定义的 store：
+
+```vue
+<template>
+  <view class="container">
+    <text>Count: {{ counter.count }}</text>
+    <text>Double Count: {{ counter.doubleCount }}</text>
+    <button @click="counter.increment">Increment</button>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { useCounterStore } from '@/stores/counter'
+
+const counter = useCounterStore()
+</script>
+```
+
+## 状态持久化
+
+Unibest 集成了 `pinia-plugin-persistedstate` 以支持状态持久化，可以将状态保存到本地存储：
+
+```ts
+// src/stores/user.ts
+import { defineStore } from 'pinia'
+
+export const useUserStore = defineStore('user', {
+  state: () => ({
+    userId: '',
+    token: '',
+    userInfo: null
+  }),
+  
+  actions: {
+    setUser(user) {
+      this.userInfo = user
+      this.userId = user.id
+    },
+    setToken(token) {
+      this.token = token
+    },
+    logout() {
+      this.userId = ''
+      this.token = ''
+      this.userInfo = null
+    }
+  },
+  
+  // 持久化配置
+  persist: {
+    enabled: true,
+    strategies: [
+      {
+        key: 'user-storage',
+        storage: {
+          getItem: (key) => uni.getStorageSync(key),
+          setItem: (key, value) => uni.setStorageSync(key, value),
+          removeItem: (key) => uni.removeStorageSync(key)
+        },
+        paths: ['userId', 'token'] // 只持久化指定字段
+      }
+    ]
+  }
+})
+```
+
+## 模块化状态管理
+
+对于大型应用，建议将状态模块化管理：
+
+```
+src/
+└── stores/
+    ├── index.ts              # 导出所有 store
+    ├── modules/
+    │   ├── user.ts           # 用户相关状态
+    │   ├── cart.ts           # 购物车相关状态
+    │   └── settings.ts       # 应用设置相关状态
+    └── types.ts              # Store 类型定义
+```
+
+## 最佳实践
+
+1. 使用组合式 API 风格定义 store
+2. 保持 store 单一职责，避免过于庞大
+3. 使用 TypeScript 为 store 提供类型支持
+4. 仅持久化必要的状态，避免存储敏感信息
+5. 在 action 中处理异步逻辑
+6. 使用 getters 派生计算状态

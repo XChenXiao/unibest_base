@@ -1,0 +1,93 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# UI 组件库使用指南
+
+Unibest 默认集成了 wot-design-uni 作为 UI 组件库，本指南介绍如何使用和自定义组件。
+
+## wot-design-uni 组件库
+
+wot-design-uni 是基于 Vue3 + TypeScript 的跨平台组件库，为 Unibest 提供了丰富的 UI 组件。
+
+### 组件使用示例
+
+```vue
+<template>
+  <view class="container">
+    <wd-button type="primary" @click="handleClick">按钮</wd-button>
+    <wd-input v-model="inputValue" placeholder="请输入内容" />
+    <wd-popup v-model="showPopup">
+      <view class="popup-content">弹出层内容</view>
+    </wd-popup>
+  </view>
+</template>
+
+<script setup lang="ts">
+const inputValue = ref('')
+const showPopup = ref(false)
+
+const handleClick = () => {
+  showPopup.value = true
+}
+</script>
+```
+
+### 主题定制
+
+可以通过修改 SCSS 变量来自定义组件样式：
+
+1. 创建 `src/styles/theme.scss` 文件
+2. 引入组件库样式并覆盖变量
+3. 在 `App.vue` 中引入自定义主题文件
+
+```scss
+// theme.scss
+$wd-primary: #fa2c19; // 自定义主题色
+$wd-warning: #ff9c00; // 自定义警告色
+
+// 导入组件库样式
+@import 'wot-design-uni/components/common/style/var.scss';
+```
+
+## UnoCSS 与组件搭配
+
+Unibest 集成了 UnoCSS，可以与组件库结合使用：
+
+```vue
+<template>
+  <view class="flex flex-col gap-4 p-4">
+    <wd-button class="w-full" type="primary">全宽按钮</wd-button>
+    <view class="bg-gray-100 rounded-lg p-4 shadow-md">
+      <wd-input class="mb-2" v-model="value" />
+    </view>
+  </view>
+</template>
+```
+
+## 其他可选 UI 库
+
+Unibest 也支持使用其他 UI 库：
+
+- uv-ui (uView-plus) - 功能丰富的 UniApp UI 库
+- TuniaoUI - 全面的跨端组件库
+
+切换 UI 库时需要：
+
+1. 安装对应的 UI 库
+2. 在 `main.ts` 中注册
+3. 修改 `tsconfig.json` 支持类型提示
+
+## 自定义组件开发
+
+在 `src/components` 目录下创建自定义组件：
+
+```
+src/
+└── components/
+    ├── MyCard/
+    │   ├── index.vue     # 组件实现
+    │   └── types.ts      # 组件类型定义
+    └── index.ts          # 组件导出
+```

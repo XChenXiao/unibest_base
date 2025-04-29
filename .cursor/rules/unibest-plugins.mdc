@@ -1,0 +1,69 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Unibest 插件系统
+
+Unibest 框架集成了多个插件来增强 UniApp 开发体验，主要包括以下几个关键插件：
+
+## 页面和路由插件
+
+### vite-plugin-uni-pages
+
+自动基于文件系统生成路由配置，替代手动维护 `pages.json`：
+
+- 路由定义放在 Vue 文件的 `route-block` 块中
+- 目录结构自动反映在路由路径上
+- 支持通过 `type="home"` 指定首页
+- 分包支持通过 `vite.config.ts` 中配置 `subPackages` 选项实现
+
+### vite-plugin-uni-layouts
+
+提供页面布局系统：
+
+- 定义在 `src/layouts` 目录下
+- 页面可以通过 `route-block` 中设置 `layout: 'custom'` 来使用特定布局
+
+## 配置插件
+
+### vite-plugin-uni-manifest
+
+自动生成 `manifest.json` 文件：
+
+- 通过 `manifest.config.ts` 定义配置
+- 支持各平台的特定配置
+
+### vite-plugin-uni-platform
+
+提供平台特定工具和辅助函数：
+
+- 检测当前运行平台
+- 按平台条件加载资源
+
+## 其他重要插件
+
+### unplugin-auto-import
+
+自动导入 API，减少手动 import 语句：
+
+- 可以直接使用 Vue 的 Composition API
+- 可以直接使用 UniApp API 无需导入
+
+### unocss
+
+提供原子化 CSS 支持：
+
+- 内置大量预定义实用工具类
+- 支持自定义扩展
+- 兼容小程序平台
+
+## 开发工具插件
+
+框架还集成了代码质量和提交规范相关工具：
+
+- ESLint - 代码质量检查
+- Prettier - 代码格式化
+- StyleLint - 样式质量检查
+- husky + lint-staged - Git提交前代码检查
+- commitlint - 提交信息规范检查

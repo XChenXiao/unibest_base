@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# UniApp 开发指南
+
+UniApp 是一个使用 Vue.js 开发跨平台应用的前端框架，支持发布到iOS、Android、Web、以及各种小程序平台。
+
+## 生命周期
+
+UniApp 应用生命周期和页面生命周期的区别：
+
+- 应用生命周期：`App.vue` 中定义，如 `onLaunch`、`onShow`、`onHide` 等
+- 页面生命周期：每个页面中可使用 `onLoad`、`onShow`、`onReady`、`onHide`、`onUnload` 等
+
+## 条件编译
+
+使用条件编译来适配不同平台：
+
+```vue
+<!-- #ifdef H5 -->
+<view>仅在 H5 平台显示</view>
+<!-- #endif -->
+
+<!-- #ifndef MP-WEIXIN -->
+<view>除了微信小程序，其他平台都显示</view>
+<!-- #endif -->
+```
+
+也可以在 JS/TS 中使用：
+
+```js
+// #ifdef H5
+H5 平台特有代码
+// #endif
+```
+
+## 路由管理
+
+UniApp 提供了路由 API 进行页面跳转：
+
+- `uni.navigateTo()` - 保留当前页面，跳转到应用内的某个页面
+- `uni.redirectTo()` - 关闭当前页面，跳转到应用内的某个页面
+- `uni.reLaunch()` - 关闭所有页面，打开到应用内的某个页面
+- `uni.navigateBack()` - 关闭当前页面，返回上一页面或多级页面
+- `uni.switchTab()` - 跳转到 tabBar 页面，并关闭其他所有非 tabBar 页面
+
+## API 请求
+
+在 UniApp 中进行网络请求使用 `uni.request()`，在 Unibest 中已封装了请求模块。
+
+## 样式处理
+
+- 支持 SCSS、LESS 预处理器
+- Unibest 集成了 UnoCSS 作为原子化 CSS 框架
+- 尺寸单位推荐使用 rpx (responsive pixel)，会自动适配不同屏幕
+
+## 常见问题
+
+- 页面样式隔离：小程序中各页面样式相互隔离，全局样式可在 App.vue 中定义
+- 小程序平台限制：注意各小程序平台的能力和限制差异
+- 性能优化：避免过度使用大型组件，减少不必要的页面切换
