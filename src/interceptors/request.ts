@@ -51,18 +51,44 @@ const httpInterceptor = {
     }
     // 3. 添加 token 请求头标识
     const userStore = useUserStore()
-    const { token } = userStore.userInfo as unknown as IUserInfo
+    const { token } = userStore.userInfo
     if (token) {
       options.header.Authorization = `Bearer ${token}`
     }
   },
 }
 
+// 响应拦截器
+const responseInterceptor = {
+  // 响应拦截，这是一个可选功能
+  returnValue(res: any) {
+    // 如果是网络请求的响应结果，即包含 statusCode
+    if (res && res.statusCode !== undefined) {
+      // 可以在这里做一些通用的状态码处理
+      // 例如，如果是401，可以触发登出逻辑
+      if (res.statusCode === 401) {
+        const userStore = useUserStore()
+        userStore.clearUserInfo()
+        uni.showToast({
+          icon: 'none',
+          title: '登录已过期，请重新登录',
+        })
+        setTimeout(() => {
+          uni.navigateTo({ url: '/pages/login/index' })
+        }, 1500)
+      }
+    }
+    return res
+  }
+}
+
 export const requestInterceptor = {
   install() {
     // 拦截 request 请求
     uni.addInterceptor('request', httpInterceptor)
+    uni.addInterceptor('request', responseInterceptor)
     // 拦截 uploadFile 文件上传
     uni.addInterceptor('uploadFile', httpInterceptor)
+    uni.addInterceptor('uploadFile', responseInterceptor)
   },
 }

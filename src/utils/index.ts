@@ -176,3 +176,9 @@ export const getEnvBaseUploadUrl = () => {
 
   return baseUploadUrl
 }
+
+// 导出工具函数
+export * from './http'
+export * from './request'
+export * from './upload'
+export * from './platform'
