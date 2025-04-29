@@ -7,9 +7,16 @@
 import { useUserStore } from '@/store'
 import { needLoginPages as _needLoginPages, getNeedLoginPages } from '@/utils'
 
-// TODO Check
+// 登录页面路径
 const loginRoute = '/pages/login/index'
 
+// 手动添加需要登录的页面路径 - 以防配置未生效
+const manualNeedLoginPages = [
+  '/pages/my/index',
+  '/pages/verification/index'
+]
+
+// 检查是否已登录
 const isLogined = () => {
   const userStore = useUserStore()
   return userStore.isLogined
@@ -21,7 +28,7 @@ const isDev = import.meta.env.DEV
 const navigateToInterceptor = {
   // 注意，这里的url是 '/' 开头的，如 '/pages/index/index'，跟 'pages.json' 里面的 path 不同
   invoke({ url }: { url: string }) {
-    // console.log(url) // /pages/route-interceptor/index?name=feige&age=30
+    console.log('路由拦截器检查URL:', url) // 添加调试输出
     const path = url.split('?')[0]
     let needLoginPages: string[] = []
     // 为了防止开发时出现BUG，这里每次都获取一下。生产环境可以移到函数外，性能更好
@@ -30,14 +37,28 @@ const navigateToInterceptor = {
     } else {
       needLoginPages = _needLoginPages
     }
-    const isNeedLogin = needLoginPages.includes(path)
+    
+    console.log('路由拦截器 - 系统获取的需要登录页面:', needLoginPages) // 添加调试输出
+    console.log('路由拦截器 - 手动配置的需要登录页面:', manualNeedLoginPages) // 添加调试输出
+    
+    // 优先使用系统配置的页面列表，如果为空则使用手动配置的列表
+    const finalNeedLoginPages = needLoginPages.length > 0 ? needLoginPages : manualNeedLoginPages
+    
+    const isNeedLogin = finalNeedLoginPages.includes(path)
+    console.log('当前页面是否需要登录:', isNeedLogin) // 添加调试输出
+    
     if (!isNeedLogin) {
       return true
     }
+    
     const hasLogin = isLogined()
+    console.log('用户是否已登录:', hasLogin) // 添加调试输出
+    
     if (hasLogin) {
       return true
     }
+    
+    console.log('用户未登录，重定向到登录页') // 添加调试输出
     const redirectRoute = `${loginRoute}?redirect=${encodeURIComponent(url)}`
     uni.navigateTo({ url: redirectRoute })
     return false
@@ -46,6 +67,7 @@ const navigateToInterceptor = {
 
 export const routeInterceptor = {
   install() {
+    console.log('安装路由拦截器') // 添加调试输出
     uni.addInterceptor('navigateTo', navigateToInterceptor)
     uni.addInterceptor('reLaunch', navigateToInterceptor)
     uni.addInterceptor('redirectTo', navigateToInterceptor)

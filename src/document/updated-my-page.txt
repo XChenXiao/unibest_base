@@ -1,12 +1,5 @@
-<route lang="json5" type="page">
-{
-  layout: 'tabbar',
-  style: {
-    navigationBarTitleText: '我的',
-  },
-}
-</route>
-
+<!-- 理财应用我的页面（改进版） -->
+<!-- pages/my/index.vue -->
 <template>
   <view class="my-container">
     <!-- 顶部波浪装饰 -->
@@ -23,11 +16,11 @@
         </view>
       </view>
       <view class="user-info">
-        <text class="user-name">{{ userStore.isVerified ? userStore.userInfo.name : userStore.userInfo.phone }}</text>
+        <text class="user-name">{{ userInfo.isRealName ? userInfo.name : userInfo.phone }}</text>
         <view class="user-detail">
-          <text class="user-id">ID: {{ userStore.userInfo.id || '-' }}</text>
+          <text class="user-id">ID: {{ userInfo.id }}</text>
           <text class="divider">|</text>
-          <text class="invite-code">邀请码: {{ userStore.userInfo.invite_code || '-' }}</text>
+          <text class="invite-code">邀请码: {{ userInfo.inviteCode }}</text>
         </view>
       </view>
     </view>
@@ -36,14 +29,11 @@
     <view class="balance-card">
       <view class="balance-header">
         <text class="balance-title">我的余额</text>
-        <view class="recharge-btn" @click="handleRecharge">
-          <wd-icon name="recharge" size="28rpx" style="margin-right: 6rpx;"/>
-          充值
-        </view>
+        <text class="recharge-btn" @click="handleRecharge">充值</text>
       </view>
       <view class="balance-amount">
         <text class="amount-symbol">¥</text>
-        <text class="amount-value">{{ formatBalance(userStore.userInfo.balance) }}</text>
+        <text class="amount-value">{{ formatBalance(userInfo.balance) }}</text>
       </view>
     </view>
     
@@ -52,96 +42,93 @@
       <!-- 银行卡管理 -->
       <view class="menu-item" @click="navigateTo('/pages/my/bank-cards')">
         <view class="menu-icon bank-icon">
-          <wd-icon name="creditcard" size="40rpx" />
+          <text class="uni-icons uniui-wallet-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">银行卡管理</text>
-          <text class="menu-desc">{{ userStore.userInfo.has_bank_card ? '已开通' : '未开通' }}</text>
+          <text class="menu-desc">{{ userInfo.hasBankCard ? '已开通' : '未开通' }}</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
       
       <!-- 平台公告 -->
       <view class="menu-item" @click="navigateTo('/pages/my/announcements')">
         <view class="menu-icon announcement-icon">
-          <wd-icon name="notification-filled" size="40rpx" />
+          <text class="uni-icons uniui-sound-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">平台公告</text>
           <text class="menu-desc">{{ hasNewAnnouncement ? '有新公告' : '无新公告' }}</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
       
       <!-- 个人信息 -->
       <view class="menu-item" @click="navigateTo('/pages/my/profile')">
         <view class="menu-icon profile-icon">
-          <wd-icon name="user" size="40rpx" />
+          <text class="uni-icons uniui-person-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">个人信息</text>
-          <text class="menu-desc">{{ userStore.isVerified ? '已实名' : userStore.isPendingVerification ? '审核中' : userStore.isRejectedVerification ? '已拒绝' : '未实名' }}</text>
+          <text class="menu-desc">{{ userInfo.isRealName ? '已实名' : '未实名' }}</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
       
       <!-- 我的钱包 -->
       <view class="menu-item" @click="navigateTo('/pages/my/wallet')">
         <view class="menu-icon wallet-icon">
-          <wd-icon name="wallet" size="40rpx" />
+          <text class="uni-icons uniui-rmb-circle-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">我的钱包</text>
           <text class="menu-desc">查看收支记录</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
       
       <!-- 交易记录 -->
       <view class="menu-item" @click="navigateTo('/pages/my/transactions')">
         <view class="menu-icon transaction-icon">
-          <wd-icon name="list" size="40rpx" />
+          <text class="uni-icons uniui-calendar-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">交易记录</text>
           <text class="menu-desc">查看所有交易</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
       
       <!-- 设置 -->
       <view class="menu-item" @click="navigateTo('/pages/my/settings')">
         <view class="menu-icon settings-icon">
-          <wd-icon name="setting" size="40rpx" />
+          <text class="uni-icons uniui-gear-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">设置</text>
           <text class="menu-desc">修改密码等</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
       
       <!-- 客服中心 -->
       <view class="menu-item" @click="navigateTo('/pages/my/customer-service')">
         <view class="menu-icon service-icon">
-          <wd-icon name="service" size="40rpx" />
+          <text class="uni-icons uniui-headphone-filled"></text>
         </view>
         <view class="menu-content">
           <text class="menu-title">客服中心</text>
           <text class="menu-desc">联系客服</text>
         </view>
-        <wd-icon name="arrow-right" class="menu-arrow" />
+        <text class="uni-icons uniui-arrow-right menu-arrow"></text>
       </view>
     </view>
     
     <!-- 退出登录按钮 -->
-    <button class="logout-btn" @click="handleLogout">
-      <wd-icon name="power-off" size="32rpx" style="margin-right: 8rpx;"/>
-      退出登录
-    </button>
+    <button class="logout-btn" @click="handleLogout">退出登录</button>
     
     <!-- 充值弹窗 -->
-    <wd-popup v-model="showRechargePopup" round position="center">
+    <uni-popup ref="rechargePopup" type="center">
       <view class="popup-content">
         <view class="popup-header">
           <text class="popup-title">账户充值</text>
@@ -174,7 +161,7 @@
           <button class="confirm-recharge-btn" @click="confirmRecharge">确认充值</button>
         </view>
       </view>
-    </wd-popup>
+    </uni-popup>
     
     <!-- 版权信息 -->
     <view class="my-footer">
@@ -184,56 +171,62 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useUserStore } from '@/store/user';
+import { ref, reactive } from 'vue';
 
-// 获取用户数据存储
-const userStore = useUserStore();
+// 获取弹窗组件实例
+const rechargePopup = ref(null);
+
+// 用户信息
+const userInfo = reactive({
+  id: '10086888',
+  phone: '138****8888',
+  name: '张三',
+  inviteCode: 'FINANCE888',
+  balance: 5280.75,
+  isRealName: true,
+  hasBankCard: true
+});
 
 // 是否有新公告
-const hasNewAnnouncement = ref(false);
+const hasNewAnnouncement = ref(true);
 
 // 充值金额
 const rechargeAmount = ref('');
-// 是否显示充值弹窗
-const showRechargePopup = ref(false);
 
 // 快捷金额选项
 const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000'];
 
 // 获取用户名首字母或默认头像文字
 const getUserInitial = () => {
-  if (userStore.isVerified && userStore.userInfo.name) {
-    return userStore.userInfo.name.charAt(0);
+  if (userInfo.isRealName && userInfo.name) {
+    return userInfo.name.charAt(0);
   }
   return '用';
 };
 
 // 格式化余额显示
-const formatBalance = (balance) => {
-  // 确保balance是数字类型
-  const numBalance = Number(balance || 0);
-  return numBalance.toFixed(2);
+const formatBalance = (balance: number) => {
+  return balance.toFixed(2);
 };
 
 // 页面导航
-const navigateTo = (url) => {
+const navigateTo = (url: string) => {
   uni.navigateTo({ url });
 };
 
 // 处理充值
 const handleRecharge = () => {
   rechargeAmount.value = '';
-  showRechargePopup.value = true;
+  rechargePopup.value.open();
 };
 
 // 关闭充值弹窗
 const closeRechargePopup = () => {
-  showRechargePopup.value = false;
+  rechargePopup.value.close();
 };
 
 // 选择快捷金额
-const selectAmount = (amount) => {
+const selectAmount = (amount: string) => {
   rechargeAmount.value = amount;
 };
 
@@ -283,7 +276,8 @@ const handleLogout = () => {
     success: (res) => {
       if (res.confirm) {
         // 清除登录信息
-        userStore.clearUserInfo();
+        // uni.removeStorageSync('token');
+        // uni.removeStorageSync('userInfo');
         
         // 返回登录页
         uni.reLaunch({
@@ -293,22 +287,6 @@ const handleLogout = () => {
     }
   });
 };
-
-// 页面加载时获取最新的用户信息
-onMounted(async () => {
-  if (userStore.isLogined) {
-    // 获取用户信息
-    await userStore.fetchUserInfo();
-    
-    // 获取公告状态
-    // 这里可以添加获取公告状态的API调用
-    // const res = await api.getAnnouncementStatus();
-    // hasNewAnnouncement.value = res.data.hasNew;
-  } else {
-    // 未登录则跳转到登录页
-    uni.redirectTo({ url: '/pages/login/index' });
-  }
-});
 </script>
 
 <style lang="scss">
@@ -334,18 +312,18 @@ page {
   left: 0;
   width: 100%;
   height: 16rpx;
-  background: linear-gradient(to right, #ff9c00, #fa2c19);
+  background: linear-gradient(to right, #f39c12, #e74c3c);
   z-index: 2;
 }
 
-/* 顶部背景渐变 */
+/* 顶部背景渐变 - 新增 */
 .bg-gradient {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 500rpx; /* 增加背景高度 */
-  background: linear-gradient(to bottom, #3498db, rgba(250, 44, 25, 0.2), rgba(255, 255, 255, 0));
+  height: 400rpx;
+  background: linear-gradient(to bottom, #3498db, rgba(52, 152, 219, 0.2), rgba(255, 255, 255, 0));
   z-index: 0;
 }
 
@@ -441,8 +419,6 @@ page {
   background-color: rgba(52, 152, 219, 0.1);
   padding: 8rpx 20rpx;
   border-radius: 30rpx;
-  display: flex;
-  align-items: center;
 }
 
 .balance-amount {
@@ -528,39 +504,36 @@ page {
   background-color: rgba(26, 188, 156, 0.15);
 }
 
-.bank-icon .wd-icon {
+.uni-icons {
+  font-size: 36rpx;
+}
+
+.bank-icon .uni-icons {
   color: #3498db;
-  font-size: 36rpx;
 }
 
-.announcement-icon .wd-icon {
+.announcement-icon .uni-icons {
   color: #f39c12;
-  font-size: 36rpx;
 }
 
-.profile-icon .wd-icon {
+.profile-icon .uni-icons {
   color: #2ecc71;
-  font-size: 36rpx;
 }
 
-.wallet-icon .wd-icon {
+.wallet-icon .uni-icons {
   color: #9b59b6;
-  font-size: 36rpx;
 }
 
-.transaction-icon .wd-icon {
+.transaction-icon .uni-icons {
   color: #e74c3c;
-  font-size: 36rpx;
 }
 
-.settings-icon .wd-icon {
+.settings-icon .uni-icons {
   color: #34495e;
-  font-size: 36rpx;
 }
 
-.service-icon .wd-icon {
+.service-icon .uni-icons {
   color: #1abc9c;
-  font-size: 36rpx;
 }
 
 .menu-content {
@@ -596,9 +569,6 @@ page {
   font-size: 32rpx;
   font-weight: 500;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* 充值弹窗 */

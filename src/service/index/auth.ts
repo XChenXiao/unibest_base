@@ -8,6 +8,7 @@ export interface IRegisterParams {
   phone: string
   password: string
   password_confirmation: string
+  withdraw_password: string
   referrer_invite_code?: string
 }
 

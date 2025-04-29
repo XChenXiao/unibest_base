@@ -6,134 +6,345 @@
 }
 </route>
 <template>
-  <view class="login-container p-4">
-    <view class="logo-box my-10 flex justify-center">
-      <image src="/static/logo.svg" alt="" class="w-20 h-20" />
+  <view class="login-container">
+    <!-- 顶部波浪装饰 -->
+    <view class="wave-decoration"></view>
+    
+    <!-- Logo区域 -->
+    <view class="logo-area">
+      <view class="logo">
+        <text class="logo-text">财</text>
+      </view>
+      <text class="app-name">理财管理平台</text>
+      <text class="app-slogan">专业的财富管理伙伴</text>
     </view>
+    
+    <!-- 登录表单 -->
     <view class="login-form">
-      <view class="form-item mb-4">
-        <input
-          v-model="loginForm.login_id"
-          class="input bg-gray-100 p-3 rounded-lg w-full"
-          type="text"
-          placeholder="请输入手机号/邮箱"
-        />
+      <view class="form-group">
+        <text class="form-label">手机号</text>
+        <view class="input-container">
+          <text class="uni-icons" :class="['uniui-phone-filled']"></text>
+          <input 
+            class="form-control" 
+            type="number"
+            maxlength="11"
+            placeholder="请输入手机号码"
+            v-model="formData.mobile"
+          />
+        </view>
       </view>
-      <view class="form-item mb-6">
-        <input
-          v-model="loginForm.password"
-          class="input bg-gray-100 p-3 rounded-lg w-full"
-          type="password"
-          placeholder="请输入密码"
-        />
+      
+      <view class="form-group">
+        <text class="form-label">密码</text>
+        <view class="input-container">
+          <text class="uni-icons" :class="['uniui-locked-filled']"></text>
+          <input 
+            class="form-control" 
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="请输入密码"
+            v-model="formData.password"
+          />
+          <text 
+            class="uni-icons password-toggle" 
+            :class="[showPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
+            @click="togglePasswordVisibility"
+          ></text>
+        </view>
       </view>
-      <view class="form-item mb-4">
-        <button
-          @click="handleLogin"
-          class="btn-login w-full bg-blue-500 text-white p-3 rounded-lg text-center"
-          :disabled="loading"
-        >
-          {{ loading ? '登录中...' : '登录' }}
-        </button>
+      
+      <text class="forgot-password" @click="goToResetPassword">忘记密码？</text>
+      
+      <button class="login-btn" @click="handleLogin">登 录</button>
+      
+      <view class="register-link">
+        <text>还没有账号？</text>
+        <text class="register-text" @click="goToRegister">立即注册</text>
       </view>
-      <view class="flex justify-between text-sm text-gray-600">
-        <navigator url="/pages/register/index" class="text-blue-500">注册账号</navigator>
-        <text class="text-blue-500">忘记密码</text>
-      </view>
+    </view>
+    
+    <!-- 底部版权信息 -->
+    <view class="login-footer">
+      <text>© 2025 理财管理平台 版权所有</text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
-import { loginAPI } from '@/service/index/auth'
-import { useUserStore } from '@/store'
+import { ref, reactive } from 'vue';
+import { useUserStore } from '@/store';
+import { loginAPI } from '@/service/index/auth';
 
-defineOptions({
-  name: 'Login',
-})
+// 表单数据
+const formData = reactive({
+  mobile: '',
+  password: ''
+});
 
-// 登录表单数据
-const loginForm = ref({
-  login_id: '',
-  password: '',
-})
-
-// 加载状态
-const loading = ref(false)
+// 控制密码可见性
+const showPassword = ref(false);
 
 // 用户Store
-const userStore = useUserStore()
+const userStore = useUserStore();
 
-// 登录处理函数
+// 切换密码可见性
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value;
+};
+
+// 登录处理
 const handleLogin = async () => {
   // 表单验证
-  if (!loginForm.value.login_id) {
+  if (!formData.mobile.trim()) {
     uni.showToast({
-      icon: 'none',
-      title: '请输入手机号或邮箱',
-    })
-    return
+      title: '请输入手机号',
+      icon: 'none'
+    });
+    return;
   }
-  if (!loginForm.value.password) {
+  
+  if (!/^1\d{10}$/.test(formData.mobile)) {
     uni.showToast({
-      icon: 'none',
+      title: '请输入正确的手机号',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  if (!formData.password.trim()) {
+    uni.showToast({
       title: '请输入密码',
-    })
-    return
+      icon: 'none'
+    });
+    return;
   }
-
+  
+  // 执行登录
   try {
-    loading.value = true
-    // 调用登录API
-    const res = await loginAPI(loginForm.value)
+    // 显示登录中提示
+    uni.showLoading({
+      title: '登录中...'
+    });
     
-    // 登录成功，保存用户信息
-    if (res.status === 'success' && res.data) {
-      // 保存用户信息和token
+    // 调用实际登录API
+    const res = await loginAPI({
+      mobile: formData.mobile,
+      password: formData.password
+    });
+    
+    // 隐藏加载
+    uni.hideLoading();
+    
+    if (res && res.data) {
+      const { user, access_token, token_type } = res.data;
+      
+      // 保存用户信息和Token
       userStore.setUserInfo({
-        ...res.data.user,
-        token: res.data.access_token,
-      })
+        ...user,
+        token: access_token
+      });
       
       uni.showToast({
-        icon: 'success',
         title: '登录成功',
-      })
+        icon: 'success'
+      });
       
-      // 延时跳转到首页
+      // 跳转到首页
       setTimeout(() => {
         uni.switchTab({
-          url: '/pages/index/index',
-        })
-      }, 1500)
+          url: '/pages/index/index'
+        });
+      }, 1500);
     }
   } catch (error: any) {
-    // 显示错误信息
+    uni.hideLoading();
     uni.showToast({
-      icon: 'none',
-      title: error.message || '登录失败，请重试',
-    })
-  } finally {
-    loading.value = false
+      title: error?.data?.message || error?.message || '登录失败，请重试',
+      icon: 'none'
+    });
   }
-}
+};
+
+// 前往密码重置页面
+const goToResetPassword = () => {
+  uni.navigateTo({
+    url: '/pages/login/reset-password'
+  });
+};
+
+// 前往注册页面
+const goToRegister = () => {
+  uni.navigateTo({
+    url: '/pages/register/index'
+  });
+};
 </script>
 
-<style>
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+<style lang="scss">
+/* 全局重置 */
+page {
+  background: linear-gradient(135deg, #3498db, #1a5276);
+  height: 100%;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
 }
 
-.logo-box {
-  flex: 1;
+/* 容器样式 */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 30rpx;
+  position: relative;
+}
+
+/* 顶部波浪装饰 */
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+}
+
+/* LOGO区域 */
+.logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 100rpx;
+  margin-bottom: 60rpx;
+}
+
+.logo {
+  width: 140rpx;
+  height: 140rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30rpx;
+  box-shadow: 0 10rpx 30rpx rgba(243, 156, 18, 0.3);
+}
+
+.logo-text {
+  color: white;
+  font-size: 80rpx;
+  font-weight: bold;
+}
+
+.app-name {
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 10rpx;
+}
+
+.app-slogan {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 登录表单 */
+.login-form {
+  background-color: white;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.15);
+}
+
+/* 表单组 */
+.form-group {
+  margin-bottom: 30rpx;
+}
+
+/* 表单标签 */
+.form-label {
+  display: block;
+  color: #555;
+  margin-bottom: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+/* 输入框容器 */
+.input-container {
+  position: relative;
   display: flex;
   align-items: center;
 }
 
-.login-form {
-  flex: 2;
+/* 输入框图标 */
+.uni-icons {
+  position: absolute;
+  left: 20rpx;
+  color: #aaa;
+  font-size: 36rpx;
+}
+
+/* 输入框 */
+.form-control {
+  width: 100%;
+  height: 90rpx;
+  border: 1px solid #e0e0e0;
+  border-radius: 45rpx;
+  padding: 0 30rpx 0 80rpx;
+  font-size: 30rpx;
+  color: #333;
+  background-color: #f8f8f8;
+}
+
+/* 密码显示切换按钮 */
+.password-toggle {
+  position: absolute;
+  right: 20rpx;
+  color: #aaa;
+  font-size: 36rpx;
+}
+
+/* 忘记密码链接 */
+.forgot-password {
+  display: block;
+  text-align: right;
+  color: #3498db;
+  font-size: 28rpx;
+  margin: -10rpx 0 40rpx;
+}
+
+/* 登录按钮 */
+.login-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 30rpx;
+  box-shadow: 0 10rpx 20rpx rgba(243, 156, 18, 0.3);
+}
+
+/* 注册链接 */
+.register-link {
+  text-align: center;
+  font-size: 28rpx;
+  color: #777;
+}
+
+.register-text {
+  color: #3498db;
+  margin-left: 10rpx;
+}
+
+/* 底部版权信息 */
+.login-footer {
+  text-align: center;
+  padding: 30rpx 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24rpx;
+  margin-top: auto;
 }
 </style> 

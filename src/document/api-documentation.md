@@ -5,6 +5,9 @@
 ### 2025-04-24
 - `/api/user` 接口现在同时支持GET和POST两种请求方法，解决了某些客户端使用POST方法访问时返回405错误的问题
 
+### 2025-04-25
+- `/api/register` 接口现在需要提供 `withdraw_password` 参数，用于设置用户提现密码
+
 ## 用户认证相关接口
 
 ### 用户注册
@@ -15,6 +18,7 @@
   - `phone`: 手机号
   - `password`: 密码
   - `password_confirmation`: 确认密码
+  - `withdraw_password`: 提现密码
   - `referrer_invite_code`: 推荐人邀请码（可选）
 
 ### 用户登录

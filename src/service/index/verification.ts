@@ -26,18 +26,27 @@ export interface IVerificationStatus {
 }
 
 /**
- * 提交实名认证API
- * @param params 实名认证参数
- * @returns Promise
+ * 获取用户实名认证状态
  */
-export const submitVerificationAPI = (params: IVerificationParams) => {
-  return http.post<IVerificationStatus>('/api/verification/submit', params)
+export const getVerificationStatusAPI = () => {
+  return http.get<{
+    status: string;
+    verified: boolean;
+    pending: boolean;
+    rejected: boolean;
+    rejection_reason?: string;
+  }>('/api/verification/status')
 }
 
 /**
- * 查询认证状态API
- * @returns Promise
+ * 提交实名认证
  */
-export const getVerificationStatusAPI = () => {
-  return http.get<IVerificationStatus>('/api/verification/status')
+export const submitVerificationAPI = (data: {
+  real_name: string;
+  id_card_number: string;
+  id_card_front_image: string;
+  id_card_back_image: string;
+  face_image?: string;
+}) => {
+  return http.post<any>('/api/verification/submit', data)
 } 
