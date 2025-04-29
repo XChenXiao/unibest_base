@@ -31,6 +31,12 @@
         "iconType": "wot"
       },
       {
+        "pagePath": "pages/assets/index",
+        "text": "资产",
+        "icon": "iconfont icon-money",
+        "iconType": "iconfont"
+      },
+      {
         "pagePath": "pages/about/about",
         "text": "关于",
         "icon": "i-carbon-code",
@@ -63,6 +69,14 @@
       }
     },
     {
+      "path": "pages/assets/index",
+      "type": "page",
+      "layout": "tabbar",
+      "style": {
+        "navigationBarTitleText": "我的资产"
+      }
+    },
+    {
       "path": "pages/login/index",
       "type": "page",
       "style": {
@@ -83,6 +97,22 @@
       "style": {
         "navigationBarTitleText": "我的"
       }
+    },
+    {
+      "path": "pages/my/reset-password",
+      "type": "page"
+    },
+    {
+      "path": "pages/my/reset-withdraw-password",
+      "type": "page"
+    },
+    {
+      "path": "pages/my/settings",
+      "type": "page"
+    },
+    {
+      "path": "pages/my/wallet",
+      "type": "page"
     },
     {
       "path": "pages/register/index",

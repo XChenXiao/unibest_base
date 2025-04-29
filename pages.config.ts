@@ -36,6 +36,12 @@ export default defineUniPages({
         iconType: 'wot',
       },
       {
+        pagePath: 'pages/assets/index',
+        text: '资产',
+        icon: 'iconfont icon-money',
+        iconType: 'iconfont',
+      },
+      {
         pagePath: 'pages/about/about',
         text: '关于',
         icon: 'i-carbon-code',

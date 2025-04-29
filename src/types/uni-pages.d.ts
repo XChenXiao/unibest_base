@@ -6,16 +6,21 @@
 interface NavigateToOptions {
   url: "/pages/index/index" |
        "/pages/about/about" |
+       "/pages/assets/index" |
        "/pages/login/index" |
        "/pages/login/reset-password" |
        "/pages/my/index" |
+       "/pages/my/reset-password" |
+       "/pages/my/reset-withdraw-password" |
+       "/pages/my/settings" |
+       "/pages/my/wallet" |
        "/pages/register/index" |
        "/pages/verification/index";
 }
 interface RedirectToOptions extends NavigateToOptions {}
 
 interface SwitchTabOptions {
-  url: "/pages/index/index" | "/pages/about/about" | "/pages/my/index"
+  url: "/pages/index/index" | "/pages/assets/index" | "/pages/about/about" | "/pages/my/index"
 }
 
 type ReLaunchOptions = NavigateToOptions | SwitchTabOptions;

@@ -1,0 +1,1021 @@
+<!-- 理财应用资产页面 -->
+<!-- pages/assets/index.vue -->
+<template>
+  <view class="assets-container">
+    <!-- 顶部波浪装饰 -->
+    <view class="wave-decoration"></view>
+    
+    <!-- 页面标题 -->
+    <view class="page-title">
+      <text class="title-text">我的资产</text>
+    </view>
+    
+    <!-- 资产总览卡片 -->
+    <view class="total-assets-card">
+      <view class="card-header">
+        <text class="card-title">总资产(元)</text>
+        <view class="visibility-toggle" @click="toggleAssetsVisibility">
+          <text class="uni-icons" :class="[showAssets ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"></text>
+        </view>
+      </view>
+      <view class="assets-amount" v-if="showAssets">
+        <text class="amount-value">{{ formatAmount(assetsInfo.totalAssets) }}</text>
+      </view>
+      <view class="assets-amount" v-else>
+        <text class="amount-hidden">******</text>
+      </view>
+      
+      <!-- 资产明细 -->
+      <view class="assets-breakdown">
+        <view class="breakdown-item">
+          <text class="breakdown-label">货币总资产</text>
+          <text class="breakdown-value" v-if="showAssets">{{ formatAmount(assetsInfo.currencyAssets) }}</text>
+          <text class="breakdown-value" v-else>******</text>
+        </view>
+        <view class="breakdown-item">
+          <text class="breakdown-label">股权总资产</text>
+          <text class="breakdown-value" v-if="showAssets">{{ formatAmount(assetsInfo.equityAssets) }}</text>
+          <text class="breakdown-value" v-else>******</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 资产类型 Tab 切换 -->
+    <view class="assets-tabs">
+      <view 
+        class="tab-item" 
+        :class="{ 'tab-active': activeTab === 'equity' }"
+        @click="switchTab('equity')"
+      >
+        <text>股权</text>
+      </view>
+      <view 
+        class="tab-item" 
+        :class="{ 'tab-active': activeTab === 'currency' }"
+        @click="switchTab('currency')"
+      >
+        <text>货币</text>
+      </view>
+    </view>
+    
+    <!-- 股权内容 -->
+    <view class="tab-content" v-if="activeTab === 'equity'">
+      <!-- 股权卡片 -->
+      <view class="equity-card">
+        <view class="equity-summary">
+          <view class="equity-info">
+            <text class="equity-label">持有股权</text>
+            <view class="equity-amount">
+              <text class="equity-value">{{ formatAmount(equityInfo.holdAmount) }}</text>
+              <text class="equity-unit">股</text>
+            </view>
+          </view>
+          <view class="equity-info">
+            <text class="equity-label">股权价格</text>
+            <view class="equity-amount">
+              <text class="equity-value">{{ formatAmount(equityInfo.price) }}</text>
+              <text class="equity-unit">元/股</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 出售股权按钮 -->
+        <button class="sell-equity-btn" @click="openSellEquityPopup">出售股权</button>
+      </view>
+      
+      <!-- 股权奖励列表 -->
+      <view class="reward-section">
+        <view class="section-header">
+          <text class="section-title">股权奖励</text>
+        </view>
+        
+        <view class="reward-list">
+          <!-- 注册实名奖励 -->
+          <view class="reward-item">
+            <view class="reward-icon">
+              <text class="uni-icons uniui-person-filled"></text>
+            </view>
+            <view class="reward-info">
+              <text class="reward-title">注册实名奖励</text>
+              <text class="reward-desc">完成注册并实名认证可获得股权奖励</text>
+            </view>
+            <view class="reward-action">
+              <view class="reward-amount">{{ equityInfo.registerReward }}股</view>
+              <button 
+                class="reward-btn" 
+                :class="{ 'received-btn': equityInfo.isRegisterRewardReceived }"
+                @click="claimReward('register')"
+              >
+                {{ equityInfo.isRegisterRewardReceived ? '已领取' : '领取' }}
+              </button>
+            </view>
+          </view>
+          
+          <!-- 邀请奖励 -->
+          <view class="reward-item">
+            <view class="reward-icon invite-icon">
+              <text class="uni-icons uniui-upload"></text>
+            </view>
+            <view class="reward-info">
+              <text class="reward-title">邀请注册实名奖励</text>
+              <text class="reward-desc">邀请好友注册并完成实名认证</text>
+              <view class="progress-container">
+                <view class="progress-bar">
+                  <view 
+                    class="progress-filled" 
+                    :style="{ width: (equityInfo.inviteProgress / equityInfo.inviteTarget * 100) + '%' }"
+                  ></view>
+                </view>
+                <text class="progress-text">{{ equityInfo.inviteProgress }}/{{ equityInfo.inviteTarget }}</text>
+              </view>
+            </view>
+            <view class="reward-action">
+              <view class="reward-amount">{{ equityInfo.inviteReward }}股</view>
+              <button 
+                class="reward-btn" 
+                :class="{ 'disabled-btn': equityInfo.inviteProgress < equityInfo.inviteTarget }"
+                @click="claimReward('invite')"
+              >
+                领取
+              </button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 货币内容 -->
+    <view class="tab-content" v-if="activeTab === 'currency'">
+      <view class="currency-list">
+        <view 
+          class="currency-item"
+          v-for="(currency, index) in currencyList"
+          :key="index"
+          @click="gotoTradingCenter(currency)"
+        >
+          <view class="currency-icon" :style="{ backgroundColor: currency.bgColor }">
+            <text class="currency-icon-text">{{ currency.symbol.charAt(0) }}</text>
+          </view>
+          <view class="currency-info">
+            <text class="currency-name">{{ currency.name }}</text>
+            <text class="currency-symbol">{{ currency.symbol }}</text>
+          </view>
+          <view class="currency-details">
+            <text class="currency-price">¥{{ formatAmount(currency.price) }}</text>
+            <text class="currency-amount">持有: {{ formatAmount(currency.holdAmount) }}</text>
+          </view>
+          <text class="uni-icons uniui-arrow-right currency-arrow"></text>
+        </view>
+        
+        <!-- 空状态 -->
+        <view v-if="currencyList.length === 0" class="empty-state">
+          <text class="empty-text">您暂无持有货币资产</text>
+          <button class="go-trading-btn" @click="gotoTradingCenter()">前往交易所</button>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 出售股权弹窗 -->
+    <uni-popup ref="sellEquityPopup" type="center">
+      <view class="popup-content">
+        <view class="popup-header">
+          <text class="popup-title">出售股权</text>
+          <text class="popup-close" @click="closeSellEquityPopup">×</text>
+        </view>
+        <view class="popup-body">
+          <view class="equity-info-row">
+            <text class="info-label">持有股权:</text>
+            <text class="info-value">{{ formatAmount(equityInfo.holdAmount) }}股</text>
+          </view>
+          <view class="equity-info-row">
+            <text class="info-label">股权单价:</text>
+            <text class="info-value">¥{{ formatAmount(equityInfo.price) }}/股</text>
+          </view>
+          
+          <view class="amount-input-container">
+            <text class="amount-label">出售数量</text>
+            <view class="amount-input-wrapper">
+              <input 
+                class="amount-input" 
+                type="digit" 
+                v-model="sellAmount" 
+                placeholder="请输入出售股权数量"
+              />
+              <text class="input-unit">股</text>
+            </view>
+          </view>
+          
+          <view class="sell-info">
+            <text class="sell-price-label">预计获得金额:</text>
+            <text class="sell-price-value">¥{{ calculateSellPrice() }}</text>
+          </view>
+          
+          <button class="confirm-sell-btn" @click="confirmSellEquity">确认出售</button>
+          <text class="sell-note">出售后资金将直接到账至您的余额</text>
+        </view>
+      </view>
+    </uni-popup>
+    
+    <!-- 底部版权信息 -->
+    <view class="assets-footer">
+      <text>© 2025 理财管理平台 版权所有</text>
+    </view>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive, computed } from 'vue';
+
+// 获取弹窗组件实例
+const sellEquityPopup = ref(null);
+
+// 控制资产显示隐藏
+const showAssets = ref(true);
+
+// 当前激活的标签页
+const activeTab = ref('equity');
+
+// 资产信息
+const assetsInfo = reactive({
+  totalAssets: 26850.75,
+  currencyAssets: 15850.75,
+  equityAssets: 11000.00
+});
+
+// 股权信息
+const equityInfo = reactive({
+  holdAmount: 1000,
+  price: 11.00,
+  registerReward: 50,
+  inviteReward: 100,
+  isRegisterRewardReceived: true,
+  inviteProgress: 3,
+  inviteTarget: 5
+});
+
+// 货币列表
+const currencyList = reactive([
+  {
+    id: 1,
+    name: '黄金',
+    symbol: 'GOLD',
+    price: 380.25,
+    holdAmount: 35.00,
+    bgColor: 'rgba(243, 156, 18, 0.2)'
+  },
+  {
+    id: 2,
+    name: '白银',
+    symbol: 'SILVER',
+    price: 42.50,
+    holdAmount: 78.50,
+    bgColor: 'rgba(189, 195, 199, 0.2)'
+  },
+  {
+    id: 3,
+    name: '铂金',
+    symbol: 'PLATINUM',
+    price: 420.30,
+    holdAmount: 5.25,
+    bgColor: 'rgba(52, 152, 219, 0.2)'
+  }
+]);
+
+// 出售股权数量
+const sellAmount = ref('');
+
+// 切换资产可见性
+const toggleAssetsVisibility = () => {
+  showAssets.value = !showAssets.value;
+};
+
+// 切换标签页
+const switchTab = (tab: string) => {
+  activeTab.value = tab;
+};
+
+// 格式化金额显示
+const formatAmount = (amount: number) => {
+  return amount.toFixed(2);
+};
+
+// 计算出售股权预计金额
+const calculateSellPrice = () => {
+  const amount = parseFloat(sellAmount.value) || 0;
+  return formatAmount(amount * equityInfo.price);
+};
+
+// 前往交易所
+const gotoTradingCenter = (currency?: any) => {
+  let url = '/pages/trading/index';
+  if (currency) {
+    url += `?id=${currency.id}&type=currency`;
+  }
+  uni.navigateTo({ url });
+};
+
+// 打开出售股权弹窗
+const openSellEquityPopup = () => {
+  sellAmount.value = '';
+  sellEquityPopup.value.open();
+};
+
+// 关闭出售股权弹窗
+const closeSellEquityPopup = () => {
+  sellEquityPopup.value.close();
+};
+
+// 确认出售股权
+const confirmSellEquity = async () => {
+  // 验证出售数量
+  if (!sellAmount.value || parseFloat(sellAmount.value) <= 0) {
+    uni.showToast({
+      title: '请输入有效的出售数量',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  const sellQuantity = parseFloat(sellAmount.value);
+  
+  // 验证持有数量是否充足
+  if (sellQuantity > equityInfo.holdAmount) {
+    uni.showToast({
+      title: '持有股权不足',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '处理中...'
+    });
+    
+    // 这里替换为实际的API调用
+    // const res = await api.sellEquity({ amount: sellQuantity });
+    
+    // 模拟出售处理
+    setTimeout(() => {
+      uni.hideLoading();
+      closeSellEquityPopup();
+      
+      // 更新股权持有量和总资产（实际应该由后端返回）
+      const saleAmount = sellQuantity * equityInfo.price;
+      equityInfo.holdAmount -= sellQuantity;
+      assetsInfo.equityAssets -= saleAmount;
+      assetsInfo.totalAssets -= saleAmount;
+      
+      // 出售成功提示
+      uni.showToast({
+        title: '出售成功',
+        icon: 'success'
+      });
+    }, 1500);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({
+      title: '出售失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+
+// 领取奖励
+const claimReward = async (type: string) => {
+  // 判断奖励类型和条件
+  if (type === 'register' && equityInfo.isRegisterRewardReceived) {
+    uni.showToast({
+      title: '您已领取过该奖励',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  if (type === 'invite' && equityInfo.inviteProgress < equityInfo.inviteTarget) {
+    uni.showToast({
+      title: `邀请进度未达标(${equityInfo.inviteProgress}/${equityInfo.inviteTarget})`,
+      icon: 'none'
+    });
+    return;
+  }
+  
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '领取中...'
+    });
+    
+    // 这里替换为实际的API调用
+    // const res = await api.claimReward({ type });
+    
+    // 模拟领取处理
+    setTimeout(() => {
+      uni.hideLoading();
+      
+      if (type === 'register') {
+        // 更新注册奖励状态和股权数量
+        equityInfo.isRegisterRewardReceived = true;
+        equityInfo.holdAmount += equityInfo.registerReward;
+        assetsInfo.equityAssets += equityInfo.registerReward * equityInfo.price;
+        assetsInfo.totalAssets += equityInfo.registerReward * equityInfo.price;
+      } else if (type === 'invite') {
+        // 更新邀请奖励和股权数量
+        equityInfo.inviteProgress = 0; // 重置进度
+        equityInfo.holdAmount += equityInfo.inviteReward;
+        assetsInfo.equityAssets += equityInfo.inviteReward * equityInfo.price;
+        assetsInfo.totalAssets += equityInfo.inviteReward * equityInfo.price;
+      }
+      
+      // 领取成功提示
+      uni.showToast({
+        title: '领取成功',
+        icon: 'success'
+      });
+    }, 1500);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({
+      title: '领取失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+</script>
+
+<style lang="scss">
+/* 全局重置 */
+page {
+  background-color: #f5f5f5;
+  height: 100%;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 容器样式 */
+.assets-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* 顶部波浪装饰 */
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  z-index: 2;
+}
+
+/* 页面标题 */
+.page-title {
+  text-align: center;
+  margin-top: 80rpx;
+  margin-bottom: 40rpx;
+}
+
+.title-text {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 资产总览卡片 */
+.total-assets-card {
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  border-radius: 20rpx;
+  margin: 0 30rpx 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.card-title {
+  color: #666;
+  font-size: 28rpx;
+}
+
+.visibility-toggle {
+  padding: 10rpx;
+}
+
+.visibility-toggle .uni-icons {
+  font-size: 36rpx;
+  color: #999;
+}
+
+.assets-amount {
+  margin-bottom: 30rpx;
+}
+
+.amount-value {
+  font-size: 60rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.amount-hidden {
+  font-size: 60rpx;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 5rpx;
+}
+
+/* 资产明细 */
+.assets-breakdown {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 20rpx;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.breakdown-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.breakdown-value {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 资产类型切换 */
+.assets-tabs {
+  display: flex;
+  background-color: white;
+  margin: 0 30rpx 30rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.tab-item {
+  flex: 1;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #666;
+  position: relative;
+}
+
+.tab-active {
+  color: #f39c12;
+  font-weight: 500;
+}
+
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+}
+
+/* 内容区域 */
+.tab-content {
+  background-color: white;
+  border-radius: 20rpx;
+  margin: 0 30rpx 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 股权卡片 */
+.equity-card {
+  background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.equity-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.equity-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.equity-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.equity-amount {
+  display: flex;
+  align-items: baseline;
+}
+
+.equity-value {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+  margin-right: 8rpx;
+}
+
+.equity-unit {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.sell-equity-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  box-shadow: 0 8rpx 20rpx rgba(243, 156, 18, 0.3);
+}
+
+/* 股权奖励区域 */
+.reward-section {
+  margin-bottom: 20rpx;
+}
+
+.section-header {
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.reward-list {
+  background-color: #f8f8f8;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  position: relative;
+}
+
+.reward-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: 0;
+  height: 1px;
+  background-color: #e5e5e5;
+}
+
+.reward-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background-color: rgba(46, 204, 113, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+}
+
+.reward-icon .uni-icons {
+  color: #2ecc71;
+  font-size: 36rpx;
+}
+
+.invite-icon {
+  background-color: rgba(52, 152, 219, 0.15);
+}
+
+.invite-icon .uni-icons {
+  color: #3498db;
+}
+
+.reward-info {
+  flex: 1;
+}
+
+.reward-title {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.reward-desc {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 10rpx;
+  background-color: #e0e0e0;
+  border-radius: 5rpx;
+  overflow: hidden;
+  margin-right: 15rpx;
+}
+
+.progress-filled {
+  height: 100%;
+  background: linear-gradient(to right, #3498db, #2980b9);
+}
+
+.progress-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.reward-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reward-amount {
+  font-size: 26rpx;
+  color: #f39c12;
+  margin-bottom: 10rpx;
+}
+
+.reward-btn {
+  background-color: #f39c12;
+  color: white;
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 30rpx;
+  border: none;
+  line-height: 1.5;
+}
+
+.received-btn {
+  background-color: #bdc3c7;
+}
+
+.disabled-btn {
+  background-color: #bdc3c7;
+  opacity: 0.7;
+}
+
+/* 货币列表 */
+.currency-list {
+  min-height: 400rpx;
+}
+
+.currency-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.currency-item:last-child {
+  border-bottom: none;
+}
+
+.currency-icon {
+  width: 90rpx;
+  height: 90rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  font-weight: bold;
+}
+
+.currency-icon-text {
+  font-size: 40rpx;
+  color: #333;
+}
+
+.currency-info {
+  flex: 1;
+}
+
+.currency-name {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.currency-symbol {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.currency-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-right: 20rpx;
+}
+
+.currency-price {
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+
+.currency-amount {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.currency-arrow {
+  color: #ccc;
+  font-size: 28rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 28rpx;
+  margin-bottom: 30rpx;
+}
+
+.go-trading-btn {
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 28rpx;
+  padding: 15rpx 40rpx;
+  border-radius: 40rpx;
+  border: none;
+}
+
+/* 弹窗样式 */
+.popup-content {
+  width: 600rpx;
+  background-color: #ffffff;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.popup-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.popup-close {
+  font-size: 40rpx;
+  color: #999;
+  line-height: 1;
+}
+
+.popup-body {
+  padding: 30rpx;
+}
+
+.equity-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.amount-input-container {
+  margin: 30rpx 0;
+}
+
+.amount-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.amount-input-wrapper {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10rpx;
+}
+
+.amount-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 36rpx;
+}
+
+.input-unit {
+  font-size: 28rpx;
+  color: #666;
+  margin-left: 10rpx;
+}
+
+.sell-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background-color: #f8f8f8;
+  border-radius: 10rpx;
+}
+
+.sell-price-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.sell-price-value {
+  font-size: 32rpx;
+  color: #f39c12;
+  font-weight: 500;
+}
+
+.confirm-sell-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 20rpx;
+}
+
+.sell-note {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+}
+
+/* 底部版权信息 */
+.assets-footer {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #999;
+  font-size: 24rpx;
+  margin-top: auto;
+}
+</style>

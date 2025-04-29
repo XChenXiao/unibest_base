@@ -1,0 +1,882 @@
+<!-- 理财应用钱包页面 -->
+<!-- pages/my/wallet.vue -->
+<template>
+  <view class="wallet-container">
+    <!-- 顶部波浪装饰 -->
+    <view class="wave-decoration"></view>
+    
+    <!-- 返回按钮 -->
+    <view class="back-button" @click="goBack">
+      <text class="uni-icons uniui-arrow-left"></text>
+    </view>
+    
+    <!-- 页面标题 -->
+    <view class="page-title">
+      <text class="title-text">我的钱包</text>
+    </view>
+    
+    <!-- 余额卡片 -->
+    <view class="balance-card">
+      <view class="balance-header">
+        <text class="balance-title">账户余额</text>
+      </view>
+      <view class="balance-amount">
+        <text class="amount-symbol">¥</text>
+        <text class="amount-value">{{ formatBalance(walletInfo.balance) }}</text>
+      </view>
+      
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <view class="action-button withdraw-btn" @click="handleWithdraw">
+          <text class="uni-icons uniui-download-filled"></text>
+          <text class="button-text">提现</text>
+        </view>
+        <view class="action-button recharge-btn" @click="handleRecharge">
+          <text class="uni-icons uniui-upload-filled"></text>
+          <text class="button-text">充值</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 交易记录 -->
+    <view class="transaction-section">
+      <view class="section-header">
+        <text class="section-title">收支记录</text>
+        <text class="view-all" @click="viewAllTransactions">查看全部</text>
+      </view>
+      
+      <!-- 记录类型选择 -->
+      <view class="type-selector">
+        <view 
+          v-for="(type, index) in transactionTypes" 
+          :key="index"
+          class="type-item"
+          :class="{ 'type-active': activeType === type.value }"
+          @click="switchType(type.value)"
+        >
+          <text>{{ type.label }}</text>
+        </view>
+      </view>
+      
+      <!-- 记录列表 -->
+      <view class="transaction-list">
+        <view 
+          v-for="(item, index) in filteredTransactions" 
+          :key="index"
+          class="transaction-item"
+        >
+          <view class="transaction-icon" :class="getIconClass(item.type)">
+            <text class="uni-icons" :class="getIconName(item.type)"></text>
+          </view>
+          <view class="transaction-info">
+            <text class="transaction-title">{{ item.title }}</text>
+            <text class="transaction-time">{{ item.time }}</text>
+          </view>
+          <view class="transaction-amount" :class="{ 'amount-income': item.isIncome }">
+            <text>{{ item.isIncome ? '+' : '-' }}{{ item.amount }}</text>
+          </view>
+        </view>
+        
+        <!-- 空状态 -->
+        <view v-if="filteredTransactions.length === 0" class="empty-state">
+          <text class="empty-text">暂无相关记录</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 提现弹窗 -->
+    <uni-popup ref="withdrawPopup" type="center">
+      <view class="popup-content">
+        <view class="popup-header">
+          <text class="popup-title">账户提现</text>
+          <text class="popup-close" @click="closeWithdrawPopup">×</text>
+        </view>
+        <view class="popup-body">
+          <view class="bank-info">
+            <text class="bank-name">{{ walletInfo.bankName }}</text>
+            <text class="bank-number">{{ maskBankCard(walletInfo.bankNumber) }}</text>
+          </view>
+          
+          <view class="amount-input-container">
+            <text class="amount-label">提现金额</text>
+            <view class="amount-input-wrapper">
+              <text class="amount-prefix">¥</text>
+              <input 
+                class="amount-input" 
+                type="digit" 
+                v-model="withdrawAmount" 
+                placeholder="请输入提现金额"
+              />
+            </view>
+            <text class="amount-available">可用余额: ¥{{ formatBalance(walletInfo.balance) }}</text>
+          </view>
+          
+          <view class="password-input-container">
+            <text class="password-label">提现密码</text>
+            <view class="password-input-wrapper">
+              <input 
+                class="password-input" 
+                type="password" 
+                maxlength="6" 
+                password 
+                v-model="withdrawPassword" 
+                placeholder="请输入6位提现密码"
+              />
+            </view>
+          </view>
+          
+          <button class="confirm-withdraw-btn" @click="confirmWithdraw">确认提现</button>
+          <text class="withdraw-note">提现申请将在1-3个工作日内处理完成</text>
+        </view>
+      </view>
+    </uni-popup>
+    
+    <!-- 充值弹窗 (重用我的页面的充值弹窗) -->
+    <uni-popup ref="rechargePopup" type="center">
+      <view class="popup-content">
+        <view class="popup-header">
+          <text class="popup-title">账户充值</text>
+          <text class="popup-close" @click="closeRechargePopup">×</text>
+        </view>
+        <view class="popup-body">
+          <view class="amount-input-container">
+            <text class="amount-label">充值金额</text>
+            <view class="amount-input-wrapper">
+              <text class="amount-prefix">¥</text>
+              <input 
+                class="amount-input" 
+                type="digit" 
+                v-model="rechargeAmount" 
+                placeholder="请输入充值金额"
+              />
+            </view>
+          </view>
+          <view class="amount-buttons">
+            <view 
+              v-for="(amount, index) in quickAmounts" 
+              :key="index" 
+              class="amount-btn" 
+              :class="{ 'amount-btn-active': rechargeAmount === amount }"
+              @click="selectAmount(amount)"
+            >
+              <text>¥{{ amount }}</text>
+            </view>
+          </view>
+          <button class="confirm-recharge-btn" @click="confirmRecharge">确认充值</button>
+        </view>
+      </view>
+    </uni-popup>
+    
+    <!-- 底部版权信息 -->
+    <view class="wallet-footer">
+      <text>© 2025 理财管理平台 版权所有</text>
+    </view>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive, computed } from 'vue';
+
+// 获取弹窗组件实例
+const withdrawPopup = ref(null);
+const rechargePopup = ref(null);
+
+// 钱包信息
+const walletInfo = reactive({
+  balance: 5280.75,
+  bankName: '中国建设银行',
+  bankNumber: '6217002940106887766'
+});
+
+// 交易类型
+const transactionTypes = [
+  { label: '全部', value: 'all' },
+  { label: '收入', value: 'income' },
+  { label: '支出', value: 'expense' },
+  { label: '提现', value: 'withdraw' }
+];
+
+// 当前选中的交易类型
+const activeType = ref('all');
+
+// 提现相关数据
+const withdrawAmount = ref('');
+const withdrawPassword = ref('');
+
+// 充值金额
+const rechargeAmount = ref('');
+
+// 快捷金额选项
+const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000'];
+
+// 交易记录数据
+const transactions = [
+  {
+    id: 1,
+    title: '购买黄金',
+    type: 'expense',
+    isIncome: false,
+    amount: '1000.00',
+    time: '2025-04-28 15:30'
+  },
+  {
+    id: 2,
+    title: '卖出股权',
+    type: 'income',
+    isIncome: true,
+    amount: '2580.75',
+    time: '2025-04-26 10:15'
+  },
+  {
+    id: 3,
+    title: '账户充值',
+    type: 'income',
+    isIncome: true,
+    amount: '5000.00',
+    time: '2025-04-25 09:45'
+  },
+  {
+    id: 4,
+    title: '提现',
+    type: 'withdraw',
+    isIncome: false,
+    amount: '3000.00',
+    time: '2025-04-20 14:20'
+  },
+  {
+    id: 5,
+    title: '签到奖励',
+    type: 'income',
+    isIncome: true,
+    amount: '10.00',
+    time: '2025-04-19 08:30'
+  }
+];
+
+// 根据类型筛选交易记录
+const filteredTransactions = computed(() => {
+  if (activeType.value === 'all') {
+    return transactions;
+  } else {
+    return transactions.filter(item => item.type === activeType.value);
+  }
+});
+
+// 格式化余额显示
+const formatBalance = (balance: number) => {
+  return balance.toFixed(2);
+};
+
+// 银行卡号脱敏
+const maskBankCard = (cardNo: string) => {
+  if (!cardNo) return '';
+  return cardNo.replace(/^(\d{4})\d+(\d{4})$/, '$1 **** **** $2');
+};
+
+// 切换交易记录类型
+const switchType = (type: string) => {
+  activeType.value = type;
+};
+
+// 获取交易类型图标样式
+const getIconClass = (type: string) => {
+  switch (type) {
+    case 'income':
+      return 'icon-income';
+    case 'expense':
+      return 'icon-expense';
+    case 'withdraw':
+      return 'icon-withdraw';
+    default:
+      return '';
+  }
+};
+
+// 获取交易类型图标名称
+const getIconName = (type: string) => {
+  switch (type) {
+    case 'income':
+      return 'uniui-arrow-down';
+    case 'expense':
+      return 'uniui-arrow-up';
+    case 'withdraw':
+      return 'uniui-download-filled';
+    default:
+      return '';
+  }
+};
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack();
+};
+
+// 查看全部交易记录
+const viewAllTransactions = () => {
+  uni.navigateTo({
+    url: '/pages/my/transactions'
+  });
+};
+
+// 处理提现
+const handleWithdraw = () => {
+  withdrawAmount.value = '';
+  withdrawPassword.value = '';
+  withdrawPopup.value.open();
+};
+
+// 关闭提现弹窗
+const closeWithdrawPopup = () => {
+  withdrawPopup.value.close();
+};
+
+// 确认提现
+const confirmWithdraw = async () => {
+  // 验证提现金额
+  if (!withdrawAmount.value || parseFloat(withdrawAmount.value) <= 0) {
+    uni.showToast({
+      title: '请输入有效的提现金额',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 验证余额是否充足
+  if (parseFloat(withdrawAmount.value) > walletInfo.balance) {
+    uni.showToast({
+      title: '余额不足',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 验证提现密码
+  if (!withdrawPassword.value || withdrawPassword.value.length !== 6) {
+    uni.showToast({
+      title: '请输入6位提现密码',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '处理中...'
+    });
+    
+    // 这里替换为实际的提现API调用
+    // const res = await api.withdraw({
+    //   amount: parseFloat(withdrawAmount.value),
+    //   password: withdrawPassword.value
+    // });
+    
+    // 模拟提现处理
+    setTimeout(() => {
+      uni.hideLoading();
+      closeWithdrawPopup();
+      
+      // 提现申请提交成功
+      uni.showModal({
+        title: '提现申请已提交',
+        content: `您的提现申请已成功提交，金额: ¥${withdrawAmount.value}，将在1-3个工作日内到账。`,
+        showCancel: false
+      });
+      
+      // 更新余额（实际应该由后端返回）
+      walletInfo.balance -= parseFloat(withdrawAmount.value);
+      
+      // 添加新的提现记录（实际应该由后端返回）
+      transactions.unshift({
+        id: transactions.length + 1,
+        title: '提现',
+        type: 'withdraw',
+        isIncome: false,
+        amount: withdrawAmount.value,
+        time: new Date().toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).replace(/\//g, '-')
+      });
+    }, 1500);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({
+      title: '提现申请失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+
+// 处理充值
+const handleRecharge = () => {
+  rechargeAmount.value = '';
+  rechargePopup.value.open();
+};
+
+// 关闭充值弹窗
+const closeRechargePopup = () => {
+  rechargePopup.value.close();
+};
+
+// 选择快捷金额
+const selectAmount = (amount: string) => {
+  rechargeAmount.value = amount;
+};
+
+// 确认充值
+const confirmRecharge = async () => {
+  if (!rechargeAmount.value || parseFloat(rechargeAmount.value) <= 0) {
+    uni.showToast({
+      title: '请输入有效的充值金额',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '处理中...'
+    });
+    
+    // 这里替换为实际的充值API调用
+    // const res = await api.recharge({ amount: parseFloat(rechargeAmount.value) });
+    
+    // 模拟第三方支付跳转
+    setTimeout(() => {
+      uni.hideLoading();
+      closeRechargePopup();
+      
+      // 模拟跳转到第三方支付
+      uni.navigateTo({
+        url: `/pages/payment/third-party?amount=${rechargeAmount.value}`
+      });
+    }, 1000);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({
+      title: '充值失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+</script>
+
+<style lang="scss">
+/* 全局重置 */
+page {
+  background-color: #f5f5f5;
+  height: 100%;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 容器样式 */
+.wallet-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* 顶部波浪装饰 */
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+}
+
+/* 返回按钮 */
+.back-button {
+  position: absolute;
+  top: 60rpx;
+  left: 20rpx;
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #333;
+  z-index: 10;
+}
+
+/* 页面标题 */
+.page-title {
+  text-align: center;
+  margin-top: 130rpx;
+  margin-bottom: 40rpx;
+}
+
+.title-text {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 余额卡片 */
+.balance-card {
+  background-color: white;
+  border-radius: 20rpx;
+  margin: 0 30rpx 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.balance-header {
+  margin-bottom: 20rpx;
+}
+
+.balance-title {
+  color: #333;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.balance-amount {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 30rpx;
+}
+
+.amount-symbol {
+  font-size: 36rpx;
+  color: #333;
+  margin-right: 8rpx;
+}
+
+.amount-value {
+  font-size: 60rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 30rpx;
+}
+
+.action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+  width: 40%;
+}
+
+.action-button .uni-icons {
+  font-size: 40rpx;
+  margin-bottom: 10rpx;
+}
+
+.withdraw-btn {
+  color: #e74c3c;
+}
+
+.recharge-btn {
+  color: #3498db;
+}
+
+.button-text {
+  font-size: 28rpx;
+}
+
+/* 交易记录区域 */
+.transaction-section {
+  background-color: white;
+  border-radius: 20rpx;
+  margin: 0 30rpx 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.view-all {
+  font-size: 26rpx;
+  color: #3498db;
+}
+
+/* 类型选择器 */
+.type-selector {
+  display: flex;
+  margin-bottom: 20rpx;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 15rpx;
+}
+
+.type-item {
+  padding: 10rpx 20rpx;
+  margin-right: 15rpx;
+  font-size: 26rpx;
+  color: #666;
+  border-radius: 30rpx;
+}
+
+.type-active {
+  background-color: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+  font-weight: 500;
+}
+
+/* 交易记录列表 */
+.transaction-list {
+  max-height: 700rpx;
+  overflow-y: auto;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+}
+
+.icon-income {
+  background-color: rgba(46, 204, 113, 0.15);
+}
+
+.icon-income .uni-icons {
+  color: #2ecc71;
+}
+
+.icon-expense {
+  background-color: rgba(231, 76, 60, 0.15);
+}
+
+.icon-expense .uni-icons {
+  color: #e74c3c;
+}
+
+.icon-withdraw {
+  background-color: rgba(155, 89, 182, 0.15);
+}
+
+.icon-withdraw .uni-icons {
+  color: #9b59b6;
+}
+
+.transaction-info {
+  flex: 1;
+}
+
+.transaction-title {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.transaction-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.transaction-amount {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #e74c3c;
+}
+
+.amount-income {
+  color: #2ecc71;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300rpx;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 弹窗样式 */
+.popup-content {
+  width: 600rpx;
+  background-color: #ffffff;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.popup-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.popup-close {
+  font-size: 40rpx;
+  color: #999;
+  line-height: 1;
+}
+
+.popup-body {
+  padding: 30rpx;
+}
+
+/* 银行卡信息 */
+.bank-info {
+  background-color: #f8f8f8;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.bank-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.bank-number {
+  font-size: 30rpx;
+  color: #666;
+  font-family: monospace;
+}
+
+/* 金额输入 */
+.amount-input-container {
+  margin-bottom: 30rpx;
+}
+
+.amount-label, .password-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.amount-input-wrapper, .password-input-wrapper {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10rpx;
+}
+
+.amount-prefix {
+  font-size: 40rpx;
+  color: #333;
+  margin-right: 10rpx;
+}
+
+.amount-input, .password-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 36rpx;
+}
+
+.amount-available {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 10rpx;
+  text-align: right;
+}
+
+/* 密码输入 */
+.password-input-container {
+  margin-bottom: 40rpx;
+}
+
+/* 快捷金额选择 */
+.amount-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 40rpx;
+}
+
+.amount-btn {
+  width: 170rpx;
+  height: 80rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.amount-btn-active {
+  background-color: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+  font-weight: 500;
+}
+
+/* 确认按钮 */
+.confirm-withdraw-btn, .confirm-recharge-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 20rpx;
+}
+
+.withdraw-note {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+}
+
+/* 底部版权信息 */
+.wallet-footer {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #999;
+  font-size: 24rpx;
+  margin-top: auto;
+}
+</style>
