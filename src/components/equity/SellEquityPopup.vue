@@ -99,7 +99,11 @@ const handleConfirm = () => {
     return;
   }
   
+  // 发送确认事件
   emit('confirm', sellQuantity);
+  
+  // 自动关闭弹窗
+  showPopup.value = false;
 };
 
 // 计算出售预计金额
@@ -110,7 +114,7 @@ const calculateSellPrice = () => {
 
 // 格式化金额显示
 const formatAmount = (amount: number) => {
-  return amount.toFixed(2);
+  return Number(amount).toFixed(2);
 };
 
 // 向父组件暴露方法

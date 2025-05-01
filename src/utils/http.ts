@@ -1,8 +1,28 @@
 import { CustomRequestOptions } from '@/interceptors/request'
+import { useUserStore } from '@/store'
 
 export const http = <T>(options: CustomRequestOptions) => {
   // 1. 返回 Promise 对象
   return new Promise<IResData<T>>((resolve, reject) => {
+    // 确保带上token
+    if (!options.header?.Authorization || !options.header?.authorization) {
+      if (!options.header) {
+        options.header = {};
+      }
+      
+      // 从pinia store获取token
+      const userStore = useUserStore();
+      const token = userStore?.userInfo?.token;
+      
+      // 如果找到token，添加到请求头
+      if (token) {
+        console.log(`添加token到请求: ${options.url}`);
+        options.header.Authorization = `Bearer ${token}`;
+      } else {
+        console.warn(`未找到token，请求可能会失败: ${options.url}`);
+      }
+    }
+    
     uni.request({
       ...options,
       dataType: 'json',
@@ -30,12 +50,15 @@ export const http = <T>(options: CustomRequestOptions) => {
           }
         } else if (res.statusCode === 401) {
           // 401错误 - 未授权，清理用户信息，跳转到登录页
-          const userStore = uni.getStorageSync('userStore') 
-            ? JSON.parse(uni.getStorageSync('userStore'))
-            : null
-          if (userStore && userStore.clearUserInfo) {
-            userStore.clearUserInfo()
-          }
+          console.error('请求未授权 (401):', {
+            url: options.url,
+            statusCode: res.statusCode
+          });
+          
+          // 直接从pinia获取userStore进行清理
+          const userStore = useUserStore();
+          userStore.clearUserInfo();
+          
           uni.showToast({
             icon: 'none',
             title: '登录已过期，请重新登录',
@@ -80,6 +103,11 @@ export const http = <T>(options: CustomRequestOptions) => {
       },
       // 响应失败
       fail(err) {
+        console.error('网络请求失败:', {
+          url: options.url,
+          error: err
+        });
+        
         uni.showToast({
           icon: 'none',
           title: '网络错误，请检查网络连接',

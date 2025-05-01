@@ -15,12 +15,16 @@ export interface IVerificationParams {
  */
 export interface IVerificationStatus {
   id: number
+  user_id: number
   status: 'pending' | 'approved' | 'rejected'
   real_name: string
   id_card_number: string
   id_card_front: string
   id_card_back: string
-  rejection_reason?: string
+  id_card_front_url: string
+  id_card_back_url: string
+  remark?: string
+  verified_at?: string
   created_at: string
   updated_at: string
 }
@@ -31,10 +35,11 @@ export interface IVerificationStatus {
 export const getVerificationStatusAPI = () => {
   return http.get<{
     status: string;
-    verified: boolean;
-    pending: boolean;
-    rejected: boolean;
-    rejection_reason?: string;
+    data?: {
+      verification?: IVerificationStatus;
+      verification_status: 'pending' | 'approved' | 'rejected' | 'unsubmitted';
+      is_verified: boolean;
+    };
   }>('/api/verification/status')
 }
 
@@ -44,8 +49,8 @@ export const getVerificationStatusAPI = () => {
 export const submitVerificationAPI = (data: {
   real_name: string;
   id_card_number: string;
-  id_card_front_image: string;
-  id_card_back_image: string;
+  id_card_front: string;
+  id_card_back: string;
   face_image?: string;
 }) => {
   return http.post<any>('/api/verification/submit', data)

@@ -1,3 +1,10 @@
+<route lang="json5">
+  {
+    style: {
+      navigationBarTitleText: '我的钱包',
+    },
+  }
+</route>
 <!-- 理财应用钱包页面 -->
 <template>
   <view class="wallet-container">
@@ -9,21 +16,19 @@
       <text class="uni-icons uniui-arrow-left"></text>
     </view>
     
-    <!-- 页面标题 -->
-    <view class="page-title">
-      <text class="title-text">我的钱包</text>
-    </view>
     
     <!-- 余额卡片组件 -->
     <balance-card 
       :balance="walletInfo.balance"
       @withdraw="handleWithdraw"
       @recharge="handleRecharge"
+      style="margin-top: 50rpx;"
     />
     
     <!-- 交易记录组件 -->
     <transaction-list 
-      :transactions="transactions"
+      ref="transactionListRef"
+      :use-local-data="false"
       @viewAll="viewAllTransactions"
     />
     
@@ -52,77 +57,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import BalanceCard from '@/components/wallet/BalanceCard.vue';
 import TransactionList from '@/components/wallet/TransactionList.vue';
 import WithdrawPopup from '@/components/wallet/WithdrawPopup.vue';
 import RechargePopup from '@/components/wallet/RechargePopup.vue';
+import { getBalanceTransactions } from '@/service/app/wallet';
+import { getUserInfo } from '@/service/app/user';
 
 // 提现和充值弹窗引用
 const withdrawPopupRef = ref(null);
 const rechargePopupRef = ref(null);
+const transactionListRef = ref(null);
 
 // 钱包信息
 const walletInfo = reactive({
-  balance: 5280.75,
+  balance: 0, // 初始化为0，将从API获取
   bankName: '中国建设银行',
   bankNumber: '6217002940106887766'
 });
 
-// 交易记录数据
-const transactions = [
-  {
-    id: 1,
-    title: '购买黄金',
-    type: 'expense',
-    isIncome: false,
-    amount: '1000.00',
-    time: '2025-04-28 15:30'
-  },
-  {
-    id: 2,
-    title: '卖出股权',
-    type: 'income',
-    isIncome: true,
-    amount: '2580.75',
-    time: '2025-04-26 10:15'
-  },
-  {
-    id: 3,
-    title: '账户充值',
-    type: 'income',
-    isIncome: true,
-    amount: '5000.00',
-    time: '2025-04-25 09:45'
-  },
-  {
-    id: 4,
-    title: '提现',
-    type: 'withdraw',
-    isIncome: false,
-    amount: '3000.00',
-    time: '2025-04-20 14:20'
-  },
-  {
-    id: 5,
-    title: '签到奖励',
-    type: 'income',
-    isIncome: true,
-    amount: '10.00',
-    time: '2025-04-19 08:30'
-  }
-];
-
 // 返回上一页
 const goBack = () => {
   uni.navigateBack();
-};
-
-// 查看全部交易记录
-const viewAllTransactions = () => {
-  uni.navigateTo({
-    url: '/pages/my/transactions'
-  });
 };
 
 // 处理提现
@@ -179,7 +136,6 @@ const confirmWithdraw = async (amount: number, password: string) => {
     // 模拟提现处理
     setTimeout(() => {
       uni.hideLoading();
-      withdrawPopupRef.value.handleClose();
       
       // 提现申请提交成功
       uni.showModal({
@@ -191,21 +147,9 @@ const confirmWithdraw = async (amount: number, password: string) => {
       // 更新余额（实际应该由后端返回）
       walletInfo.balance -= amount;
       
-      // 添加新的提现记录（实际应该由后端返回）
-      transactions.unshift({
-        id: transactions.length + 1,
-        title: '提现',
-        type: 'withdraw',
-        isIncome: false,
-        amount: amount.toFixed(2),
-        time: new Date().toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        }).replace(/\//g, '-')
-      });
+      // 刷新交易记录
+      refreshTransactions();
+      
     }, 1500);
   } catch (error) {
     uni.hideLoading();
@@ -248,7 +192,6 @@ const confirmRecharge = async (amount: number) => {
     // 模拟第三方支付跳转
     setTimeout(() => {
       uni.hideLoading();
-      rechargePopupRef.value.handleClose();
       
       // 模拟跳转到第三方支付
       uni.navigateTo({
@@ -263,6 +206,62 @@ const confirmRecharge = async (amount: number) => {
     });
   }
 };
+
+// 查看所有交易记录
+const viewAllTransactions = () => {
+  uni.navigateTo({
+    url: '/pages/my/transactions?type=balance'
+  });
+};
+
+// 刷新交易记录
+const refreshTransactions = () => {
+  if (transactionListRef.value) {
+    transactionListRef.value.refreshTransactions();
+  }
+};
+
+// 获取钱包信息
+const fetchWalletInfo = async () => {
+  try {
+    // 调用获取用户信息API
+    const response = await getUserInfo();
+    
+    if (response && response.data) {
+      // 使用类型断言确保类型安全
+      const responseData = response.data as any;
+      
+      // 根据网络请求结果结构，获取用户信息
+      if (responseData.user && responseData.user.balance !== undefined) {
+        // 用户信息在user对象中
+        walletInfo.balance = parseFloat(responseData.user.balance);
+        
+        // 如果有银行卡信息，也可以更新
+        if (responseData.user.bank_card) {
+          walletInfo.bankName = responseData.user.bank_card.bank_name || walletInfo.bankName;
+          walletInfo.bankNumber = responseData.user.bank_card.card_number || walletInfo.bankNumber;
+        }
+      } else if (responseData.balance !== undefined) {
+        // 余额直接在数据对象中
+        walletInfo.balance = parseFloat(responseData.balance);
+      }
+      
+      console.log('获取到用户余额:', walletInfo.balance);
+    } else {
+      console.error('获取用户信息失败或返回数据格式不正确');
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    uni.showToast({
+      title: '获取用户信息失败',
+      icon: 'none'
+    });
+  }
+};
+
+onMounted(() => {
+  fetchWalletInfo();
+});
 </script>
 
 <style lang="scss">

@@ -5,6 +5,16 @@ import { CustomRequestOptions } from '@/interceptors/request';
 
 import * as API from './types';
 
+/**
+ * 获取用户信息
+ */
+export async function getUserInfo(options?: CustomRequestOptions) {
+  return request('/api/user', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
 /** Create user This can only be done by the logged in user. 返回值: successful operation POST /user */
 export async function createUser({
   body,
@@ -145,6 +155,53 @@ export async function logoutUser({
 }) {
   return request<unknown>('/user/logout', {
     method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** 提交实名认证 POST /api/verification/submit */
+export async function submitVerification({
+  data,
+  options,
+}: {
+  data: FormData | {
+    real_name: string;
+    id_card_number: string;
+    id_card_front: string;
+    id_card_back: string;
+  };
+  options?: CustomRequestOptions;
+}) {
+  return request<API.VerificationResult>('/api/verification/submit', {
+    method: 'POST',
+    data,
+    ...(options || {}),
+  });
+}
+
+/** 获取实名认证状态 GET /api/verification/status */
+export async function getVerificationStatus({
+  options,
+}: {
+  options?: CustomRequestOptions;
+}) {
+  return request<API.VerificationStatus>('/api/verification/status', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** 上传单个图片 POST /api/upload */
+export async function uploadImage({
+  data,
+  options,
+}: {
+  data: FormData;
+  options?: CustomRequestOptions;
+}) {
+  return request<API.UploadImageResult>('/api/files/upload/file', {
+    method: 'POST',
+    data,
     ...(options || {}),
   });
 }

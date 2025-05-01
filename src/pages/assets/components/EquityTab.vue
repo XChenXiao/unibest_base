@@ -19,82 +19,74 @@
         </view>
       </view>
       
-      <!-- 出售股权按钮已移除 -->
+      <!-- 股权操作按钮 -->
+      <view class="equity-actions">
+        <button class="action-btn records-btn" @click="goToEquityRecords">股权记录</button>
+        <button class="action-btn sell-btn" @click="openSellEquity" v-if="equityInfo.holdAmount > 0">出售股权</button>
+      </view>
     </view>
     
-    <!-- 股权奖励列表 -->
-    <view class="reward-section">
-      <view class="section-header">
-        <text class="section-title">股权奖励</text>
-      </view>
-      
-      <view class="reward-list">
-        <!-- 注册实名奖励 -->
-        <view class="reward-item">
-          <view class="reward-icon">
-            <text class="uni-icons uniui-person-filled"></text>
-          </view>
-          <view class="reward-info">
-            <text class="reward-title">注册实名奖励</text>
-            <text class="reward-desc">完成注册并实名认证可获得股权奖励</text>
-          </view>
-          <view class="reward-action">
-            <view class="reward-amount">{{ equityInfo.registerReward }}股</view>
-            <button 
-              class="reward-btn" 
-              :class="{ 'received-btn': equityInfo.isRegisterRewardReceived }"
-              @click="handleClaimReward('register')"
-            >
-              {{ equityInfo.isRegisterRewardReceived ? '已领取' : '领取' }}
-            </button>
-          </view>
-        </view>
-        
-        <!-- 邀请奖励 -->
-        <view class="reward-item">
-          <view class="reward-icon invite-icon">
-            <text class="uni-icons uniui-upload"></text>
-          </view>
-          <view class="reward-info">
-            <text class="reward-title">邀请注册实名奖励</text>
-            <text class="reward-desc">邀请好友注册并完成实名认证</text>
-            <view class="progress-container">
-              <view class="progress-bar">
-                <view 
-                  class="progress-filled" 
-                  :style="{ width: (equityInfo.inviteProgress / equityInfo.inviteTarget * 100) + '%' }"
-                ></view>
-              </view>
-              <text class="progress-text">{{ equityInfo.inviteProgress }}/{{ equityInfo.inviteTarget }}</text>
-            </view>
-          </view>
-          <view class="reward-action">
-            <view class="reward-amount">{{ equityInfo.inviteReward }}股</view>
-            <button 
-              class="reward-btn" 
-              :class="{ 'disabled-btn': equityInfo.inviteProgress < equityInfo.inviteTarget }"
-              @click="handleClaimReward('invite')"
-            >
-              领取
-            </button>
-          </view>
-        </view>
-      </view>
-    </view>
+    <!-- 股权奖励组件 -->
+    <equity-rewards
+      :register-reward="equityInfo.registerReward"
+      :invite-reward="equityInfo.inviteReward"
+      :is-register-reward-claimed="equityInfo.isRegisterRewardReceived"
+      :has-claimable-registration="equityInfo.hasClaimableRegistration"
+      :is-verified="equityInfo.isVerified"
+      :invite-progress="equityInfo.inviteProgress"
+      :invite-target="equityInfo.inviteTarget"
+      :invitation-reward-claimed="equityInfo.invitationRewardClaimed"
+      :has-claimable-invitation="equityInfo.hasClaimableInvitation"
+      :invitation-rewards="equityInfo.invitationRewards"
+      :registration-description="registrationRewardDescription"
+      @claim-reward="handleClaimReward"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
+import EquityRewards from '@/components/equity/EquityRewards.vue';
 
 const props = defineProps({
   equityInfo: {
     type: Object,
-    required: true
+    required: true,
+    default: () => ({
+      holdAmount: 0,
+      price: 0,
+      registerReward: 0,
+      inviteReward: 0,
+      isRegisterRewardReceived: false,
+      hasClaimableRegistration: false,
+      isVerified: false,
+      inviteProgress: 0,
+      inviteTarget: 5,
+      invitationRewardClaimed: false,
+      hasClaimableInvitation: false,
+      invitationRewards: []
+    })
   }
 });
 
 const emit = defineEmits(['open-sell-equity', 'claim-reward']);
+
+// 计算注册奖励描述
+const registrationRewardDescription = computed(() => {
+  // 调试日志 - 确认股权数据传递状态
+  console.log('EquityTab 组件接收到的奖励数据:', {
+    'isRegisterRewardClaimed(是否已领取)': props.equityInfo.isRegisterRewardReceived,
+    'hasClaimableRegistration(是否可领取)': props.equityInfo.hasClaimableRegistration,
+    'isVerified(是否已实名)': props.equityInfo.isVerified
+  });
+  
+  if (props.equityInfo.invitationRewards && props.equityInfo.invitationRewards.length > 0 && 
+      props.equityInfo.registrationReward) {
+    // 如果存在注册奖励配置，返回它的描述
+    return props.equityInfo.registrationReward.description || '完成注册并实名认证可获得股权奖励';
+  }
+  return '完成注册并实名认证可获得股权奖励';
+});
 
 // 打开出售股权弹窗
 const openSellEquity = () => {
@@ -106,9 +98,16 @@ const handleClaimReward = (type: string) => {
   emit('claim-reward', type);
 };
 
+// 跳转到股权记录页面
+const goToEquityRecords = () => {
+  uni.navigateTo({
+    url: '/pages/equity-records/index'
+  });
+};
+
 // 格式化金额显示
 const formatAmount = (amount: number) => {
-  return amount.toFixed(2);
+  return Number(amount).toFixed(2);
 };
 </script>
 
@@ -132,6 +131,8 @@ const formatAmount = (amount: number) => {
 .equity-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  padding: 0 20rpx;
 }
 
 .equity-label {
@@ -157,140 +158,28 @@ const formatAmount = (amount: number) => {
   color: #666;
 }
 
-/* 股权奖励区域 */
-.reward-section {
-  margin-bottom: 20rpx;
-}
-
-.section-header {
-  margin-bottom: 20rpx;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #333;
-}
-
-.reward-list {
-  background-color: #f8f8f8;
-  border-radius: 16rpx;
-  overflow: hidden;
-}
-
-.reward-item {
+/* 股权操作按钮 */
+.equity-actions {
+  margin-top: 30rpx;
   display: flex;
-  align-items: center;
-  padding: 30rpx;
-  position: relative;
+  justify-content: flex-end;
+  gap: 20rpx; /* 按钮之间的间距 */
 }
 
-.reward-item:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 20rpx;
-  right: 20rpx;
-  bottom: 0;
-  height: 1px;
-  background-color: #e5e5e5;
-}
-
-.reward-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background-color: rgba(46, 204, 113, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 20rpx;
-}
-
-.reward-icon .uni-icons {
-  color: #2ecc71;
-  font-size: 36rpx;
-}
-
-.invite-icon {
-  background-color: rgba(52, 152, 219, 0.15);
-}
-
-.invite-icon .uni-icons {
-  color: #3498db;
-}
-
-.reward-info {
-  flex: 1;
-}
-
-.reward-title {
+.action-btn {
+  padding: 12rpx 40rpx;
+  border-radius: 40rpx;
   font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 6rpx;
-  display: block;
-}
-
-.reward-desc {
-  font-size: 24rpx;
-  color: #999;
-  margin-bottom: 10rpx;
-  display: block;
-}
-
-.progress-container {
-  display: flex;
-  align-items: center;
-  margin-top: 10rpx;
-}
-
-.progress-bar {
-  flex: 1;
-  height: 10rpx;
-  background-color: #e0e0e0;
-  border-radius: 5rpx;
-  overflow: hidden;
-  margin-right: 15rpx;
-}
-
-.progress-filled {
-  height: 100%;
-  background: linear-gradient(to right, #3498db, #2980b9);
-}
-
-.progress-text {
-  font-size: 22rpx;
-  color: #999;
-}
-
-.reward-action {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.reward-amount {
-  font-size: 26rpx;
-  color: #f39c12;
-  margin-bottom: 10rpx;
-}
-
-.reward-btn {
-  background-color: #f39c12;
-  color: white;
-  font-size: 24rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 30rpx;
   border: none;
-  line-height: 1.5;
 }
 
-.received-btn {
-  background-color: #bdc3c7;
+.sell-btn {
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
 }
 
-.disabled-btn {
-  background-color: #bdc3c7;
-  opacity: 0.7;
+.records-btn {
+  background: linear-gradient(to right, #3498db, #2980b9);
+  color: white;
 }
 </style> 

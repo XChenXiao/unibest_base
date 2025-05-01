@@ -165,13 +165,39 @@ export async function findPetsByStatus({
   params: API.findPetsByStatusParams;
   options?: CustomRequestOptions;
 }) {
-  return request<API.Pet[]>('/pet/findByStatus', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  });
+  let requestTask: UniApp.RequestTask | null = null
+  
+  const result = {
+    request: new Promise<API.Pet[]>((resolve, reject) => {
+      requestTask = uni.request({
+        url: '/pet/findByStatus',
+        method: 'GET',
+        data: params,
+        success: (res) => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(res.data as API.Pet[])
+          } else {
+            reject(res)
+          }
+        },
+        fail: (err) => {
+          reject(err)
+        },
+        complete: () => {
+          requestTask = null
+        },
+        ...(options || {})
+      })
+    }),
+    cancel: () => {
+      if (requestTask) {
+        requestTask.abort()
+        requestTask = null
+      }
+    }
+  }
+  
+  return result
 }
 
 /** Finds Pets by tags Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing. GET /pet/findByTags */

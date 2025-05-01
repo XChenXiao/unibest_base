@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getUserInfoAPI } from '@/service/index/auth'
-import { getVerificationStatusAPI } from '@/service/index/verification'
+import { getVerificationStatusAPI, IVerificationStatus } from '@/service/index/verification'
 
 const initState: IUserInfo = { 
   name: '',
@@ -14,6 +14,18 @@ const initState: IUserInfo = {
   invite_code: '',
   referrer_invite_code: '',
   has_bank_card: false
+}
+
+// 认证状态类型
+interface VerificationResponse {
+  status: string;
+  data?: {
+    user: IUserInfo & {
+      verification?: IVerificationStatus;
+    };
+    verification_status: 'pending' | 'approved' | 'rejected' | 'unsubmitted';
+    is_verified: boolean;
+  };
 }
 
 export const useUserStore = defineStore(
@@ -45,6 +57,27 @@ export const useUserStore = defineStore(
       }
     }
     
+    // 更新用户余额
+    const updateUserBalance = (newBalance: number, newFrozenBalance?: number) => {
+      // 直接更新用户余额
+      if (typeof newBalance === 'number') {
+        userInfo.value.balance = newBalance;
+      }
+      
+      // 如果提供了冻结余额，也进行更新
+      if (typeof newFrozenBalance === 'number') {
+        userInfo.value.frozen_balance = newFrozenBalance;
+      }
+      
+      console.log('用户余额已更新:', {
+        balance: userInfo.value.balance,
+        frozen_balance: userInfo.value.frozen_balance
+      });
+      
+      // 保存用户信息更新时间到存储
+      uni.setStorageSync('userInfoUpdateTime', Date.now());
+    }
+    
     // 获取用户信息
     const fetchUserInfo = async () => {
       if (!userInfo.value.token) {
@@ -52,17 +85,57 @@ export const useUserStore = defineStore(
       }
       
       try {
-        const res = await getUserInfoAPI()
+        console.log('开始获取用户信息')
+        const res = await getUserInfoAPI() as VerificationResponse
+        
         if (res.status === 'success' && res.data) {
-          // 更新用户信息，但保留token
-          const token = userInfo.value.token
-          setUserInfo({ ...res.data, token })
+          // 获取用户数据 - 固定结构: res.data.user
+          const userData = res.data.user
           
-          // 获取实名认证状态
-          await fetchVerificationStatus()
+          // 确保余额字段为数字
+          if (userData) {
+            // 将余额相关字段转为数字
+            if (userData.balance !== undefined) {
+              userData.balance = Number(userData.balance)
+            }
+            if (userData.frozen_balance !== undefined) {
+              userData.frozen_balance = Number(userData.frozen_balance)
+            }
+            if (userData.equity_balance !== undefined) {
+              userData.equity_balance = Number(userData.equity_balance)
+            }
+          }
+          
+          // 保留token
+          const token = userInfo.value.token
+          
+          // 更新用户信息
+          setUserInfo({ ...userData, token })
+          
+          // 处理实名认证信息 - 固定结构: res.data.is_verified 和 res.data.verification_status
+          const isVerified = res.data.is_verified || false
+          const verificationStatusVal = res.data.verification_status || 'unsubmitted'
+          
+          // 更新认证状态
+          verificationStatus.value = {
+            verified: isVerified,
+            pending: verificationStatusVal === 'pending',
+            rejected: verificationStatusVal === 'rejected',
+            rejection_reason: userData.verification?.remark || ''
+          }
+          
+          console.log('用户信息和认证状态已更新:', {
+            is_verified: isVerified,
+            verification_status: verificationStatusVal,
+            user_name: userData.name
+          })
+          
+          // 保存用户信息更新时间到存储
+          uni.setStorageSync('userInfoUpdateTime', Date.now())
           
           return true
         }
+        
         return false
       } catch (error) {
         console.error('获取用户信息失败', error)
@@ -76,17 +149,36 @@ export const useUserStore = defineStore(
         return false
       }
       
+      // 已认证用户，跳过请求
+      if (verificationStatus.value.verified) {
+        console.log('用户已通过认证，无需获取认证状态')
+        return true
+      }
+      
       try {
+        console.log('开始获取实名认证状态')
         const res = await getVerificationStatusAPI()
+        
         if (res.status === 'success' && res.data) {
+          // 使用类型断言处理嵌套数据结构
+          const resData = res.data as any
+          
+          // 更新验证状态
           verificationStatus.value = {
-            verified: res.data.verified,
-            pending: res.data.pending,
-            rejected: res.data.rejected,
-            rejection_reason: res.data.rejection_reason || ''
+            verified: !!resData.is_verified, 
+            pending: resData.verification_status === 'pending',
+            rejected: resData.verification_status === 'rejected',
+            rejection_reason: resData.verification?.remark || ''
           }
+          
+          console.log('已获取实名认证状态:', {
+            is_verified: resData.is_verified,
+            verification_status: resData.verification_status
+          })
+          
           return true
         }
+        
         return false
       } catch (error) {
         console.error('获取实名认证状态失败', error)
@@ -111,6 +203,7 @@ export const useUserStore = defineStore(
       verificationStatus,
       setUserInfo,
       clearUserInfo,
+      updateUserBalance,
       fetchUserInfo,
       fetchVerificationStatus,
       isLogined,

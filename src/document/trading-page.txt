@@ -1,0 +1,1312 @@
+<!-- 理财应用交易页面 -->
+<!-- pages/trading/index.vue -->
+<template>
+  <view class="trading-container">
+    <!-- 顶部波浪装饰 -->
+    <view class="wave-decoration"></view>
+    
+    <!-- 顶部图片 -->
+    <view class="header-banner">
+      <image class="banner-image" src="/static/images/trading-banner.jpg" mode="aspectFill"></image>
+    </view>
+    
+    <!-- 交易记录按钮 -->
+    <view class="transaction-record-btn" @click="navigateTo('/pages/trading/records')">
+      <text class="uni-icons uniui-list"></text>
+      <text class="btn-text">交易记录</text>
+    </view>
+    
+    <!-- 资产卡片 -->
+    <view class="asset-card">
+      <view class="card-header">
+        <text class="card-title">总资金(元)</text>
+        <view class="visibility-toggle" @click="toggleAssetsVisibility">
+          <text class="uni-icons" :class="[showAssets ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"></text>
+        </view>
+      </view>
+      <view class="assets-amount" v-if="showAssets">
+        <text class="amount-value">{{ formatAmount(totalAssets) }}</text>
+      </view>
+      <view class="assets-amount" v-else>
+        <text class="amount-hidden">******</text>
+      </view>
+      
+      <!-- 资产明细 -->
+      <view class="assets-breakdown">
+        <view class="breakdown-item">
+          <text class="breakdown-label">货币总额</text>
+          <text class="breakdown-value" v-if="showAssets">{{ formatAmount(currencyAssets) }}</text>
+          <text class="breakdown-value" v-else>******</text>
+        </view>
+        <view class="breakdown-item">
+          <text class="breakdown-label">股票总额</text>
+          <text class="breakdown-value" v-if="showAssets">{{ formatAmount(equityAssets) }}</text>
+          <text class="breakdown-value" v-else>******</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 交易所标签 -->
+    <view class="section-title">
+      <text>交易所</text>
+    </view>
+    
+    <!-- 资产类型 Tab 切换 -->
+    <view class="asset-tabs">
+      <view 
+        class="tab-item" 
+        :class="{ 'tab-active': activeTab === 'currency' }"
+        @click="switchTab('currency')"
+      >
+        <text>货币</text>
+      </view>
+      <view 
+        class="tab-item" 
+        :class="{ 'tab-active': activeTab === 'equity' }"
+        @click="switchTab('equity')"
+      >
+        <text>股权</text>
+      </view>
+    </view>
+    
+    <!-- 货币内容 -->
+    <view class="tab-content" v-if="activeTab === 'currency'">
+      <!-- 货币交易子标签 -->
+      <view class="currency-tabs">
+        <view 
+          class="currency-tab-item" 
+          :class="{ 'currency-tab-active': activeCurrencyTab === 'buy' }"
+          @click="switchCurrencyTab('buy')"
+        >
+          <text>买入</text>
+        </view>
+        <view 
+          class="currency-tab-item" 
+          :class="{ 'currency-tab-active': activeCurrencyTab === 'sell' }"
+          @click="switchCurrencyTab('sell')"
+        >
+          <text>卖出</text>
+        </view>
+      </view>
+      
+      <!-- 货币列表 -->
+      <view class="currency-list">
+        <view 
+          v-for="(item, index) in filteredCurrencies" 
+          :key="index"
+          class="currency-item"
+        >
+          <!-- 货币图标和信息 -->
+          <view class="currency-info-container">
+            <view class="currency-icon" :style="{ backgroundColor: item.bgColor }">
+              <text class="currency-icon-text">{{ item.symbol.charAt(0) }}</text>
+            </view>
+            <view class="currency-info">
+              <text class="currency-name">{{ item.name }} <text class="currency-symbol">({{ item.symbol }})</text></text>
+              <text class="currency-price">{{ activeCurrencyTab === 'buy' ? '买入价: ' : '卖出价: ' }}¥{{ formatAmount(activeCurrencyTab === 'buy' ? item.buyPrice : item.sellPrice) }}</text>
+              <view v-if="activeCurrencyTab === 'sell'" class="holding-info">
+                <text class="holding-amount">持有: {{ formatAmount(item.holdAmount) }}</text>
+                <text class="fee-info">手续费: {{ item.fee }}%</text>
+              </view>
+              <view class="limit-info">
+                <text class="limit-text">交易额: {{ formatAmount(item.minAmount) }}~{{ formatAmount(item.maxAmount) }}</text>
+                <text v-if="activeCurrencyTab === 'buy'" class="remaining-text">剩余: {{ formatAmount(item.remainingAmount) }}</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 交易按钮 -->
+          <button 
+            class="trade-btn" 
+            :class="{ 'sell-btn': activeCurrencyTab === 'sell' }"
+            @click="openTradePopup(item)"
+          >
+            {{ activeCurrencyTab === 'buy' ? '买入' : '卖出' }}
+          </button>
+        </view>
+        
+        <!-- 空状态 -->
+        <view v-if="filteredCurrencies.length === 0" class="empty-state">
+          <text class="empty-text">{{ activeCurrencyTab === 'buy' ? '暂无可买入的货币' : '您暂无可卖出的货币' }}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 股权内容 -->
+    <view class="tab-content" v-if="activeTab === 'equity'">
+      <view class="equity-card">
+        <view class="equity-info-container">
+          <view class="equity-info-item">
+            <text class="equity-label">股权价格</text>
+            <view class="equity-value-container">
+              <text class="equity-value">{{ formatAmount(equityPrice) }}</text>
+              <text class="equity-unit">元/股</text>
+            </view>
+          </view>
+          <view class="equity-divider"></view>
+          <view class="equity-info-item">
+            <text class="equity-label">我的股权</text>
+            <view class="equity-value-container">
+              <text class="equity-value">{{ formatAmount(myEquity) }}</text>
+              <text class="equity-unit">股</text>
+            </view>
+          </view>
+        </view>
+        <button class="sell-equity-btn" @click="openSellEquityPopup">出售股权</button>
+      </view>
+      
+      <!-- 股权趋势图 -->
+      <view class="equity-trend-card">
+        <view class="card-header">
+          <text class="card-title">股权价格趋势</text>
+          <view class="time-selector">
+            <text 
+              v-for="(period, index) in timePeriods" 
+              :key="index"
+              class="time-option"
+              :class="{ 'time-active': activePeriod === period.value }"
+              @click="changePeriod(period.value)"
+            >
+              {{ period.label }}
+            </text>
+          </view>
+        </view>
+        <view class="chart-container">
+          <!-- 这里实际应用中放入图表组件 -->
+          <view class="chart-placeholder">
+            <text>股权价格走势图</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 交易弹窗 -->
+    <uni-popup ref="tradePopup" type="center">
+      <view class="popup-content">
+        <view class="popup-header">
+          <text class="popup-title">{{ activeCurrencyTab === 'buy' ? '买入' : '卖出' }} {{ currentCurrency.name }}</text>
+          <text class="popup-close" @click="closeTradePopup">×</text>
+        </view>
+        <view class="popup-body">
+          <view class="currency-brief">
+            <view class="brief-icon" :style="{ backgroundColor: currentCurrency.bgColor }">
+              <text class="brief-icon-text">{{ currentCurrency.symbol ? currentCurrency.symbol.charAt(0) : '' }}</text>
+            </view>
+            <view class="brief-info">
+              <text class="brief-name">{{ currentCurrency.name }} ({{ currentCurrency.symbol }})</text>
+              <text class="brief-price">
+                {{ activeCurrencyTab === 'buy' ? '买入价: ' : '卖出价: ' }}
+                ¥{{ formatAmount(activeCurrencyTab === 'buy' ? currentCurrency.buyPrice : currentCurrency.sellPrice) }}
+              </text>
+            </view>
+          </view>
+          
+          <view class="amount-input-container">
+            <text class="amount-label">{{ activeCurrencyTab === 'buy' ? '买入' : '卖出' }}数量</text>
+            <view class="amount-input-wrapper">
+              <input 
+                class="amount-input" 
+                type="digit" 
+                v-model="tradeAmount" 
+                :placeholder="`请输入${activeCurrencyTab === 'buy' ? '买入' : '卖出'}数量`"
+              />
+              <text class="input-unit">{{ currentCurrency.unit || '单位' }}</text>
+            </view>
+          </view>
+          
+          <view class="trade-info">
+            <view class="info-row">
+              <text class="info-label">{{ activeCurrencyTab === 'buy' ? '支付金额' : '获得金额' }}:</text>
+              <text class="info-value">¥{{ calculateTradeAmount() }}</text>
+            </view>
+            <view class="info-row" v-if="activeCurrencyTab === 'sell'">
+              <text class="info-label">手续费({{ currentCurrency.fee }}%):</text>
+              <text class="info-value">¥{{ calculateFee() }}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">{{ activeCurrencyTab === 'buy' ? '买入' : '卖出' }}限额:</text>
+              <text class="info-value">¥{{ formatAmount(currentCurrency.minAmount) }}~¥{{ formatAmount(currentCurrency.maxAmount) }}</text>
+            </view>
+            <view class="info-row" v-if="activeCurrencyTab === 'sell'">
+              <text class="info-label">当前持有:</text>
+              <text class="info-value">{{ formatAmount(currentCurrency.holdAmount) }} {{ currentCurrency.unit || '单位' }}</text>
+            </view>
+          </view>
+          
+          <button class="confirm-trade-btn" @click="confirmTrade">确认{{ activeCurrencyTab === 'buy' ? '买入' : '卖出' }}</button>
+        </view>
+      </view>
+    </uni-popup>
+    
+    <!-- 出售股权弹窗 -->
+    <uni-popup ref="sellEquityPopup" type="center">
+      <view class="popup-content">
+        <view class="popup-header">
+          <text class="popup-title">出售股权</text>
+          <text class="popup-close" @click="closeSellEquityPopup">×</text>
+        </view>
+        <view class="popup-body">
+          <view class="equity-info-row">
+            <text class="info-label">持有股权:</text>
+            <text class="info-value">{{ formatAmount(myEquity) }}股</text>
+          </view>
+          <view class="equity-info-row">
+            <text class="info-label">股权单价:</text>
+            <text class="info-value">¥{{ formatAmount(equityPrice) }}/股</text>
+          </view>
+          
+          <view class="amount-input-container">
+            <text class="amount-label">出售数量</text>
+            <view class="amount-input-wrapper">
+              <input 
+                class="amount-input" 
+                type="digit" 
+                v-model="sellEquityAmount" 
+                placeholder="请输入出售股权数量"
+              />
+              <text class="input-unit">股</text>
+            </view>
+          </view>
+          
+          <view class="sell-info">
+            <text class="sell-price-label">预计获得金额:</text>
+            <text class="sell-price-value">¥{{ calculateSellEquityPrice() }}</text>
+          </view>
+          
+          <button class="confirm-sell-btn" @click="confirmSellEquity">确认出售</button>
+          <text class="sell-note">出售后资金将直接到账至您的余额</text>
+        </view>
+      </view>
+    </uni-popup>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive, computed } from 'vue';
+
+// 获取弹窗组件实例
+const tradePopup = ref(null);
+const sellEquityPopup = ref(null);
+
+// 控制资产显示隐藏
+const showAssets = ref(true);
+
+// 资产信息
+const totalAssets = ref(26850.75);
+const currencyAssets = ref(15850.75);
+const equityAssets = ref(11000.00);
+
+// 当前激活的标签页
+const activeTab = ref('currency');
+const activeCurrencyTab = ref('buy');
+
+// 股权信息
+const equityPrice = ref(11.00);
+const myEquity = ref(1000);
+
+// 图表时间周期
+const timePeriods = [
+  { label: '日', value: 'day' },
+  { label: '周', value: 'week' },
+  { label: '月', value: 'month' },
+  { label: '年', value: 'year' }
+];
+const activePeriod = ref('day');
+
+// 货币列表
+const currencies = reactive([
+  {
+    id: 1,
+    name: '黄金',
+    symbol: 'GOLD',
+    buyPrice: 385.50,
+    sellPrice: 380.25,
+    holdAmount: 35.00,
+    totalAmount: 1000,
+    remainingAmount: 800,
+    minAmount: 100,
+    maxAmount: 50000,
+    fee: 1.5,
+    unit: '克',
+    bgColor: 'rgba(243, 156, 18, 0.2)'
+  },
+  {
+    id: 2,
+    name: '白银',
+    symbol: 'SILVER',
+    buyPrice: 45.20,
+    sellPrice: 42.50,
+    holdAmount: 78.50,
+    totalAmount: 5000,
+    remainingAmount: 3500,
+    minAmount: 50,
+    maxAmount: 30000,
+    fee: 1.2,
+    unit: '克',
+    bgColor: 'rgba(189, 195, 199, 0.2)'
+  },
+  {
+    id: 3,
+    name: '铂金',
+    symbol: 'PLATINUM',
+    buyPrice: 425.80,
+    sellPrice: 420.30,
+    holdAmount: 5.25,
+    totalAmount: 500,
+    remainingAmount: 350,
+    minAmount: 200,
+    maxAmount: 70000,
+    fee: 2.0,
+    unit: '克',
+    bgColor: 'rgba(52, 152, 219, 0.2)'
+  }
+]);
+
+// 根据当前选择的标签过滤货币列表
+const filteredCurrencies = computed(() => {
+  if (activeCurrencyTab.value === 'buy') {
+    return currencies.filter(item => item.remainingAmount > 0);
+  } else {
+    return currencies.filter(item => item.holdAmount > 0);
+  }
+});
+
+// 交易相关数据
+const currentCurrency = reactive({
+  id: 0,
+  name: '',
+  symbol: '',
+  buyPrice: 0,
+  sellPrice: 0,
+  holdAmount: 0,
+  totalAmount: 0,
+  remainingAmount: 0,
+  minAmount: 0,
+  maxAmount: 0,
+  fee: 0,
+  unit: '',
+  bgColor: ''
+});
+const tradeAmount = ref('');
+
+// 出售股权数量
+const sellEquityAmount = ref('');
+
+// 格式化金额显示
+const formatAmount = (amount) => {
+  return amount.toFixed(2);
+};
+
+// 切换资产可见性
+const toggleAssetsVisibility = () => {
+  showAssets.value = !showAssets.value;
+};
+
+// 切换标签页
+const switchTab = (tab) => {
+  activeTab.value = tab;
+};
+
+// 切换货币交易标签
+const switchCurrencyTab = (tab) => {
+  activeCurrencyTab.value = tab;
+};
+
+// 切换时间周期
+const changePeriod = (period) => {
+  activePeriod.value = period;
+};
+
+// 页面导航
+const navigateTo = (url) => {
+  uni.navigateTo({ url });
+};
+
+// 打开交易弹窗
+const openTradePopup = (currency) => {
+  // 复制货币信息到当前货币
+  Object.assign(currentCurrency, currency);
+  tradeAmount.value = '';
+  tradePopup.value.open();
+};
+
+// 关闭交易弹窗
+const closeTradePopup = () => {
+  tradePopup.value.close();
+};
+
+// 计算交易金额
+const calculateTradeAmount = () => {
+  const amount = parseFloat(tradeAmount.value) || 0;
+  if (activeCurrencyTab.value === 'buy') {
+    return formatAmount(amount * currentCurrency.buyPrice);
+  } else {
+    const total = amount * currentCurrency.sellPrice;
+    return formatAmount(total - calculateFee());
+  }
+};
+
+// 计算手续费
+const calculateFee = () => {
+  const amount = parseFloat(tradeAmount.value) || 0;
+  const total = amount * currentCurrency.sellPrice;
+  return formatAmount(total * (currentCurrency.fee / 100));
+};
+
+// 确认交易
+const confirmTrade = async () => {
+  // 验证交易数量
+  if (!tradeAmount.value || parseFloat(tradeAmount.value) <= 0) {
+    uni.showToast({
+      title: '请输入有效的交易数量',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  const tradeQuantity = parseFloat(tradeAmount.value);
+  
+  if (activeCurrencyTab.value === 'buy') {
+    // 买入交易验证
+    const totalCost = tradeQuantity * currentCurrency.buyPrice;
+    
+    // 验证交易限额
+    if (totalCost < currentCurrency.minAmount || totalCost > currentCurrency.maxAmount) {
+      uni.showToast({
+        title: `交易金额需在${currentCurrency.minAmount}~${currentCurrency.maxAmount}之间`,
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 验证剩余数量
+    if (tradeQuantity > currentCurrency.remainingAmount) {
+      uni.showToast({
+        title: '超出可买入数量',
+        icon: 'none'
+      });
+      return;
+    }
+  } else {
+    // 卖出交易验证
+    
+    // 验证持有数量
+    if (tradeQuantity > currentCurrency.holdAmount) {
+      uni.showToast({
+        title: '超出可卖出数量',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 验证交易限额
+    const totalValue = tradeQuantity * currentCurrency.sellPrice;
+    if (totalValue < currentCurrency.minAmount || totalValue > currentCurrency.maxAmount) {
+      uni.showToast({
+        title: `交易金额需在${currentCurrency.minAmount}~${currentCurrency.maxAmount}之间`,
+        icon: 'none'
+      });
+      return;
+    }
+  }
+  
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '处理中...'
+    });
+    
+    // 这里替换为实际的交易API调用
+    // const res = await api.tradeCurrency({
+    //   currencyId: currentCurrency.id,
+    //   type: activeCurrencyTab.value,
+    //   amount: tradeQuantity
+    // });
+    
+    // 模拟交易处理
+    setTimeout(() => {
+      uni.hideLoading();
+      closeTradePopup();
+      
+      if (activeCurrencyTab.value === 'buy') {
+        // 更新持有量和剩余量
+        const currency = currencies.find(item => item.id === currentCurrency.id);
+        if (currency) {
+          currency.holdAmount += tradeQuantity;
+          currency.remainingAmount -= tradeQuantity;
+          
+          // 更新总资产
+          currencyAssets.value += tradeQuantity * currency.buyPrice;
+          totalAssets.value = currencyAssets.value + equityAssets.value;
+        }
+        
+        // 购买成功提示
+        uni.showToast({
+          title: '购买成功',
+          icon: 'success'
+        });
+      } else {
+        // 更新持有量和剩余量
+        const currency = currencies.find(item => item.id === currentCurrency.id);
+        if (currency) {
+          currency.holdAmount -= tradeQuantity;
+          currency.remainingAmount += tradeQuantity;
+          
+          // 更新总资产
+          const sellValue = tradeQuantity * currency.sellPrice;
+          const fee = sellValue * (currency.fee / 100);
+          currencyAssets.value -= sellValue;
+          totalAssets.value = currencyAssets.value + equityAssets.value;
+        }
+        
+        // 卖出成功提示
+        uni.showToast({
+          title: '卖出成功',
+          icon: 'success'
+        });
+      }
+    }, 1500);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({
+      title: '交易失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+
+// 打开出售股权弹窗
+const openSellEquityPopup = () => {
+  sellEquityAmount.value = '';
+  sellEquityPopup.value.open();
+};
+
+// 关闭出售股权弹窗
+const closeSellEquityPopup = () => {
+  sellEquityPopup.value.close();
+};
+
+// 计算出售股权预计金额
+const calculateSellEquityPrice = () => {
+  const amount = parseFloat(sellEquityAmount.value) || 0;
+  return formatAmount(amount * equityPrice.value);
+};
+
+// 确认出售股权
+const confirmSellEquity = async () => {
+  // 验证出售数量
+  if (!sellEquityAmount.value || parseFloat(sellEquityAmount.value) <= 0) {
+    uni.showToast({
+      title: '请输入有效的出售数量',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  const sellQuantity = parseFloat(sellEquityAmount.value);
+  
+  // 验证持有数量是否充足
+  if (sellQuantity > myEquity.value) {
+    uni.showToast({
+      title: '持有股权不足',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '处理中...'
+    });
+    
+    // 这里替换为实际的API调用
+    // const res = await api.sellEquity({ amount: sellQuantity });
+    
+    // 模拟出售处理
+    setTimeout(() => {
+      uni.hideLoading();
+      closeSellEquityPopup();
+      
+      // 更新股权持有量和总资产
+      const saleAmount = sellQuantity * equityPrice.value;
+      myEquity.value -= sellQuantity;
+      equityAssets.value -= saleAmount;
+      totalAssets.value = currencyAssets.value + equityAssets.value;
+      
+      // 出售成功提示
+      uni.showToast({
+        title: '出售成功',
+        icon: 'success'
+      });
+    }, 1500);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({
+      title: '出售失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+</script>
+
+<style lang="scss">
+/* 全局重置 */
+page {
+  background-color: #f5f5f5;
+  height: 100%;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 容器样式 */
+.trading-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* 顶部波浪装饰 */
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  z-index: 2;
+}
+
+/* 顶部横幅 */
+.header-banner {
+  width: 100%;
+  height: 220rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+}
+
+/* 交易记录按钮 */
+.transaction-record-btn {
+  position: absolute;
+  top: 60rpx;
+  right: 20rpx;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 30rpx;
+  padding: 8rpx 20rpx;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.transaction-record-btn .uni-icons {
+  font-size: 28rpx;
+  color: #555;
+  margin-right: 6rpx;
+}
+
+.btn-text {
+  font-size: 24rpx;
+  color: #555;
+}
+
+/* 资产卡片 */
+.asset-card {
+  background-color: white;
+  border-radius: 20rpx;
+  margin: -40rpx 30rpx 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 1;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.card-title {
+  color: #666;
+  font-size: 28rpx;
+}
+
+.visibility-toggle {
+  padding: 10rpx;
+}
+
+.visibility-toggle .uni-icons {
+  font-size: 36rpx;
+  color: #999;
+}
+
+.assets-amount {
+  margin-bottom: 30rpx;
+}
+
+.amount-value {
+  font-size: 60rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.amount-hidden {
+  font-size: 60rpx;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 5rpx;
+}
+
+/* 资产明细 */
+.assets-breakdown {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 20rpx;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.breakdown-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.breakdown-value {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 交易所标题 */
+.section-title {
+  padding: 20rpx 30rpx;
+}
+
+.section-title text {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+  position: relative;
+  padding-left: 20rpx;
+}
+
+.section-title text::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 30rpx;
+  background: linear-gradient(to bottom, #f39c12, #e74c3c);
+  border-radius: 4rpx;
+}
+
+/* 资产类型切换 */
+.asset-tabs {
+  display: flex;
+  background-color: white;
+  margin: 0 30rpx 30rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.tab-item {
+  flex: 1;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #666;
+  position: relative;
+}
+
+.tab-active {
+  color: #f39c12;
+  font-weight: 500;
+}
+
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+}
+
+/* 内容区域 */
+.tab-content {
+  background-color: white;
+  border-radius: 20rpx;
+  margin: 0 30rpx 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 货币交易子标签 */
+.currency-tabs {
+  display: flex;
+  border-radius: 10rpx;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  margin-bottom: 30rpx;
+}
+
+.currency-tab-item {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: #666;
+}
+
+.currency-tab-active {
+  background: linear-gradient(135deg, #f39c12, #e74c3c);
+  color: white;
+  font-weight: 500;
+}
+
+/* 货币列表 */
+.currency-list {
+  margin-top: 20rpx;
+}
+
+.currency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.currency-item:last-child {
+  border-bottom: none;
+}
+
+.currency-info-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.currency-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+}
+
+.currency-icon-text {
+  font-size: 36rpx;
+  color: #333;
+  font-weight: bold;
+}
+
+.currency-info {
+  flex: 1;
+}
+
+.currency-name {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+  display: block;
+  font-weight: 500;
+}
+
+.currency-symbol {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: normal;
+}
+
+.currency-price {
+  font-size: 28rpx;
+  color: #e74c3c;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.holding-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.holding-amount {
+  font-size: 24rpx;
+  color: #666;
+  margin-right: 20rpx;
+}
+
+.fee-info {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.limit-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.limit-text, .remaining-text {
+  font-size: 24rpx;
+  color: #999;
+  margin-right: 20rpx;
+}
+
+.trade-btn {
+  min-width: 120rpx;
+  height: 70rpx;
+  border: none;
+  border-radius: 35rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 28rpx;
+  line-height: 70rpx;
+  margin-left: 20rpx;
+}
+
+.sell-btn {
+  background: linear-gradient(to right, #3498db, #2980b9);
+}
+
+/* 空状态 */
+.empty-state {
+  padding: 60rpx 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 股权卡片 */
+.equity-card {
+  background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.equity-info-container {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30rpx;
+}
+
+.equity-info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.equity-divider {
+  width: 1px;
+  background-color: #e0e0e0;
+}
+
+.equity-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+
+.equity-value-container {
+  display: flex;
+  align-items: baseline;
+}
+
+.equity-value {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+  margin-right: 8rpx;
+}
+
+.equity-unit {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.sell-equity-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  box-shadow: 0 8rpx 20rpx rgba(243, 156, 18, 0.3);
+}
+
+/* 股权趋势图卡片 */
+.equity-trend-card {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.time-selector {
+  display: flex;
+  background-color: #f0f0f0;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.time-option {
+  padding: 6rpx 16rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.time-active {
+  background-color: #f39c12;
+  color: white;
+}
+
+.chart-container {
+  height: 400rpx;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+.chart-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 弹窗样式 */
+.popup-content {
+  width: 600rpx;
+  background-color: #ffffff;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.popup-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.popup-close {
+  font-size: 40rpx;
+  color: #999;
+  line-height: 1;
+}
+
+.popup-body {
+  padding: 30rpx;
+}
+
+/* 货币简要信息 */
+.currency-brief {
+  display: flex;
+  align-items: center;
+  padding-bottom: 20rpx;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 20rpx;
+}
+
+.brief-icon {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15rpx;
+}
+
+.brief-icon-text {
+  font-size: 24rpx;
+  color: #333;
+  font-weight: bold;
+}
+
+.brief-info {
+  flex: 1;
+}
+
+.brief-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.brief-price {
+  font-size: 26rpx;
+  color: #e74c3c;
+}
+
+/* 输入金额 */
+.amount-input-container {
+  margin: 30rpx 0;
+}
+
+.amount-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.amount-input-wrapper {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10rpx;
+}
+
+.amount-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 36rpx;
+}
+
+.input-unit {
+  font-size: 28rpx;
+  color: #666;
+  margin-left: 10rpx;
+}
+
+/* 交易信息 */
+.trade-info {
+  background-color: #f8f8f8;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 确认交易按钮 */
+.confirm-trade-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+/* 出售股权弹窗样式 */
+.equity-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.sell-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background-color: #f8f8f8;
+  border-radius: 10rpx;
+}
+
+.sell-price-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.sell-price-value {
+  font-size: 32rpx;
+  color: #f39c12;
+  font-weight: 500;
+}
+
+.confirm-sell-btn {
+  width: 100%;
+  height: 90rpx;
+  border: none;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 20rpx;
+}
+
+.sell-note {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+}
+</style>

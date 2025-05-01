@@ -3,6 +3,7 @@
   layout: 'tabbar',
   style: {
     navigationBarTitleText: '我的',
+    navigationStyle: 'custom',
   },
 }
 </route>
@@ -23,7 +24,7 @@
         </view>
       </view>
       <view class="user-info">
-        <text class="user-name">{{ userStore.isVerified ? userStore.userInfo.name : userStore.userInfo.phone }}</text>
+        <text class="user-name">{{ getUserDisplayName() }}</text>
         <view class="user-detail">
           <text class="user-id">ID: {{ userStore.userInfo.id || '-' }}</text>
           <text class="divider">|</text>
@@ -74,7 +75,7 @@
       </view>
       
       <!-- 个人信息 -->
-      <view class="menu-item" @click="navigateTo('/pages/my/profile')">
+      <view class="menu-item" @click="handleProfileClick">
         <view class="menu-icon profile-icon">
           <wd-icon name="user" size="40rpx" />
         </view>
@@ -184,8 +185,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/store/user';
+import { useTabItemTap } from '@/hooks/useTabItemTap';
 
 // 获取用户数据存储
 const userStore = useUserStore();
@@ -201,6 +203,55 @@ const showRechargePopup = ref(false);
 // 快捷金额选项
 const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000'];
 
+// 使用TabBar切换钩子，自动处理用户数据刷新
+useTabItemTap({
+  refreshUserInfo: true,
+  pageName: '我的页面',
+  onTabTap: () => {
+    console.log('我的页面Tab被点击，可以在这里执行额外的业务逻辑');
+  }
+});
+
+// 页面挂载时添加事件监听
+onMounted(() => {
+  // 监听余额更新事件
+  uni.$on('user_balance_updated', handleBalanceUpdated);
+  
+  // 初始检查用户数据和余额
+  checkUserInfo();
+});
+
+// 页面卸载时移除事件监听
+onUnmounted(() => {
+  // 移除事件监听
+  uni.$off('user_balance_updated', handleBalanceUpdated);
+});
+
+// 处理余额更新事件
+const handleBalanceUpdated = (data) => {
+  console.log('收到余额更新事件:', data);
+  // 无需额外操作，因为Pinia中的数据已经更新，这里只记录日志
+};
+
+// 检查用户信息，确保数据是最新的
+const checkUserInfo = async () => {
+  // 如果用户已登录，尝试刷新用户信息
+  if (userStore.isLogined) {
+    // 获取上次更新时间
+    const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0;
+    const currentTime = Date.now();
+    const timeElapsed = currentTime - lastUpdateTime;
+    
+    // 如果距离上次更新超过5分钟，则重新获取用户信息
+    if (timeElapsed > 5 * 60 * 1000) {
+      console.log('用户数据已过期，重新获取');
+      await userStore.fetchUserInfo();
+    } else {
+      console.log('用户数据在有效期内，无需重新获取');
+    }
+  }
+};
+
 // 获取用户名首字母或默认头像文字
 const getUserInitial = () => {
   if (userStore.isVerified && userStore.userInfo.name) {
@@ -209,16 +260,68 @@ const getUserInitial = () => {
   return '用';
 };
 
+// 获取用户显示名称
+const getUserDisplayName = () => {
+  // 已认证用户优先显示姓名（通过API已处理为实名信息中的真实姓名）
+  if (userStore.isVerified && userStore.userInfo.name) {
+    return userStore.userInfo.name;
+  }
+  // 未认证用户或姓名为空时显示手机号
+  return userStore.userInfo.phone || '未登录';
+};
+
 // 格式化余额显示
 const formatBalance = (balance) => {
+  // 处理undefined、null或空字符串的情况
+  if (balance === undefined || balance === null || balance === '') {
+    return '0.00';
+  }
+  
   // 确保balance是数字类型
-  const numBalance = Number(balance || 0);
+  let numBalance = 0;
+  try {
+    numBalance = typeof balance === 'string' ? parseFloat(balance) : Number(balance);
+    // 处理NaN的情况
+    if (isNaN(numBalance)) {
+      numBalance = 0;
+    }
+  } catch (error) {
+    console.error('余额格式化错误:', error);
+    numBalance = 0;
+  }
+  
   return numBalance.toFixed(2);
 };
 
 // 页面导航
 const navigateTo = (url) => {
   uni.navigateTo({ url });
+};
+
+// 处理个人信息点击
+const handleProfileClick = () => {
+  // 如果已经实名认证，显示简单提示
+  if (userStore.isVerified) {
+    uni.showToast({
+      title: '您已完成实名认证',
+      icon: 'success',
+      duration: 1500
+    });
+    return;
+  }
+  
+  // 如果实名认证审核中，显示提示
+  if (userStore.isPendingVerification) {
+    uni.showToast({
+      title: '您的认证正在审核中',
+      icon: 'none',
+      duration: 1500
+    });
+    return;
+  }
+  
+  // 未认证或认证被拒绝，跳转到认证页面
+  navigateTo('/pages/my/identity-verify');
 };
 
 // 处理充值
@@ -293,22 +396,6 @@ const handleLogout = () => {
     }
   });
 };
-
-// 页面加载时获取最新的用户信息
-onMounted(async () => {
-  if (userStore.isLogined) {
-    // 获取用户信息
-    await userStore.fetchUserInfo();
-    
-    // 获取公告状态
-    // 这里可以添加获取公告状态的API调用
-    // const res = await api.getAnnouncementStatus();
-    // hasNewAnnouncement.value = res.data.hasNew;
-  } else {
-    // 未登录则跳转到登录页
-    uni.redirectTo({ url: '/pages/login/index' });
-  }
-});
 </script>
 
 <style lang="scss">

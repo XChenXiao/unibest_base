@@ -20,6 +20,8 @@ declare interface IUserInfo {
   has_bank_card?: boolean
   /** 银行卡开通时间 */
   bank_card_opened_at?: string
+  /** 是否已通过实名认证 */
+  is_verified?: boolean
 }
 
 declare interface ILoginResponse {

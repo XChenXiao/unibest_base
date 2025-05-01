@@ -141,6 +141,18 @@ export default ({ command, mode }) => {
               // 不重写路径，保留/api前缀
               // rewrite: (path) => path.replace(new RegExp(`^${VITE_APP_PROXY_PREFIX}`), ''),
             },
+            // 添加文件上传专用代理
+            '/api/files/upload': {
+              target: VITE_SERVER_BASEURL,
+              changeOrigin: true,
+              // 关键设置：确保不转换请求体，保持文件上传格式
+              secure: false,
+            },
+            '/api/files/upload/file': {
+              target: VITE_SERVER_BASEURL, 
+              changeOrigin: true,
+              secure: false,
+            },
           }
         : undefined,
     },

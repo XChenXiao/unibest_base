@@ -26,7 +26,7 @@
 <script lang="ts" setup>
 // 定义props
 const props = defineProps<{
-  balance: number
+  balance: number | string
 }>();
 
 // 定义事件
@@ -36,8 +36,17 @@ const emit = defineEmits<{
 }>();
 
 // 格式化余额显示
-const formatBalance = (balance: number) => {
-  return balance.toFixed(2);
+const formatBalance = (balance: number | string) => {
+  // 确保余额是数字类型
+  const numBalance = typeof balance === 'string' ? parseFloat(balance) : balance;
+  
+  // 如果是有效数字，则格式化为两位小数
+  if (!isNaN(numBalance)) {
+    return numBalance.toFixed(2);
+  }
+  
+  // 如果转换失败，返回0.00
+  return '0.00';
 };
 
 // 处理提现

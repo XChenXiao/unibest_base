@@ -5,22 +5,28 @@
 
 interface NavigateToOptions {
   url: "/pages/index/index" |
-       "/pages/about/about" |
        "/pages/assets/index" |
+       "/pages/currency-records/index" |
+       "/pages/equity-records/index" |
        "/pages/login/index" |
        "/pages/login/reset-password" |
+       "/pages/my/identity-verify" |
        "/pages/my/index" |
        "/pages/my/reset-password" |
        "/pages/my/reset-withdraw-password" |
        "/pages/my/settings" |
        "/pages/my/wallet" |
        "/pages/register/index" |
+       "/pages/trading/exchange" |
+       "/pages/trading/index" |
+       "/pages/trading/records" |
+       "/pages/trading/trade-detail" |
        "/pages/verification/index";
 }
 interface RedirectToOptions extends NavigateToOptions {}
 
 interface SwitchTabOptions {
-  url: "/pages/index/index" | "/pages/assets/index" | "/pages/about/about" | "/pages/my/index"
+  url: "/pages/index/index" | "/pages/trading/index" | "/pages/assets/index" | "/pages/my/index"
 }
 
 type ReLaunchOptions = NavigateToOptions | SwitchTabOptions;

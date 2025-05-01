@@ -28,7 +28,7 @@
           <input 
             class="form-control" 
             type="number"
-            maxlength="11"
+            :maxlength="11"
             placeholder="请输入手机号码"
             v-model="formData.mobile"
           />
@@ -41,9 +41,11 @@
           <text class="uni-icons" :class="['uniui-locked-filled']"></text>
           <input 
             class="form-control" 
-            :type="showPassword ? 'text' : 'password'"
+            type="text"
+            :password="!showPassword"
             placeholder="请输入密码"
             v-model="formData.password"
+            password-icon-style="right: 20rpx;"
           />
           <text 
             class="uni-icons password-toggle" 
@@ -143,6 +145,19 @@ const handleLogin = async () => {
         ...user,
         token: access_token
       });
+      
+      // 登录成功后立即获取完整的用户信息和实名认证状态
+      try {
+        console.log('登录成功，正在获取最新用户信息...');
+        // 一次性获取完整用户信息，包含认证状态
+        const infoUpdated = await userStore.fetchUserInfo();
+        if (infoUpdated) {
+          console.log('用户信息和认证状态已更新:', userStore.verificationStatus);
+        }
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+        // 错误不影响登录流程
+      }
       
       uni.showToast({
         title: '登录成功',

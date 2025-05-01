@@ -48,7 +48,33 @@ export const loginAPI = (params: ILoginParams) => {
  * @returns Promise
  */
 export const getUserInfoAPI = () => {
-  return http.get<IUserInfo>('/api/user')
+  return http.get<any>('/api/user')
+    .then(res => {
+      // 确保余额字段是数字类型
+      if (res.status === 'success' && res.data && res.data.user) {
+        // 转换余额字段类型
+        const userData = res.data.user;
+        
+        // 处理用户姓名：如果用户已实名认证且有实名信息，则使用实名信息中的真实姓名作为用户名称
+        if (res.data.is_verified && userData.verification && userData.verification.real_name) {
+          userData.name = userData.verification.real_name;
+        }
+        
+        return {
+          status: 'success',
+          data: {
+            ...res.data,
+            user: {
+              ...userData,
+              balance: userData.balance ? Number(userData.balance) : 0,
+              frozen_balance: userData.frozen_balance ? Number(userData.frozen_balance) : 0,
+              equity_balance: userData.equity_balance ? Number(userData.equity_balance) : 0
+            }
+          }
+        };
+      }
+      return res;
+    });
 }
 
 /**

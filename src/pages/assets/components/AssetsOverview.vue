@@ -59,9 +59,9 @@ const toggleVisibility = () => {
   emit('toggle-visibility');
 };
 
-// 格式化金额显示
+// 格式化金额
 const formatAmount = (amount: number) => {
-  return amount.toFixed(2);
+  return Number(amount).toFixed(2);
 };
 </script>
 

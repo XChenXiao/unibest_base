@@ -8,6 +8,9 @@ import { pages } from '@/pages.json'
 // 初始化用户状态
 const userStore = useUserStore()
 
+// 最小更新时间间隔(毫秒)：5分钟
+const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
+
 onLaunch(async () => {
   console.log('App Launch')
   
@@ -21,7 +24,8 @@ onLaunch(async () => {
       console.log('尝试获取用户信息')
       const success = await userStore.fetchUserInfo()
       if (success) {
-        console.log('自动登录成功')
+        console.log('自动登录成功，用户信息已更新，包含认证状态')
+        // 不再单独调用fetchVerificationStatus，因为fetchUserInfo已经包含了认证状态的获取
       } else {
         console.log('自动登录失败：无法获取用户信息')
         // 清除过期的token
@@ -82,11 +86,33 @@ const checkInitialPageRequiresLogin = () => {
   }, 100) // 延迟一小段时间，确保页面已加载
 }
 
-onShow(() => {
+onShow(async () => {
   console.log('App Show')
   
-  // 每次显示应用时都检查当前页面是否需要登录
-  if (!userStore.isLogined) {
+  // 如果用户已登录，检查是否需要刷新用户信息
+  if (userStore.isLogined) {
+    // 获取上次更新时间
+    const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0
+    const currentTime = Date.now()
+    
+    // 如果超过最小更新间隔，才重新获取用户信息
+    if (currentTime - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+      try {
+        console.log('距离上次更新超过设定时间，正在刷新用户信息')
+        await userStore.fetchUserInfo()
+        console.log('用户信息已更新')
+      } catch (error) {
+        console.error('更新用户信息失败:', error)
+      }
+    } else {
+      console.log('距离上次更新时间不足，跳过用户信息更新', {
+        lastUpdate: new Date(lastUpdateTime).toLocaleString(),
+        nextUpdateAfter: new Date(lastUpdateTime + MIN_UPDATE_INTERVAL).toLocaleString()
+      })
+    }
+  }
+  // 如果用户未登录，检查当前页面是否需要登录
+  else {
     checkInitialPageRequiresLogin()
     
     // 特别处理TabBar页面 - 直接检查当前URL

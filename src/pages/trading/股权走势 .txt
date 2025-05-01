@@ -1,0 +1,22 @@
+            <view class="equity-trend-card">
+              <view class="card-header">
+                <text class="card-title">股权价格趋势</text>
+                <view class="time-selector">
+                  <text 
+                    v-for="(period, index) in timePeriods" 
+                    :key="index"
+                    class="time-option"
+                    :class="{ 'time-active': activePeriod === period.value }"
+                    @click="changePeriod(period.value)"
+                  >
+                    {{ period.label }}
+                  </text>
+                </view>
+              </view>
+              <view class="chart-container">
+                <!-- 这里实际应用中放入图表组件 -->
+                <view class="chart-placeholder">
+                  <text>股权价格走势图</text>
+                </view>
+              </view>
+            </view>

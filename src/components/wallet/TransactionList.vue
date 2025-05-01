@@ -1,73 +1,107 @@
 <template>
-  <!-- 交易记录 -->
+  <!-- 交易记录区域 -->
   <view class="transaction-section">
+    <!-- 区域标题 -->
     <view class="section-header">
       <text class="section-title">收支记录</text>
-      <text class="view-all" @click="$emit('viewAll')">查看全部</text>
+      <text class="view-all" @click="viewAllRecords">查看全部</text>
     </view>
     
-    <!-- 记录类型选择 -->
+    <!-- 交易类型选择器 -->
     <view class="type-selector">
       <view 
-        v-for="(type, index) in transactionTypes" 
+        v-for="(item, index) in transactionTypes" 
         :key="index"
         class="type-item"
-        :class="{ 'type-active': activeType === type.value }"
-        @click="switchType(type.value)"
+        :class="{ 'type-active': activeType === item.value }"
+        @click="changeType(item.value)"
       >
-        <text>{{ type.label }}</text>
+        {{ item.label }}
       </view>
     </view>
     
-    <!-- 记录列表 -->
+    <!-- 交易记录列表 -->
     <view class="transaction-list">
+      <!-- 加载中状态 -->
+      <view v-if="loading" class="empty-state">
+        <text class="empty-text">加载中...</text>
+      </view>
+      
+      <!-- 空记录状态 -->
+      <view v-else-if="filteredTransactions.length === 0" class="empty-state">
+        <text class="empty-text">暂无收支记录</text>
+      </view>
+      
+      <!-- 交易记录 -->
       <view 
-        v-for="(item, index) in filteredTransactions" 
-        :key="index"
+        v-else
+        v-for="item in filteredTransactions" 
+        :key="item.id"
         class="transaction-item"
       >
-        <view class="transaction-icon" :class="getIconClass(item.type)">
-          <text class="uni-icons" :class="getIconName(item.type)"></text>
+        <!-- 交易图标 -->
+        <view 
+          class="transaction-icon" 
+          :class="{
+            'icon-income': item.is_income, 
+            'icon-expense': !item.is_income && item.type !== 'withdraw',
+            'icon-withdraw': item.type === 'withdraw'
+          }"
+        >
+          <text 
+            class="uni-icons" 
+            :class="{
+              'uniui-arrow-down': item.is_income,
+              'uniui-arrow-up': !item.is_income && item.type !== 'withdraw',
+              'uniui-wallet-filled': item.type === 'withdraw'
+            }"
+          ></text>
         </view>
+        
+        <!-- 交易信息 -->
         <view class="transaction-info">
           <text class="transaction-title">{{ item.title }}</text>
           <text class="transaction-time">{{ item.time }}</text>
         </view>
-        <view class="transaction-amount" :class="{ 'amount-income': item.isIncome }">
-          <text>{{ item.isIncome ? '+' : '-' }}{{ item.amount }}</text>
+        
+        <!-- 交易金额 -->
+        <view class="transaction-amount" :class="{ 'amount-income': item.is_income }">
+          <text>{{ item.is_income ? '+' : '-' }}{{ item.amount }}</text>
         </view>
-      </view>
-      
-      <!-- 空状态 -->
-      <view v-if="filteredTransactions.length === 0" class="empty-state">
-        <text class="empty-text">暂无相关记录</text>
       </view>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { getBalanceTransactions } from '@/service/app/wallet';
 
 // 定义交易记录类型
 interface Transaction {
   id: number;
-  title: string;
-  type: string;
-  isIncome: boolean;
+  title: string; // 用于显示的标题，从description获取
+  original_type: string; // 原始类型
+  type: string; // 前端使用的类型分类
+  is_income: boolean; // 是否收入
   amount: string;
   time: string;
 }
 
 // 定义props
-const props = defineProps<{
-  transactions: Transaction[]
-}>();
+const props = defineProps({
+  transactionData: {
+    type: Array as () => Transaction[],
+    default: () => []
+  },
+  useLocalData: {
+    type: Boolean,
+    default: false
+  }
+});
 
 // 定义事件
-const emit = defineEmits<{
-  (e: 'viewAll'): void
-}>();
+const emit = defineEmits(['viewAll']);
 
 // 交易类型
 const transactionTypes = [
@@ -80,47 +114,101 @@ const transactionTypes = [
 // 当前选中的交易类型
 const activeType = ref('all');
 
-// 根据类型筛选交易记录
-const filteredTransactions = computed(() => {
-  if (activeType.value === 'all') {
-    return props.transactions;
-  } else {
-    return props.transactions.filter(item => item.type === activeType.value);
-  }
-});
+// 交易记录数据
+const transactions = ref<Transaction[]>([]);
 
-// 切换交易记录类型
-const switchType = (type: string) => {
+// 数据加载状态
+const loading = ref(false);
+
+// 获取交易记录数据
+const fetchTransactions = async () => {
+  loading.value = true;
+  try {
+    const response = await getBalanceTransactions(1, 10);
+    
+    if (response?.status === 'success' && response.data?.data) {
+      const recordsData = response.data.data;
+      
+      // 格式化交易记录数据
+      const formattedRecords: Transaction[] = [];
+      
+      // 确保recordsData是数组
+      if (Array.isArray(recordsData)) {
+        for (const record of recordsData) {
+          // 根据记录类型映射为前端所需的类型
+          let frontendType = record.is_income ? 'income' : 'expense';
+          if (record.type === 'withdraw') {
+            frontendType = 'withdraw';
+          }
+          
+          // 优先使用description作为标题
+          const title = record.description || record.type_text || '交易记录';
+          
+          formattedRecords.push({
+            id: record.id,
+            title: title,
+            original_type: record.type,
+            type: frontendType,
+            is_income: record.is_income || false,
+            amount: record.amount || '0',
+            time: record.created_at || ''
+          });
+        }
+      }
+      
+      transactions.value = formattedRecords;
+    } else {
+      transactions.value = [];
+    }
+  } catch (error) {
+    console.error('获取余额变动记录失败:', error);
+    uni.showToast({
+      title: '获取余额变动记录失败',
+      icon: 'none'
+    });
+    transactions.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 切换交易类型
+const changeType = (type: string) => {
   activeType.value = type;
 };
 
-// 获取交易类型图标样式
-const getIconClass = (type: string) => {
-  switch (type) {
-    case 'income':
-      return 'icon-income';
-    case 'expense':
-      return 'icon-expense';
-    case 'withdraw':
-      return 'icon-withdraw';
-    default:
-      return '';
-  }
+// 查看全部记录
+const viewAllRecords = () => {
+  emit('viewAll');
 };
 
-// 获取交易类型图标名称
-const getIconName = (type: string) => {
-  switch (type) {
-    case 'income':
-      return 'uniui-arrow-down';
-    case 'expense':
-      return 'uniui-arrow-up';
-    case 'withdraw':
-      return 'uniui-download-filled';
-    default:
-      return '';
-  }
+// 刷新交易记录
+const refreshTransactions = () => {
+  fetchTransactions();
 };
+
+// 根据类型筛选交易记录
+const filteredTransactions = computed(() => {
+  // 使用本地数据还是API数据
+  const dataSource = props.useLocalData ? props.transactionData : transactions.value;
+  
+  if (activeType.value === 'all') {
+    return dataSource;
+  } else {
+    return dataSource.filter(transaction => transaction.type === activeType.value);
+  }
+});
+
+// 组件挂载后执行
+onMounted(() => {
+  if (!props.useLocalData) {
+    fetchTransactions();
+  }
+});
+
+defineExpose({
+  refreshTransactions
+});
 </script>
 
 <style lang="scss" scoped>
@@ -198,6 +286,7 @@ const getIconName = (type: string) => {
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
+  flex-shrink: 0;
 }
 
 .icon-income {
@@ -226,6 +315,7 @@ const getIconName = (type: string) => {
 
 .transaction-info {
   flex: 1;
+  min-width: 0; /* 确保内容可以正确截断 */
 }
 
 .transaction-title {
@@ -233,6 +323,9 @@ const getIconName = (type: string) => {
   color: #333;
   margin-bottom: 6rpx;
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .transaction-time {
@@ -244,6 +337,8 @@ const getIconName = (type: string) => {
   font-size: 30rpx;
   font-weight: 500;
   color: #e74c3c;
+  margin-left: 10rpx;
+  flex-shrink: 0;
 }
 
 .amount-income {

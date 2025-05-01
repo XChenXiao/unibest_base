@@ -1,0 +1,930 @@
+<!-- UniApp 理财应用首页 -->
+<!-- pages/index/index.vue -->
+<template>
+  <view class="page-container">
+    <!-- 顶部区域 -->
+    <view class="header">
+      <view class="wave-decoration"></view>
+      <view class="header-bg"></view>
+      
+      <!-- 菜单容器 -->
+      <view class="menu-container">
+        <!-- 第一行菜单 -->
+        <view class="menu-row">
+          <view class="menu-item" @click="handleMenuItem('scanPay')">
+            <view class="menu-icon scanner-icon">
+              <text class="uni-icons uniui-scan"></text>
+            </view>
+            <view class="menu-label">扫码支付</view>
+          </view>
+          
+          <view class="menu-item" @click="handleMenuItem('payment')">
+            <view class="menu-icon payment-icon">
+              <text class="uni-icons uniui-card"></text>
+            </view>
+            <view class="menu-label">收付款</view>
+          </view>
+          
+          <view class="menu-item" @click="handleMenuItem('transfer')">
+            <view class="menu-icon transfer-icon">
+              <text class="uni-icons uniui-upload"></text>
+            </view>
+            <view class="menu-label">转账</view>
+          </view>
+          
+          <view class="menu-item" @click="handleMenuItem('account')">
+            <view class="menu-icon account-icon">
+              <text class="uni-icons uniui-person"></text>
+            </view>
+            <view class="menu-label">账户管理</view>
+          </view>
+        </view>
+        
+        <!-- 第二行菜单 -->
+        <view class="menu-row">
+          <view class="menu-item" @click="handleMenuItem('service')">
+            <view class="menu-icon customer-icon">
+              <text class="uni-icons uniui-headphone"></text>
+            </view>
+            <view class="menu-label">联系客服</view>
+          </view>
+          
+          <view class="menu-item" @click="handleMenuItem('record')">
+            <view class="menu-icon record-icon">
+              <text class="uni-icons uniui-list"></text>
+            </view>
+            <view class="menu-label">收支记录</view>
+          </view>
+          
+          <view class="menu-item" @click="handleMenuItem('verify')">
+            <view class="menu-icon verify-icon">
+              <text class="uni-icons uniui-checkbox-filled"></text>
+            </view>
+            <view class="menu-label">实名认证</view>
+          </view>
+          
+          <view class="menu-item" @click="handleMenuItem('promote')">
+            <view class="menu-icon promote-icon">
+              <text class="uni-icons uniui-rmb"></text>
+            </view>
+            <view class="menu-label">推广</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 签到状态 -->
+    <view class="checkin-status">
+      <view class="status-header">
+        <view class="status-title">打卡进度</view>
+        <view class="today-status" :class="{ 'checked': checkInData.isCheckedToday }">
+          {{ checkInData.isCheckedToday ? '今日已打卡' : '今日未打卡' }}
+        </view>
+      </view>
+      
+      <view class="progress-bar">
+        <view class="progress-fill" :style="{ width: checkInData.completionRate + '%' }"></view>
+        <view 
+          v-for="(marker, index) in markers" 
+          :key="index"
+          class="progress-marker" 
+          :class="{ 'reached': checkInData.daysCompleted >= marker.days }"
+          :style="{ left: (marker.days / checkInData.totalDays * 100) + '%' }"
+        >
+          <view class="marker-day">{{ marker.days }}天</view>
+        </view>
+      </view>
+      
+      <view class="progress-info">
+        <view>已打卡 {{ checkInData.daysCompleted }}/{{ checkInData.totalDays }} 天</view>
+        <view>完成率 {{ Math.round(checkInData.completionRate) }}%</view>
+      </view>
+      
+      <button 
+        class="check-in-button" 
+        :class="{ 'disabled': checkInData.isCheckedToday }"
+        :disabled="checkInData.isCheckedToday || isCheckingIn"
+        @click="handleCheckIn"
+      >
+        {{ isCheckingIn ? '签到中...' : (checkInData.isCheckedToday ? '今日已签到' : '立即签到') }}
+      </button>
+    </view>
+    
+    <!-- 打卡记录圆圈 -->
+    <view class="checkin-circles">
+      <view class="circles-header">
+        <view class="circles-title">30天打卡记录</view>
+        <view class="cycle-info">周期: {{ formatDate(checkInData.cycleStartDate) }} ~ {{ formatDate(checkInData.cycleEndDate) }}</view>
+      </view>
+      
+      <view class="circles-grid">
+        <view 
+          v-for="day in 30" 
+          :key="day"
+          class="circle" 
+          :class="{ 
+            'checked': isCheckedDay(day), 
+            'missed': isMissedDay(day),
+            'today': isToday(day)
+          }"
+        >
+          {{ day }}
+          <view v-if="isCheckedDay(day)" class="check-mark">✓</view>
+          <view v-else-if="isMissedDay(day)" class="miss-mark">✗</view>
+          <view v-if="isToday(day)" class="today-mark">今</view>
+        </view>
+      </view>
+      
+      <view class="circles-legend">
+        <view class="legend-item">
+          <view class="legend-circle legend-checked"></view>
+          <view>已打卡</view>
+        </view>
+        <view class="legend-item">
+          <view class="legend-circle legend-missed"></view>
+          <view>漏打卡</view>
+        </view>
+        <view class="legend-item">
+          <view class="legend-circle legend-normal"></view>
+          <view>未开始</view>
+        </view>
+        <view class="legend-item">
+          <view class="legend-circle legend-today"></view>
+          <view>今天</view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 里程碑时间线 -->
+    <view class="milestone-container">
+      <view class="milestone-header">
+        <view class="milestone-title">打卡里程碑</view>
+        <view class="milestone-subtitle">每月将自动领取达成的最高奖励</view>
+      </view>
+      
+      <view class="timeline">
+        <view class="timeline-line"></view>
+        
+        <view 
+          v-for="(milestone, index) in milestones" 
+          :key="index"
+          class="milestone-item"
+        >
+          <view 
+            class="milestone-dot" 
+            :class="{ 
+              'completed': milestone.completed, 
+              'current': milestone.current, 
+              'upcoming': !milestone.completed && !milestone.current 
+            }"
+          >
+            <text v-if="milestone.completed">✓</text>
+            <text v-else-if="milestone.current">●</text>
+            <text v-else>○</text>
+          </view>
+          
+          <view class="milestone-content">
+            <view class="milestone-name">{{ milestone.title }}</view>
+            <view class="milestone-progress-bar">
+              <view 
+                class="milestone-progress-fill" 
+                :class="{ 
+                  'completed': milestone.completed, 
+                  'current': milestone.current, 
+                  'upcoming': !milestone.completed && !milestone.current 
+                }"
+                :style="{ width: (milestone.daysCompleted / milestone.days * 100) + '%' }"
+              ></view>
+            </view>
+            <view class="milestone-footer">
+              <view class="milestone-days">{{ milestone.daysCompleted }}/{{ milestone.days }}天</view>
+              <view class="milestone-reward">¥{{ milestone.reward }}</view>
+            </view>
+            <view 
+              class="status-badge" 
+              :class="{ 
+                'status-completed': milestone.completed, 
+                'status-current': milestone.current, 
+                'status-upcoming': !milestone.completed && !milestone.current 
+              }"
+            >
+              {{ milestone.completed ? '已完成' : (milestone.current ? '进行中' : '未开始') }}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      isCheckingIn: false,
+      // 签到数据
+      checkInData: {
+        daysCompleted: 8,
+        totalDays: 30,
+        isCheckedToday: false,
+        completionRate: 26.67,
+        cycleStartDate: '2025-04-01',
+        cycleEndDate: '2025-04-30'
+      },
+      // 里程碑点
+      markers: [
+        { days: 7, label: '7天' },
+        { days: 15, label: '15天' },
+        { days: 30, label: '30天' }
+      ],
+      // 已打卡的天
+      checkedDays: [1, 2, 3, 4, 5, 8, 9, 10],
+      // 漏打卡的天
+      missedDays: [6, 7],
+      // 里程碑数据
+      milestones: [
+        {
+          title: '打卡7天奖励',
+          days: 7,
+          reward: '1000.00',
+          daysCompleted: 7,
+          completed: true,
+          current: false
+        },
+        {
+          title: '打卡15天奖励',
+          days: 15,
+          reward: '3000.00',
+          daysCompleted: 8,
+          completed: false,
+          current: true
+        },
+        {
+          title: '打卡30天奖励',
+          days: 30,
+          reward: '8000.00',
+          daysCompleted: 8,
+          completed: false,
+          current: false
+        }
+      ]
+    };
+  },
+  onLoad() {
+    // 模拟获取签到数据
+    this.fetchCheckInData();
+  },
+  methods: {
+    // 模拟获取签到数据
+    fetchCheckInData() {
+      // 实际开发中，这里应该调用API获取数据
+      // 假设这里已经获取到数据并赋值给了 this.checkInData, this.checkedDays, this.missedDays, this.milestones
+      console.log('获取签到数据...');
+    },
+    
+    // 处理菜单项点击
+    handleMenuItem(type) {
+      // 实际开发中，这里应该根据不同的菜单项进行相应的操作
+      uni.showToast({
+        title: '新功能即将上线',
+        icon: 'none'
+      });
+    },
+    
+    // 处理签到
+    handleCheckIn() {
+      if (this.checkInData.isCheckedToday || this.isCheckingIn) {
+        return;
+      }
+      
+      this.isCheckingIn = true;
+      
+      // 模拟签到请求
+      setTimeout(() => {
+        this.checkInData.isCheckedToday = true;
+        this.checkInData.daysCompleted += 1;
+        this.checkInData.completionRate = (this.checkInData.daysCompleted / this.checkInData.totalDays) * 100;
+        
+        // 添加今天到已打卡列表
+        const today = this.getCurrentDayInCycle();
+        if (!this.checkedDays.includes(today)) {
+          this.checkedDays.push(today);
+        }
+        
+        // 更新里程碑数据
+        this.updateMilestones();
+        
+        this.isCheckingIn = false;
+        
+        uni.showToast({
+          title: '签到成功',
+          icon: 'success'
+        });
+      }, 1000);
+    },
+    
+    // 更新里程碑数据
+    updateMilestones() {
+      this.milestones.forEach((milestone, index) => {
+        if (milestone.daysCompleted < this.checkInData.daysCompleted && milestone.days >= this.checkInData.daysCompleted) {
+          milestone.daysCompleted = this.checkInData.daysCompleted;
+        }
+        
+        // 更新状态
+        if (this.checkInData.daysCompleted >= milestone.days) {
+          milestone.completed = true;
+          milestone.current = false;
+        } else if (index > 0 && this.milestones[index - 1].completed) {
+          milestone.current = true;
+        }
+      });
+    },
+    
+    // 格式化日期
+    formatDate(dateStr) {
+      if (!dateStr) return '';
+      
+      const date = new Date(dateStr);
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    },
+    
+    // 检查是否是已打卡的天
+    isCheckedDay(day) {
+      return this.checkedDays.includes(day);
+    },
+    
+    // 检查是否是漏打卡的天
+    isMissedDay(day) {
+      return this.missedDays.includes(day);
+    },
+    
+    // 检查是否是当前天
+    isToday(day) {
+      return day === this.getCurrentDayInCycle();
+    },
+    
+    // 获取当前周期的第几天
+    getCurrentDayInCycle() {
+      if (!this.checkInData.cycleStartDate) return 1;
+      
+      const cycleStart = new Date(this.checkInData.cycleStartDate);
+      const today = new Date();
+      
+      // 确保日期格式正确
+      cycleStart.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      // 计算天数差
+      const diffTime = Math.abs(today - cycleStart);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // 当前天从1开始计数
+      return Math.min(diffDays + 1, 30);
+    }
+  }
+};
+</script>
+
+<style>
+page {
+  background-color: #f5f5f5;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 页面容器 */
+.page-container {
+  min-height: 100vh;
+}
+
+/* 顶部区域 */
+.header {
+  position: relative;
+  background: linear-gradient(135deg, #3498db, #1a5276);
+  padding-bottom: 30rpx;
+  border-bottom-left-radius: 40rpx;
+  border-bottom-right-radius: 40rpx;
+  overflow: hidden;
+  padding-top: var(--status-bar-height);
+}
+
+/* 波浪装饰 */
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  z-index: 2;
+}
+
+/* 顶部背景 */
+.header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 200rpx;
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9InJnYmEoMjU1LCAyNTUsIDI1NSwgMC4xKSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjApIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZmlsbD0idXJsKCNhKSIgZD0iTTAgMGgxMDB2MTAwSDB6Ii8+PHBhdGggZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjIpIiBkPSJNMCAyMGMxNSAwIDIwIDEwIDQwIDEwczI1LTEwIDQwLTEwIDIwIDEwIDQwIDEwdjIwYy0yMCAwLTI1LTEwLTQwLTEwcy0yNSAxMC00MCAxMFMxNSA0MCAwIDQweiIvPjwvc3ZnPg==);
+  opacity: 0.6;
+  z-index: 1;
+}
+
+/* 菜单容器 */
+.menu-container {
+  position: relative;
+  padding: 30rpx 30rpx 0;
+  z-index: 10;
+}
+
+/* 菜单行 */
+.menu-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+/* 菜单项 */
+.menu-item {
+  width: 23%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 20rpx;
+  padding: 20rpx 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 菜单图标 */
+.menu-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+}
+
+.scanner-icon {
+  background-color: rgba(52, 152, 219, 0.15);
+  color: #3498db;
+}
+
+.payment-icon {
+  background-color: rgba(243, 156, 18, 0.15);
+  color: #f39c12;
+}
+
+.transfer-icon {
+  background-color: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+}
+
+.account-icon {
+  background-color: rgba(155, 89, 182, 0.15);
+  color: #9b59b6;
+}
+
+.customer-icon {
+  background-color: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+}
+
+.record-icon {
+  background-color: rgba(52, 73, 94, 0.15);
+  color: #34495e;
+}
+
+.verify-icon {
+  background-color: rgba(26, 188, 156, 0.15);
+  color: #1abc9c;
+}
+
+.promote-icon {
+  background-color: rgba(241, 196, 15, 0.15);
+  color: #f1c40f;
+}
+
+/* 菜单文字 */
+.menu-label {
+  font-size: 24rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 图标样式 */
+.uni-icons {
+  font-size: 40rpx;
+}
+
+/* 签到状态 */
+.checkin-status {
+  background-color: white;
+  border-radius: 30rpx;
+  margin: 0 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
+  margin-top: -20rpx;
+  position: relative;
+  z-index: 20;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.status-title {
+  font-weight: bold;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.today-status {
+  font-size: 24rpx;
+  color: #FF5C00;
+  background-color: rgba(255, 92, 0, 0.1);
+  padding: 6rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.today-status.checked {
+  color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.progress-bar {
+  height: 20rpx;
+  background-color: #f5f5f5;
+  border-radius: 10rpx;
+  margin-bottom: 30rpx;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF9645 0%, #FF5C00 100%);
+  border-radius: 10rpx;
+  transition: width 0.5s;
+}
+
+.progress-marker {
+  position: absolute;
+  top: -6rpx;
+  width: 30rpx;
+  height: 30rpx;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 4rpx solid #ccc;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.progress-marker.reached {
+  border-color: #FF5C00;
+  background-color: #FF9645;
+}
+
+.marker-day {
+  position: absolute;
+  top: -50rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24rpx;
+  white-space: nowrap;
+  background-color: #f8f8f8;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 30rpx;
+}
+
+.check-in-button {
+  background: linear-gradient(90deg, #FF9645 0%, #FF5C00 100%);
+  color: white;
+  border: none;
+  padding: 24rpx 0;
+  width: 100%;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  box-shadow: 0 8rpx 16rpx rgba(255, 92, 0, 0.3);
+}
+
+.check-in-button.disabled {
+  background: #cccccc;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* 打卡记录圆圈 */
+.checkin-circles {
+  background-color: white;
+  border-radius: 30rpx;
+  margin: 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.circles-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.circles-title {
+  font-weight: bold;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.cycle-info {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.circles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.circle {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  margin: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: bold;
+  position: relative;
+  background-color: #f8f8f8;
+  border: 2rpx solid #e0e0e0;
+}
+
+.circle.checked {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+.circle.missed {
+  background-color: #ff9800;
+  color: white;
+  border-color: #ff9800;
+}
+
+.circle.today {
+  border: 4rpx solid #6e45e2;
+  background-color: #f0f0ff;
+  color: #333;
+}
+
+.circle.today.checked {
+  background-color: #4caf50;
+  color: white;
+}
+
+.check-mark, .miss-mark {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30rpx;
+  height: 30rpx;
+  border-radius: 50%;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.check-mark {
+  background-color: #388e3c;
+}
+
+.miss-mark {
+  background-color: #f57c00;
+}
+
+.today-mark {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 30rpx;
+  height: 30rpx;
+  font-size: 20rpx;
+  background-color: #6e45e2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circles-legend {
+  display: flex;
+  justify-content: center;
+  margin-top: 30rpx;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 0 20rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.legend-circle {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  margin-right: 10rpx;
+}
+
+.legend-checked {
+  background-color: #4caf50;
+}
+
+.legend-missed {
+  background-color: #ff9800;
+}
+
+.legend-normal {
+  background-color: #f8f8f8;
+  border: 2rpx solid #e0e0e0;
+}
+
+.legend-today {
+  background-color: #f0f0ff;
+  border: 2rpx solid #6e45e2;
+}
+
+/* 里程碑 */
+.milestone-container {
+  background-color: white;
+  border-radius: 30rpx;
+  margin: 30rpx;
+  padding: 30rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 60rpx;
+}
+
+.milestone-header {
+  margin-bottom: 40rpx;
+}
+
+.milestone-title {
+  font-weight: bold;
+  font-size: 32rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.milestone-subtitle {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 40rpx;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 8rpx;
+  top: 0;
+  height: 100%;
+  width: 4rpx;
+  background-color: #e0e0e0;
+}
+
+.milestone-item {
+  position: relative;
+  margin-bottom: 50rpx;
+  padding-left: 30rpx;
+}
+
+.milestone-item:last-child {
+  margin-bottom: 0;
+}
+
+.milestone-dot {
+  position: absolute;
+  left: -32rpx;
+  top: 0;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+}
+
+.milestone-dot.completed {
+  background-color: #4caf50;
+  color: white;
+}
+
+.milestone-dot.current {
+  background-color: #2196f3;
+  color: white;
+}
+
+.milestone-dot.upcoming {
+  background-color: #e0e0e0;
+  color: #fff;
+}
+
+.milestone-content {
+  position: relative;
+}
+
+.milestone-name {
+  font-weight: bold;
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.milestone-progress-bar {
+  height: 16rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+
+.milestone-progress-fill {
+  height: 100%;
+  border-radius: 8rpx;
+  transition: width 0.5s;
+}
+
+.milestone-progress-fill.completed {
+  background-color: #4caf50;
+}
+
+.milestone-progress-fill.current {
+  background-color: #2196f3;
+}
+
+.milestone-progress-fill.upcoming {
+  background-color: #e0e0e0;
+}
+
+.milestone-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+}
+
+.milestone-days {
+  color: #666;
+}
+
+.milestone-reward {
+  color: #ff5722;
+  font-weight: bold;
+}
+
+.status-badge {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: white;
+}
+
+.status-completed {
+  background-color: #4caf50;
+}
+
+.status-current {
+  background-color: #2196f3;
+}
+
+.status-upcoming {
+  background-color: #9e9e9e;
+}
+</style>

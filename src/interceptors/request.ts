@@ -8,8 +8,6 @@ export type CustomRequestOptions = UniApp.RequestOptions & {
   query?: Record<string, any>
   /** 出错时是否隐藏错误提示 */
   hideErrorToast?: boolean
-  /** 是否需要认证 */
-  needAuth?: boolean
 } & IUniUploadFileOptions // 添加uni.uploadFile参数类型
 
 // 请求基准地址
@@ -19,6 +17,8 @@ const baseUrl = getEnvBaseUrl()
 const httpInterceptor = {
   // 拦截前触发
   invoke(options: CustomRequestOptions) {
+    console.log('请求拦截器开始处理:', options.url)
+    
     // 接口请求支持通过 query 参数配置 queryString
     if (options.query) {
       const queryStr = qs.stringify(options.query)
@@ -35,13 +35,16 @@ const httpInterceptor = {
       if (JSON.parse(__VITE_APP_PROXY__)) {
         // 如果是 H5 环境且启用了代理，使用接口代理
         // 不需要做额外处理
+        console.log('使用接口代理:', options.url)
       } else {
         options.url = baseUrl + options.url
+        console.log('拼接基础URL:', options.url)
       }
       // #endif
       // 非H5正常拼接
       // #ifndef H5
       options.url = baseUrl + options.url
+      console.log('拼接基础URL:', options.url)
       // #endif
     }
     
@@ -51,19 +54,33 @@ const httpInterceptor = {
     // 2. 添加请求头
     options.header = {
       platform, // 平台标识
-      'Content-Type': 'application/json', // 默认内容类型
       ...options.header,
     }
     
-    // 3. 添加 token 请求头标识
-    const userStore = useUserStore()
-    const { token } = userStore.userInfo
-    if (token) {
-      options.header.Authorization = `Bearer ${token}`
-    } else if (options.needAuth !== false) {
-      // 如果请求需要认证但没有token，可以在这里处理
-      // 例如，可以取消请求，重定向到登录页等
-      console.warn('请求需要认证但无Token:', options.url)
+    // 判断是否为文件上传请求 - 看是否有filePath属性
+    const isUploadRequest = 'filePath' in options && !!options.filePath
+    
+    // 如果不是文件上传请求，添加JSON Content-Type
+    if (!isUploadRequest && !options.header['Content-Type']) {
+      options.header['Content-Type'] = 'application/json'
+    }
+    
+    // 3. 添加 token 请求头标识 - 默认为所有请求添加token
+    try {
+      // 直接从pinia store获取token
+      const userStore = useUserStore()
+      const token = userStore?.userInfo?.token
+      
+      // 添加token到请求头
+      if (token) {
+        options.header.Authorization = `Bearer ${token}`
+        console.log(`拦截器已添加token到请求头:`, options.url)
+      } else {
+        // 如果没有token，这里不处理错误，让http层再尝试获取一次
+        console.warn(`拦截器未找到token:`, options.url)
+      }
+    } catch (error) {
+      console.error('拦截器添加token失败:', error)
     }
   },
 }
