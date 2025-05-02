@@ -8,6 +8,7 @@ interface NavigateToOptions {
        "/pages/assets/index" |
        "/pages/currency-records/index" |
        "/pages/equity-records/index" |
+       "/pages/login/change-password" |
        "/pages/login/index" |
        "/pages/login/reset-password" |
        "/pages/my/identity-verify" |

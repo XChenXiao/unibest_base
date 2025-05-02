@@ -27,8 +27,8 @@
       </wd-tabbar-item>
       <wd-tabbar-item v-else-if="item.iconType === 'local'" :title="item.text">
         <template #icon>
-          <image v-if="idx === tabbarStore.curIdx" :src="item.iconHL" h-40rpx w-40rpx />
-          <image v-else :src="item.icon" h-40rpx w-40rpx />
+          <image v-if="idx === tabbarStore.curIdx" :src="getIconPath(item.iconHL)" h-40rpx w-40rpx />
+          <image v-else :src="getIconPath(item.icon)" h-40rpx w-40rpx />
         </template>
       </wd-tabbar-item>
     </block>
@@ -43,6 +43,27 @@ import { tabbarStore } from './tabbar'
 
 /** tabbarList 里面的 path 从 pages.config.ts 得到 */
 const tabbarList = tabBar.list.map((item) => ({ ...item, path: `/${item.pagePath}` }))
+
+/**
+ * 处理图标路径，确保无论部署在什么基础路径下都能正确加载
+ * @param iconPath 原始图标路径
+ * @returns 处理后的图标路径
+ */
+function getIconPath(iconPath: string): string {
+  // 如果是完整URL或绝对路径，直接返回
+  if (iconPath.startsWith('http') || iconPath.startsWith('//')) {
+    return iconPath
+  }
+  
+  // 优先使用VITE_APP_PUBLIC_BASE，如果不存在则使用BASE_URL或默认的'/'
+  const baseUrl = import.meta.env.VITE_APP_PUBLIC_BASE || import.meta.env.BASE_URL || '/'
+  const basePath = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+  
+  // 移除iconPath开头的斜杠，避免路径重复
+  const cleanIconPath = iconPath.startsWith('/') ? iconPath.slice(1) : iconPath
+  
+  return `${basePath}${cleanIconPath}`
+}
 
 function selectTabBar({ value: index }: { value: number }) {
   const url = tabbarList[index].path

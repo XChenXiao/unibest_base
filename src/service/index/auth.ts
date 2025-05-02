@@ -22,6 +22,26 @@ export interface ILoginParams {
 }
 
 /**
+ * 用户找回密码请求参数接口
+ */
+export interface IForgotPasswordParams {
+  phone: string
+  name: string
+  id_card: string
+  new_password: string
+  new_password_confirmation: string
+}
+
+/**
+ * 用户重置密码请求参数接口
+ */
+export interface IResetPasswordParams {
+  current_password: string
+  new_password: string
+  new_password_confirmation: string
+}
+
+/**
  * 用户注册API
  * @param params 注册参数
  * @returns Promise
@@ -41,6 +61,24 @@ export const loginAPI = (params: ILoginParams) => {
     access_token: string
     token_type: string
   }>('/api/login', params)
+}
+
+/**
+ * 用户找回密码API
+ * @param params 找回密码参数
+ * @returns Promise
+ */
+export const forgotPasswordAPI = (params: IForgotPasswordParams) => {
+  return http.post<any>('/api/forgot-password', params)
+}
+
+/**
+ * 用户重置密码API (需要登录)
+ * @param params 重置密码参数
+ * @returns Promise
+ */
+export const resetPasswordAPI = (params: IResetPasswordParams) => {
+  return http.post<any>('/api/reset-password', params)
 }
 
 /**

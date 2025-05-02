@@ -4,7 +4,6 @@
     <!-- 区域标题 -->
     <view class="section-header">
       <text class="section-title">收支记录</text>
-      <text class="view-all" @click="viewAllRecords">查看全部</text>
     </view>
     
     <!-- 交易类型选择器 -->

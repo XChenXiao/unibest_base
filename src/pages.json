@@ -85,6 +85,13 @@
       }
     },
     {
+      "path": "pages/login/change-password",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "修改密码"
+      }
+    },
+    {
       "path": "pages/login/index",
       "type": "page",
       "style": {

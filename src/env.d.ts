@@ -23,6 +23,10 @@ interface ImportMetaEnv {
   readonly VITE_UPLOAD_BASEURL: string
   /** 是否清除console */
   readonly VITE_DELETE_CONSOLE: string
+  /** 应用的基础路径 */
+  readonly BASE_URL: string
+  /** 应用的公共基础路径 */
+  readonly VITE_APP_PUBLIC_BASE: string
   // 更多环境变量...
 }
 

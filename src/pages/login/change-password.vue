@@ -1,12 +1,12 @@
 <route lang="json5">
 {
   style: {
-    navigationBarTitleText: '找回密码',
+    navigationBarTitleText: '修改密码',
   },
 }
 </route>
 <template>
-  <view class="reset-container">
+  <view class="change-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
     
@@ -17,53 +17,28 @@
     
     <!-- 页面标题 -->
     <view class="page-title">
-      <text class="title-text">找回密码</text>
-      <text class="subtitle-text">重置您的账户密码</text>
+      <text class="title-text">修改密码</text>
+      <text class="subtitle-text">设置新的安全密码</text>
     </view>
     
-    <!-- 重置密码表单 -->
-    <view class="reset-form">
-      <!-- 手机号 -->
+    <!-- 修改密码表单 -->
+    <view class="change-form">
+      <!-- 当前密码 -->
       <view class="form-group">
-        <text class="form-label">手机号</text>
+        <text class="form-label">当前密码</text>
         <view class="input-container">
-          <text class="uni-icons uniui-phone-filled"></text>
+          <text class="uni-icons uniui-locked-filled"></text>
           <input 
             class="form-control" 
-            type="number"
-            :maxlength="11"
-            placeholder="请输入手机号码"
-            v-model="formData.phone"
+            type="safe-password"
+            placeholder="请输入当前密码"
+            v-model="formData.currentPassword"
           />
-        </view>
-      </view>
-      
-      <!-- 姓名 -->
-      <view class="form-group">
-        <text class="form-label">姓名</text>
-        <view class="input-container">
-          <text class="uni-icons uniui-person-filled"></text>
-          <input 
-            class="form-control" 
-            type="text"
-            placeholder="请输入您的真实姓名"
-            v-model="formData.name"
-          />
-        </view>
-      </view>
-      
-      <!-- 身份证号码 -->
-      <view class="form-group">
-        <text class="form-label">身份证号码</text>
-        <view class="input-container">
-          <text class="uni-icons uniui-idcard"></text>
-          <input 
-            class="form-control" 
-            type="idcard"
-            :maxlength="18"
-            placeholder="请输入您的身份证号码"
-            v-model="formData.idCard"
-          />
+          <text 
+            class="uni-icons password-toggle" 
+            :class="[showCurrentPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
+            @click="toggleCurrentPasswordVisibility"
+          ></text>
         </view>
       </view>
       
@@ -80,8 +55,8 @@
           />
           <text 
             class="uni-icons password-toggle" 
-            :class="[showPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
-            @click="togglePasswordVisibility"
+            :class="[showNewPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
+            @click="toggleNewPasswordVisibility"
           ></text>
         </view>
       </view>
@@ -105,18 +80,12 @@
         </view>
       </view>
       
-      <!-- 重置按钮 -->
-      <button class="reset-btn" @click="handleReset">重置密码</button>
-      
-      <!-- 返回登录 -->
-      <view class="login-link">
-        <text>已有账号？</text>
-        <text class="login-text" @click="goToLogin">返回登录</text>
-      </view>
+      <!-- 提交按钮 -->
+      <button class="submit-btn" @click="handleSubmit">确认修改</button>
     </view>
     
     <!-- 底部版权信息 -->
-    <view class="reset-footer">
+    <view class="change-footer">
       <text>© 2025 理财管理平台 版权所有</text>
     </view>
   </view>
@@ -124,69 +93,39 @@
 
 <script lang="ts" setup>
 import { ref, reactive } from 'vue';
-import { forgotPasswordAPI } from '@/service/index/auth';
+import { resetPasswordAPI } from '@/service/index/auth';
 
 // 表单数据
 const formData = reactive({
-  phone: '',
-  name: '',
-  idCard: '',
+  currentPassword: '',
   newPassword: '',
   confirmPassword: ''
 });
 
 // 控制密码可见性
-const showPassword = ref(false);
+const showCurrentPassword = ref(false);
+const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 // 切换密码可见性
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value;
+const toggleCurrentPasswordVisibility = () => {
+  showCurrentPassword.value = !showCurrentPassword.value;
+};
+
+const toggleNewPasswordVisibility = () => {
+  showNewPassword.value = !showNewPassword.value;
 };
 
 const toggleConfirmPasswordVisibility = () => {
   showConfirmPassword.value = !showConfirmPassword.value;
 };
 
-// 重置密码处理
-const handleReset = async () => {
+// 修改密码处理
+const handleSubmit = async () => {
   // 表单验证
-  if (!formData.phone.trim()) {
+  if (!formData.currentPassword.trim()) {
     uni.showToast({
-      title: '请输入手机号',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  if (!/^1\d{10}$/.test(formData.phone)) {
-    uni.showToast({
-      title: '请输入正确的手机号',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  if (!formData.name.trim()) {
-    uni.showToast({
-      title: '请输入姓名',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  if (!formData.idCard.trim()) {
-    uni.showToast({
-      title: '请输入身份证号码',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  // 身份证号码校验（简易版）
-  if (!/^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}(\d|X|x)$/.test(formData.idCard)) {
-    uni.showToast({
-      title: '请输入正确的身份证号码',
+      title: '请输入当前密码',
       icon: 'none'
     });
     return;
@@ -216,18 +155,16 @@ const handleReset = async () => {
     return;
   }
   
-  // 执行重置密码
+  // 执行密码修改
   try {
     // 显示加载状态
     uni.showLoading({
       title: '提交中...'
     });
     
-    // 调用找回密码API
-    const res = await forgotPasswordAPI({
-      phone: formData.phone,
-      name: formData.name,
-      id_card: formData.idCard,
+    // 调用重置密码API
+    const res = await resetPasswordAPI({
+      current_password: formData.currentPassword,
       new_password: formData.newPassword,
       new_password_confirmation: formData.confirmPassword
     });
@@ -235,20 +172,20 @@ const handleReset = async () => {
     uni.hideLoading();
     
     if (res.status === 'success') {
-      // 重置成功后跳转到登录页
+      // 修改成功
       uni.showToast({
-        title: '密码重置成功',
+        title: '密码修改成功',
         icon: 'success',
         duration: 2000,
         success: () => {
           setTimeout(() => {
-            uni.navigateBack(); // 返回登录页
+            uni.navigateBack();
           }, 2000);
         }
       });
     } else {
       uni.showToast({
-        title: res.message || '重置失败，请重试',
+        title: res.message || '修改失败，请重试',
         icon: 'none'
       });
     }
@@ -257,21 +194,16 @@ const handleReset = async () => {
     // 检查错误对象中是否包含后端返回的信息
     if (error.response && error.response.data) {
       uni.showToast({
-        title: error.response.data.message || '重置失败，请重试',
+        title: error.response.data.message || '修改失败，请重试',
         icon: 'none'
       });
     } else {
       uni.showToast({
-        title: error?.message || '重置失败，请重试',
+        title: error?.message || '修改失败，请重试',
         icon: 'none'
       });
     }
   }
-};
-
-// 返回到登录页面
-const goToLogin = () => {
-  uni.navigateBack();
 };
 
 // 返回上一页
@@ -289,7 +221,7 @@ page {
 }
 
 /* 容器样式 */
-.reset-container {
+.change-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -342,8 +274,8 @@ page {
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* 重置表单 */
-.reset-form {
+/* 修改密码表单 */
+.change-form {
   background-color: white;
   border-radius: 20rpx;
   padding: 40rpx;
@@ -400,8 +332,8 @@ page {
   font-size: 36rpx;
 }
 
-/* 重置按钮 */
-.reset-btn {
+/* 提交按钮 */
+.submit-btn {
   width: 100%;
   height: 90rpx;
   border: none;
@@ -410,24 +342,12 @@ page {
   color: white;
   font-size: 32rpx;
   font-weight: 500;
-  margin-bottom: 30rpx;
+  margin-top: 20rpx;
   box-shadow: 0 10rpx 20rpx rgba(243, 156, 18, 0.3);
 }
 
-/* 登录链接 */
-.login-link {
-  text-align: center;
-  font-size: 28rpx;
-  color: #777;
-}
-
-.login-text {
-  color: #3498db;
-  margin-left: 10rpx;
-}
-
 /* 底部版权信息 */
-.reset-footer {
+.change-footer {
   text-align: center;
   padding: 30rpx 0;
   color: rgba(255, 255, 255, 0.6);
