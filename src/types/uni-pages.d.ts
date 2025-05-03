@@ -11,6 +11,8 @@ interface NavigateToOptions {
        "/pages/login/change-password" |
        "/pages/login/index" |
        "/pages/login/reset-password" |
+       "/pages/my/announcement-detail" |
+       "/pages/my/announcements" |
        "/pages/my/identity-verify" |
        "/pages/my/index" |
        "/pages/my/reset-password" |

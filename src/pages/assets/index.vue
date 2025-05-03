@@ -413,9 +413,9 @@ const loadRewardConfigs = async () => {
           
           equityInfo.inviteReward = parseFloat(firstInvitation.amount);
           equityInfo.inviteTarget = firstInvitation.invite_count || 1;
-          // 修正映射：has_claimed=是否可领取，has_claimable=是否已领取
-          equityInfo.hasClaimableInvitation = firstInvitation.has_claimed || false; // 是否可领取
-          equityInfo.invitationRewardClaimed = firstInvitation.has_claimable || false; // 是否已领取
+          // 修正映射：has_claimable=是否可领取，has_claimed=是否已领取
+          equityInfo.hasClaimableInvitation = firstInvitation.has_claimable || false; // 是否可领取
+          equityInfo.invitationRewardClaimed = firstInvitation.has_claimed || false; // 是否已领取
           equityInfo.inviteProgress = firstInvitation.current_invites || 0;
           
           // 记录所有可用的邀请奖励配置
@@ -424,9 +424,9 @@ const loadRewardConfigs = async () => {
             amount: parseFloat(reward.amount),
             inviteCount: reward.invite_count,
             description: reward.description,
-            // 修正映射：has_claimed=是否可领取，has_claimable=是否已领取
-            hasClaimable: reward.has_claimed || false, // 是否可领取
-            hasClaimed: reward.has_claimable || false, // 是否已领取
+            // 修正映射：has_claimable=是否可领取，has_claimed=是否已领取
+            hasClaimable: reward.has_claimable || false, // 是否可领取
+            hasClaimed: reward.has_claimed || false, // 是否已领取
             currentInvites: reward.current_invites || 0,
             claimInfo: reward.claim_info || ''
           }));

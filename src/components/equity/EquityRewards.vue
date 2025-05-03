@@ -23,7 +23,8 @@
           <button 
             class="reward-btn" 
             :class="{
-              'claimed-btn': registerButtonStatus.claimed
+              'claimed-btn': registerButtonStatus.claimed,
+              'disabled-btn': registerButtonStatus.disabled && !registerButtonStatus.claimed
             }"
             :disabled="registerButtonStatus.disabled" 
             @click="claimReward('register')"
@@ -63,7 +64,8 @@
           <button 
             class="reward-btn" 
             :class="{
-              'claimed-btn': getInviteRewardButtonStatus(reward).claimed
+              'claimed-btn': getInviteRewardButtonStatus(reward).claimed,
+              'disabled-btn': getInviteRewardButtonStatus(reward).disabled && !getInviteRewardButtonStatus(reward).claimed
             }" 
             :disabled="getInviteRewardButtonStatus(reward).disabled"
             @click="claimInviteReward(reward.id)"
@@ -99,7 +101,8 @@
           <button 
             class="reward-btn" 
             :class="{
-              'claimed-btn': inviteButtonStatus.claimed
+              'claimed-btn': inviteButtonStatus.claimed,
+              'disabled-btn': inviteButtonStatus.disabled && !inviteButtonStatus.claimed
             }" 
             :disabled="inviteButtonStatus.disabled"
             @click="claimReward('invite')"
@@ -211,12 +214,12 @@ const inviteButtonStatus = computed(() => {
   if (props.invitationRewardClaimed) {
     return { text: '已领取', disabled: true, claimed: true };
   }
-  // 不可领取
-  if (!props.hasClaimableInvitation) {
-    return { text: `需要邀请${props.inviteTarget}人`, disabled: true, claimed: true };
-  }
   // 可领取
-  return { text: '领取奖励', disabled: false, claimed: false };
+  if (props.hasClaimableInvitation) {
+    return { text: '领取奖励', disabled: false, claimed: false };
+  }
+  // 不可领取
+  return { text: `需要邀请${props.inviteTarget}人`, disabled: true, claimed: false };
 });
 
 // 计算特定邀请奖励的按钮状态
@@ -225,16 +228,16 @@ const getInviteRewardButtonStatus = (reward: InvitationReward) => {
   if (reward.hasClaimed) {
     return { text: '已领取', disabled: true, claimed: true };
   }
-  // 有提示信息
-  if (reward.claimInfo) {
-    return { text: reward.claimInfo.replace(/（.*?）|\(.*?\)/g, ''), disabled: true, claimed: true };
-  }
-  // 不可领取
-  if (!reward.hasClaimable) {
-    return { text: `需要邀请${reward.inviteCount}人`, disabled: true, claimed: true };
+  // 不可领取，但有提示信息
+  if (reward.claimInfo && !reward.hasClaimable) {
+    return { text: reward.claimInfo.replace(/（.*?）|\(.*?\)/g, ''), disabled: true, claimed: false };
   }
   // 可领取
-  return { text: '领取奖励', disabled: false, claimed: false };
+  if (reward.hasClaimable) {
+    return { text: '领取奖励', disabled: false, claimed: false };
+  }
+  // 默认不可领取状态
+  return { text: `需要邀请${reward.inviteCount}人`, disabled: true, claimed: false };
 };
 
 // 领取奖励处理函数
@@ -435,12 +438,21 @@ const sortedInvitationRewards = computed(() => {
   width: 280rpx;
   text-align: center;
   border: none;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
-/* 已领取或不可领取状态的按钮样式 */
+/* 已领取状态的按钮样式 */
 .claimed-btn {
-  background: linear-gradient(to right, #bdc3c7, #95a5a6) !important;
-  color: white !important;
-  opacity: 0.9;
+  background: #bbbbbb !important;
+  box-shadow: none;
+  color: #ffffff;
+}
+
+/* 不可领取但未领取的按钮样式 */
+.disabled-btn {
+  background: #f2f2f2 !important;
+  color: #999999;
+  box-shadow: none;
 }
 </style> 

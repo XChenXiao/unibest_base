@@ -188,12 +188,39 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/store/user';
 import { useTabItemTap } from '@/hooks/useTabItemTap';
+import { API_URL } from '@/config/api';
 
 // 获取用户数据存储
 const userStore = useUserStore();
 
 // 是否有新公告
 const hasNewAnnouncement = ref(false);
+
+// 检查是否有未读公告
+const checkAnnouncementStatus = async () => {
+  try {
+    const response = await uni.request({
+      url: `${API_URL}/api/messages/unread-count`,
+      method: 'GET'
+    });
+    
+    // UniApp请求返回的数据结构是 [err, res]
+    const [err, res] = response as unknown as [any, {
+      data: { status: string; data: { unread_count: number } }
+    }];
+    
+    if (err) {
+      console.error('获取未读消息数量失败:', err);
+      return;
+    }
+    
+    if (res?.data?.status === 'success') {
+      hasNewAnnouncement.value = res.data.data.unread_count > 0;
+    }
+  } catch (error) {
+    console.error('检查公告状态失败:', error);
+  }
+};
 
 // 充值金额
 const rechargeAmount = ref('');
@@ -219,6 +246,9 @@ onMounted(() => {
   
   // 初始检查用户数据和余额
   checkUserInfo();
+  
+  // 检查是否有未读公告
+  checkAnnouncementStatus();
 });
 
 // 页面卸载时移除事件监听

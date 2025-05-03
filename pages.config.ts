@@ -57,4 +57,19 @@ export default defineUniPages({
       },
     ],
   },
+  pages: [
+    // 我的页面
+    {
+      path: 'pages/my/announcements',
+      style: {
+        navigationBarTitleText: '平台公告',
+      },
+    },
+    {
+      path: 'pages/my/announcement-detail',
+      style: {
+        navigationBarTitleText: '公告详情',
+      },
+    },
+  ],
 })

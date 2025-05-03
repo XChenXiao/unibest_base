@@ -106,6 +106,20 @@
       }
     },
     {
+      "path": "pages/my/announcement-detail",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "公告详情"
+      }
+    },
+    {
+      "path": "pages/my/announcements",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "平台公告"
+      }
+    },
+    {
       "path": "pages/my/identity-verify",
       "type": "page",
       "style": {
@@ -123,15 +137,18 @@
     },
     {
       "path": "pages/my/reset-password",
-      "type": "page"
+      "type": "page",
+      "style": {}
     },
     {
       "path": "pages/my/reset-withdraw-password",
-      "type": "page"
+      "type": "page",
+      "style": {}
     },
     {
       "path": "pages/my/settings",
-      "type": "page"
+      "type": "page",
+      "style": {}
     },
     {
       "path": "pages/my/wallet",
