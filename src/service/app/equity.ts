@@ -132,8 +132,8 @@ export function claimEquityReward(type: 'register' | 'invitation' | string): Pro
     type = 'invitation'; // 兼容前端使用的invite类型
   }
   
-  // 旧版本接口调用 - 按类型领取
-  return http.post('/api/equity/rewards/claim-by-type', { type }) as Promise<IResData<any>>;
+  // 使用正确的API路径
+  return http.post('/api/equity/rewards/claim', { type }) as Promise<IResData<any>>;
 }
 
 /**
