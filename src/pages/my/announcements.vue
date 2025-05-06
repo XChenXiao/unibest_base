@@ -26,7 +26,7 @@
         
         <!-- 公告项目 -->
         <view 
-          v-for="(item) in announcementList" 
+          v-for="item in announcementList" 
           :key="item.id" 
           class="announcement-item"
           @click="navigateToDetail(item.id)"
@@ -58,6 +58,8 @@ interface AnnouncementItem {
   content: string;
   is_read: boolean;
   created_at: string;
+  user_id: number | null;
+  is_system: boolean;
 }
 
 // 定义数据
@@ -69,30 +71,38 @@ const announcementList = ref<AnnouncementItem[]>([]);
 const queryAnnouncements = async (pageNo: number, pageSize: number) => {
   loading.value = true;
   try {
-    const response = await uni.request({
-      url: `${API_URL}/api/messages`,
-      method: 'GET',
-      data: {
-        page: pageNo,
-        per_page: pageSize,
-        is_system: true  // 只请求系统公告
-      }
+    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
+    const response = await new Promise((resolve, reject) => {
+      uni.request({
+        url: `${API_URL}/api/messages`,
+        method: 'GET',
+        data: {
+          page: pageNo,
+          per_page: pageSize,
+          is_system: true  // 只请求系统公告
+        },
+        success: (res) => {
+          resolve(res);
+        },
+        fail: (err) => {
+          reject(err);
+        }
+      });
     });
     
-    // UniApp请求返回的数据结构是 [err, res]
-    const [err, res] = response as unknown as [any, {
-      data: { status: string; data: { data: AnnouncementItem[] } }
-    }];
-    
-    if (err) {
-      console.error('获取公告列表失败:', err);
-      paging.value.complete(false);
-      return;
-    }
+    // 直接使用response的data属性
+    const res = response as any;
     
     if (res && res.data && res.data.status === 'success') {
-      // 成功获取数据，通知z-paging更新
-      paging.value.complete(res.data.data.data);
+      const responseData = res.data.data;
+      const announcements = responseData.data || [];
+      const total = responseData.total || 0;
+      
+      // 通知z-paging组件完成加载，传入当前页数据和总数
+      paging.value.complete(announcements, {
+        total: total,
+        noMore: responseData.current_page >= responseData.last_page
+      });
     } else {
       // 获取数据失败
       paging.value.complete(false);
@@ -108,10 +118,14 @@ const queryAnnouncements = async (pageNo: number, pageSize: number) => {
 // 截断公告内容
 const truncateContent = (content: string): string => {
   if (!content) return '';
-  if (content.length > 50) {
-    return content.substring(0, 50) + '...';
+  
+  // 移除HTML标签
+  const plainText = content.replace(/<[^>]*>/g, '');
+  
+  if (plainText.length > 50) {
+    return plainText.substring(0, 50) + '...';
   }
-  return content;
+  return plainText;
 };
 
 // 格式化日期
@@ -128,8 +142,35 @@ const formatDate = (dateString: string): string => {
 
 // 跳转到公告详情
 const navigateToDetail = (id: number): void => {
+  console.log('点击跳转公告详情，ID:', id);
+  
+  // 确保ID存在且有效
+  if (!id) {
+    uni.showToast({
+      title: '无效的公告ID',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 将ID存储到本地，作为备用方案
+  uni.setStorageSync('announcement_params', { id });
+  
+  // 跳转到详情页
   uni.navigateTo({
-    url: `/pages/my/announcement-detail?id=${id}`
+    url: `/pages/my/announcement-detail?id=${id}`,
+    success: () => {
+      console.log('导航到公告详情成功');
+    },
+    fail: (err) => {
+      console.error('导航到公告详情失败:', err);
+      // 失败后尝试另一种方式
+      setTimeout(() => {
+        uni.navigateTo({
+          url: `/pages/my/announcement-detail?id=${id}`
+        });
+      }, 200);
+    }
   });
 };
 

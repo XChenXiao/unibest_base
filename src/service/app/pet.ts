@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-ignore
-import request from '@/utils/request';
+import { httpGet, httpPost, httpPut, httpDelete } from '@/utils/http';
 import { CustomRequestOptions } from '@/interceptors/request';
 
 import * as API from './types';
@@ -13,12 +13,10 @@ export async function updatePet({
   body: API.Pet;
   options?: CustomRequestOptions;
 }) {
-  return request<unknown>('/pet', {
-    method: 'PUT',
-    headers: {
+  return httpPut<unknown>('/pet', body, null, {
+    header: {
       'Content-Type': 'application/json',
     },
-    data: body,
     ...(options || {}),
   });
 }
@@ -31,12 +29,10 @@ export async function addPet({
   body: API.Pet;
   options?: CustomRequestOptions;
 }) {
-  return request<unknown>('/pet', {
-    method: 'POST',
-    headers: {
+  return httpPost<unknown>('/pet', body, null, {
+    header: {
       'Content-Type': 'application/json',
     },
-    data: body,
     ...(options || {}),
   });
 }
@@ -52,11 +48,7 @@ export async function getPetById({
 }) {
   const { petId: param0, ...queryParams } = params;
 
-  return request<API.Pet>(`/pet/${param0}`, {
-    method: 'GET',
-    params: { ...queryParams },
-    ...(options || {}),
-  });
+  return httpGet<API.Pet>(`/pet/${param0}`, queryParams, options);
 }
 
 /** Updates a pet in the store with form data POST /pet/${param0} */
@@ -77,13 +69,10 @@ export async function updatePetWithForm({
 }) {
   const { petId: param0, ...queryParams } = params;
 
-  return request<unknown>(`/pet/${param0}`, {
-    method: 'POST',
-    headers: {
+  return httpPost<unknown>(`/pet/${param0}`, body, queryParams, {
+    header: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    params: { ...queryParams },
-    data: body,
     ...(options || {}),
   });
 }
@@ -99,11 +88,7 @@ export async function deletePet({
 }) {
   const { petId: param0, ...queryParams } = params;
 
-  return request<unknown>(`/pet/${param0}`, {
-    method: 'DELETE',
-    params: { ...queryParams },
-    ...(options || {}),
-  });
+  return httpDelete<unknown>(`/pet/${param0}`, null, queryParams, options);
 }
 
 /** uploads an image POST /pet/${param0}/uploadImage */
@@ -145,13 +130,10 @@ export async function uploadFile({
     }
   });
 
-  return request<API.ApiResponse>(`/pet/${param0}/uploadImage`, {
-    method: 'POST',
-    headers: {
+  return httpPost<API.ApiResponse>(`/pet/${param0}/uploadImage`, formData, queryParams, {
+    header: {
       'Content-Type': 'multipart/form-data',
     },
-    params: { ...queryParams },
-    data: formData,
     ...(options || {}),
   });
 }
@@ -209,11 +191,5 @@ export async function findPetsByTags({
   params: API.findPetsByTagsParams;
   options?: CustomRequestOptions;
 }) {
-  return request<API.Pet[]>('/pet/findByTags', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  });
+  return httpGet<API.Pet[]>('/pet/findByTags', params, options);
 }

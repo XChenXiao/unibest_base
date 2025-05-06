@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>银行卡管理应用</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .card-top {
+            width: 100%;
+            border-radius: 12px;
+            background-color: #6b7280;
+            color: white;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .card-top-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .card-balance {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 16px;
+            border-radius: 8px;
+        }
+        
+        .balance-label {
+            font-size: 14px;
+        }
+        
+        .balance-amount {
+            font-size: 28px;
+            margin-top: 4px;
+        }
+        
+        .balance-card-info {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .card-activation {
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .activation-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        
+        .activation-fee {
+            background-color: #fffbeb;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .btn-activate {
+            width: 100%;
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .btn-page {
+            text-align: center;
+            margin-top: 16px;
+        }
+        
+        .btn-page button {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .card-container {
+            width: 100%;
+        }
+        
+        .bank-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .card-bank-name {
+            font-weight: bold;
+        }
+        
+        .card-default-tag {
+            color: #10b981;
+            font-size: 14px;
+        }
+        
+        .card-holder-name {
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .card-number {
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+        
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .btn-default {
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: none;
+            background-color: #eff6ff;
+            color: #3b82f6;
+            cursor: pointer;
+        }
+        
+        .btn-default:disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .btn-delete {
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: none;
+            background-color: #fee2e2;
+            color: #ef4444;
+            cursor: pointer;
+        }
+        
+        .add-card-btn {
+            width: 100%;
+            border: 2px dashed #d1d5db;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            color: #6b7280;
+            background-color: transparent;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        
+        .card-form {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-title {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            color: #4b5563;
+            margin-bottom: 4px;
+        }
+        
+        .form-input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .btn-cancel {
+            padding: 8px 16px;
+            background-color: #e5e7eb;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-save {
+            padding: 8px 16px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部卡片 -->
+        <div class="card-top">
+            <div class="card-top-title">
+                网商银行卡
+                <span id="activation-status">未激活</span>
+            </div>
+            
+            <div class="card-balance">
+                <div class="balance-label">当前余额</div>
+                <div class="balance-amount" id="balance-amount">¥ 0.00</div>
+                <div class="balance-card-info hidden" id="default-card-info"></div>
+            </div>
+        </div>
+        
+        <!-- 激活区域 -->
+        <div class="card-activation" id="activation-section">
+            <div class="activation-title">激活银行卡</div>
+            <div class="activation-fee">
+                激活银行卡需支付 50 USDT 手续费
+            </div>
+            <button class="btn-activate" id="activate-btn">立即激活</button>
+        </div>
+        
+        <!-- 卡片管理区域 (初始隐藏) -->
+        <div class="card-container hidden" id="card-management">
+            <!-- 卡片列表区域 (动态添加) -->
+            <div id="card-list"></div>
+            
+            <!-- 添加卡片按钮 -->
+            <button class="add-card-btn" id="add-card-btn">+ 添加银行卡</button>
+            
+            <!-- 添加卡片表单 (初始隐藏) -->
+            <div class="card-form hidden" id="add-card-form">
+                <div class="form-title">添加银行卡</div>
+                <div class="form-group">
+                    <label class="form-label">持卡人姓名</label>
+                    <input type="text" class="form-input" id="cardholder-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">银行名称</label>
+                    <input type="text" class="form-input" id="bank-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">银行卡号</label>
+                    <input type="text" class="form-input" id="card-number" required>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-cancel" id="cancel-add-card">取消</button>
+                    <button class="btn-save" id="save-card">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 状态管理
+        let isActivated = false;
+        let cards = [];
+        let defaultCardId = null;
+
+        // DOM 元素
+        const activationStatus = document.getElementById('activation-status');
+        const balanceAmount = document.getElementById('balance-amount');
+        const defaultCardInfo = document.getElementById('default-card-info');
+        const activationSection = document.getElementById('activation-section');
+        const cardManagement = document.getElementById('card-management');
+        const activateBtn = document.getElementById('activate-btn');
+        const addCardBtn = document.getElementById('add-card-btn');
+        const addCardForm = document.getElementById('add-card-form');
+        const cardList = document.getElementById('card-list');
+        const cancelAddCard = document.getElementById('cancel-add-card');
+        const saveCard = document.getElementById('save-card');
+        const cardholderName = document.getElementById('cardholder-name');
+        const bankName = document.getElementById('bank-name');
+        const cardNumber = document.getElementById('card-number');
+
+        // 激活银行卡
+        activateBtn.addEventListener('click', function() {
+            isActivated = true;
+            activationStatus.textContent = '已激活';
+            activationSection.classList.add('hidden');
+            cardManagement.classList.remove('hidden');
+        });
+
+        // 显示添加卡片表单
+        addCardBtn.addEventListener('click', function() {
+            addCardBtn.classList.add('hidden');
+            addCardForm.classList.remove('hidden');
+        });
+
+        // 取消添加卡片
+        cancelAddCard.addEventListener('click', function() {
+            addCardForm.classList.add('hidden');
+            addCardBtn.classList.remove('hidden');
+            // 清空表单
+            cardholderName.value = '';
+            bankName.value = '';
+            cardNumber.value = '';
+        });
+
+        // 保存卡片
+        saveCard.addEventListener('click', function() {
+            // 表单验证
+            if (!cardholderName.value || !bankName.value || !cardNumber.value) {
+                alert('请填写所有必填字段');
+                return;
+            }
+            
+            // 创建新卡
+            const newCard = {
+                id: Date.now(),
+                name: cardholderName.value,
+                bankName: bankName.value,
+                cardNumber: cardNumber.value
+            };
+            
+            // 添加到卡片列表
+            cards.push(newCard);
+            
+            // 如果是第一张卡，设为默认
+            if (cards.length === 1) {
+                defaultCardId = newCard.id;
+                updateDefaultCardDisplay();
+            }
+            
+            // 更新界面
+            renderCards();
+            addCardForm.classList.add('hidden');
+            addCardBtn.classList.remove('hidden');
+            
+            // 清空表单
+            cardholderName.value = '';
+            bankName.value = '';
+            cardNumber.value = '';
+        });
+
+        // 设置默认卡并更新显示
+        function setAsDefault(id) {
+            defaultCardId = id;
+            updateDefaultCardDisplay();
+            renderCards();
+        }
+
+        // 删除卡片
+        function deleteCard(id) {
+            cards = cards.filter(card => card.id !== id);
+            
+            // 如果删除的是默认卡，重新设置默认卡
+            if (id === defaultCardId) {
+                defaultCardId = cards.length > 0 ? cards[0].id : null;
+                updateDefaultCardDisplay();
+            }
+            
+            renderCards();
+        }
+
+        // 更新默认卡显示
+        function updateDefaultCardDisplay() {
+            if (defaultCardId) {
+                const defaultCard = cards.find(card => card.id === defaultCardId);
+                if (defaultCard) {
+                    balanceAmount.textContent = '¥ 10,000.00';
+                    defaultCardInfo.textContent = `${defaultCard.bankName} **** ${defaultCard.cardNumber.slice(-4)}`;
+                    defaultCardInfo.classList.remove('hidden');
+                }
+            } else {
+                balanceAmount.textContent = '¥ 0.00';
+                defaultCardInfo.classList.add('hidden');
+            }
+        }
+
+        // 渲染卡片列表
+        function renderCards() {
+            cardList.innerHTML = '';
+            
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'bank-card';
+                
+                const isDefault = card.id === defaultCardId;
+                
+                cardElement.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-bank-name">${card.bankName}</div>
+                        ${isDefault ? '<span class="card-default-tag">默认</span>' : ''}
+                    </div>
+                    <div class="card-holder-name">${card.name}</div>
+                    <div class="card-number">**** **** **** ${card.cardNumber.slice(-4)}</div>
+                    <div class="card-actions">
+                        <button class="btn-default" onclick="setAsDefault(${card.id})" ${isDefault ? 'disabled' : ''}>设为默认</button>
+                        <button class="btn-delete" onclick="deleteCard(${card.id})">删除</button>
+                    </div>
+                `;
+                
+                cardList.appendChild(cardElement);
+            });
+        }
+
+        // 将函数暴露到全局作用域以便内联事件处理器使用
+        window.setAsDefault = setAsDefault;
+        window.deleteCard = deleteCard;
+    </script>
+</body>
+</html>

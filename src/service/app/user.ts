@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-ignore
-import request from '@/utils/request';
+import { http, httpGet, httpPost, httpPut, httpDelete } from '@/utils/http';
 import { CustomRequestOptions } from '@/interceptors/request';
 
 import * as API from './types';
@@ -9,10 +9,7 @@ import * as API from './types';
  * 获取用户信息
  */
 export async function getUserInfo(options?: CustomRequestOptions) {
-  return request('/api/user', {
-    method: 'GET',
-    ...(options || {}),
-  });
+  return httpGet('/api/user', null, options);
 }
 
 /** Create user This can only be done by the logged in user. 返回值: successful operation POST /user */
@@ -23,12 +20,10 @@ export async function createUser({
   body: API.User;
   options?: CustomRequestOptions;
 }) {
-  return request<unknown>('/user', {
-    method: 'POST',
-    headers: {
+  return httpPost<unknown>('/user', body, null, {
+    header: {
       'Content-Type': 'application/json',
     },
-    data: body,
     ...(options || {}),
   });
 }
@@ -44,11 +39,7 @@ export async function getUserByName({
 }) {
   const { username: param0, ...queryParams } = params;
 
-  return request<API.User>(`/user/${param0}`, {
-    method: 'GET',
-    params: { ...queryParams },
-    ...(options || {}),
-  });
+  return httpGet<API.User>(`/user/${param0}`, queryParams, options);
 }
 
 /** Updated user This can only be done by the logged in user. PUT /user/${param0} */
@@ -64,13 +55,10 @@ export async function updateUser({
 }) {
   const { username: param0, ...queryParams } = params;
 
-  return request<unknown>(`/user/${param0}`, {
-    method: 'PUT',
-    headers: {
+  return httpPut<unknown>(`/user/${param0}`, body, queryParams, {
+    header: {
       'Content-Type': 'application/json',
     },
-    params: { ...queryParams },
-    data: body,
     ...(options || {}),
   });
 }
@@ -86,11 +74,7 @@ export async function deleteUser({
 }) {
   const { username: param0, ...queryParams } = params;
 
-  return request<unknown>(`/user/${param0}`, {
-    method: 'DELETE',
-    params: { ...queryParams },
-    ...(options || {}),
-  });
+  return httpDelete<unknown>(`/user/${param0}`, null, queryParams, options);
 }
 
 /** Creates list of users with given input array 返回值: successful operation POST /user/createWithArray */
@@ -101,12 +85,10 @@ export async function createUsersWithArrayInput({
   body: API.User[];
   options?: CustomRequestOptions;
 }) {
-  return request<unknown>('/user/createWithArray', {
-    method: 'POST',
-    headers: {
+  return httpPost<unknown>('/user/createWithArray', body, null, {
+    header: {
       'Content-Type': 'application/json',
     },
-    data: body,
     ...(options || {}),
   });
 }
@@ -119,12 +101,10 @@ export async function createUsersWithListInput({
   body: API.User[];
   options?: CustomRequestOptions;
 }) {
-  return request<unknown>('/user/createWithList', {
-    method: 'POST',
-    headers: {
+  return httpPost<unknown>('/user/createWithList', body, null, {
+    header: {
       'Content-Type': 'application/json',
     },
-    data: body,
     ...(options || {}),
   });
 }
@@ -138,13 +118,7 @@ export async function loginUser({
   params: API.loginUserParams;
   options?: CustomRequestOptions;
 }) {
-  return request<string>('/user/login', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  });
+  return httpGet<string>('/user/login', params, options);
 }
 
 /** Logs out current logged in user session 返回值: successful operation GET /user/logout */
@@ -153,10 +127,7 @@ export async function logoutUser({
 }: {
   options?: CustomRequestOptions;
 }) {
-  return request<unknown>('/user/logout', {
-    method: 'GET',
-    ...(options || {}),
-  });
+  return httpGet<unknown>('/user/logout', null, options);
 }
 
 /** 提交实名认证 POST /api/verification/submit */
@@ -172,11 +143,7 @@ export async function submitVerification({
   };
   options?: CustomRequestOptions;
 }) {
-  return request<API.VerificationResult>('/api/verification/submit', {
-    method: 'POST',
-    data,
-    ...(options || {}),
-  });
+  return httpPost<API.VerificationResult>('/api/verification/submit', data, null, options);
 }
 
 /** 获取实名认证状态 GET /api/verification/status */
@@ -185,10 +152,7 @@ export async function getVerificationStatus({
 }: {
   options?: CustomRequestOptions;
 }) {
-  return request<API.VerificationStatus>('/api/verification/status', {
-    method: 'GET',
-    ...(options || {}),
-  });
+  return httpGet<API.VerificationStatus>('/api/verification/status', null, options);
 }
 
 /** 上传单个图片 POST /api/upload */
@@ -199,9 +163,5 @@ export async function uploadImage({
   data: FormData;
   options?: CustomRequestOptions;
 }) {
-  return request<API.UploadImageResult>('/api/files/upload/file', {
-    method: 'POST',
-    data,
-    ...(options || {}),
-  });
+  return httpPost<API.UploadImageResult>('/api/files/upload/file', data, null, options);
 }

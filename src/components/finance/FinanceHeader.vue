@@ -9,28 +9,28 @@
       <view class="menu-row">
         <view class="menu-item" @click="handleMenuClick('scanPay')">
           <view class="menu-icon scanner-icon">
-            <text class="uni-icons uniui-scan"></text>
+            <image src="/static/images/menu/m1-1.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">扫码支付</view>
         </view>
         
         <view class="menu-item" @click="handleMenuClick('payment')">
           <view class="menu-icon payment-icon">
-            <text class="uni-icons uniui-card"></text>
+            <image src="/static/images/menu/m1-2.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">收付款</view>
         </view>
         
         <view class="menu-item" @click="handleMenuClick('transfer')">
           <view class="menu-icon transfer-icon">
-            <text class="uni-icons uniui-upload"></text>
+            <image src="/static/images/menu/m1-3.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">转账</view>
         </view>
         
         <view class="menu-item" @click="handleMenuClick('account')">
           <view class="menu-icon account-icon">
-            <text class="uni-icons uniui-person"></text>
+            <image src="/static/images/menu/m1-4.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">账户管理</view>
         </view>
@@ -40,28 +40,28 @@
       <view class="menu-row">
         <view class="menu-item" @click="handleMenuClick('service')">
           <view class="menu-icon customer-icon">
-            <text class="uni-icons uniui-headphone"></text>
+            <image src="/static/images/menu/m2-1.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">联系客服</view>
         </view>
         
         <view class="menu-item" @click="handleMenuClick('record')">
           <view class="menu-icon record-icon">
-            <text class="uni-icons uniui-list"></text>
+            <image src="/static/images/menu/m2-2.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">收支记录</view>
         </view>
         
         <view class="menu-item" @click="handleMenuClick('verify')">
           <view class="menu-icon verify-icon">
-            <text class="uni-icons uniui-checkbox-filled"></text>
+            <image src="/static/images/menu/m2-3.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">实名认证</view>
         </view>
         
-        <view class="menu-item" @click="handleMenuClick('promote')">
+        <view class="menu-item" @click="navigateToTeam">
           <view class="menu-icon promote-icon">
-            <text class="uni-icons uniui-rmb"></text>
+            <image src="/static/images/menu/m2-4.png" mode="aspectFit" class="menu-image"></image>
           </view>
           <view class="menu-label">推广</view>
         </view>
@@ -71,6 +71,9 @@
 </template>
 
 <script lang="ts" setup>
+import { ref } from 'vue'
+import { useUserStore } from '@/store'
+
 defineProps({
   safeAreaInsets: {
     type: Object,
@@ -84,9 +87,62 @@ defineProps({
 })
 
 const emit = defineEmits(['menu-click'])
+const userStore = useUserStore()
 
 const handleMenuClick = (type: string) => {
   emit('menu-click', type)
+  
+  switch (type) {
+    case 'record': // 收支记录
+      uni.navigateTo({
+        url: '/pages/my/wallet'
+      })
+      break
+    case 'verify': // 实名认证
+      checkVerificationStatus()
+      break
+    case 'service': // 联系客服
+      uni.navigateTo({
+        url: '/pages/my/customer-service'
+      })
+      break
+    default:
+      uni.showToast({
+        title: '新功能即将上线',
+        icon: 'none'
+      })
+      break
+  }
+}
+
+// 检查实名认证状态
+const checkVerificationStatus = async () => {
+  try {
+    // 获取用户信息，检查认证状态
+    if (userStore.userInfo?.is_verified) {
+      uni.showToast({
+        title: '您已完成实名认证',
+        icon: 'success'
+      })
+    } else {
+      uni.navigateTo({
+        url: '/pages/verification/index'
+      })
+    }
+  } catch (error) {
+    console.error('获取认证状态失败', error)
+    // 出错时默认跳转到认证页面
+    uni.navigateTo({
+      url: '/pages/verification/index'
+    })
+  }
+}
+
+// 跳转到团队页面
+const navigateToTeam = () => {
+  uni.navigateTo({
+    url: '/pages/team/index'
+  })
 }
 </script>
 
@@ -161,44 +217,42 @@ const handleMenuClick = (type: string) => {
   margin-bottom: 12rpx;
 }
 
+/* 菜单图片样式 */
+.menu-image {
+  width: 50rpx;
+  height: 50rpx;
+}
+
 .scanner-icon {
   background-color: rgba(52, 152, 219, 0.15);
-  color: #3498db;
 }
 
 .payment-icon {
   background-color: rgba(243, 156, 18, 0.15);
-  color: #f39c12;
 }
 
 .transfer-icon {
   background-color: rgba(46, 204, 113, 0.15);
-  color: #2ecc71;
 }
 
 .account-icon {
   background-color: rgba(155, 89, 182, 0.15);
-  color: #9b59b6;
 }
 
 .customer-icon {
   background-color: rgba(231, 76, 60, 0.15);
-  color: #e74c3c;
 }
 
 .record-icon {
   background-color: rgba(52, 73, 94, 0.15);
-  color: #34495e;
 }
 
 .verify-icon {
   background-color: rgba(26, 188, 156, 0.15);
-  color: #1abc9c;
 }
 
 .promote-icon {
   background-color: rgba(241, 196, 15, 0.15);
-  color: #f1c40f;
 }
 
 /* 菜单文字 */
@@ -206,10 +260,5 @@ const handleMenuClick = (type: string) => {
   font-size: 24rpx;
   color: #333;
   font-weight: 500;
-}
-
-/* 图标样式 */
-.uni-icons {
-  font-size: 40rpx;
 }
 </style> 

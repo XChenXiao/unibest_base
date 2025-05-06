@@ -1,13 +1,12 @@
 import { Currency, UserCurrency, UserAssets } from './types';
-import { request } from "@/utils/request";
+import { httpGet, httpPost } from "@/utils/http";
 
 /**
  * 获取所有货币列表
  */
 export async function getCurrencyList() {
-  return request<{ status: string; data: Currency[] }>(
-    '/api/currencies',
-    { method: 'GET' }
+  return httpGet<{ status: string; data: Currency[] }>(
+    '/api/currencies'
   );
 }
 
@@ -15,9 +14,8 @@ export async function getCurrencyList() {
  * 获取单个货币详情
  */
 export async function getCurrencyDetail(id: number | string) {
-  return request<{ status: string; data: Currency }>(
-    `/api/currencies/${id}`,
-    { method: 'GET' }
+  return httpGet<{ status: string; data: Currency }>(
+    `/api/currencies/${id}`
   );
 }
 
@@ -25,9 +23,8 @@ export async function getCurrencyDetail(id: number | string) {
  * 获取用户持有的货币列表
  */
 export async function getUserCurrencies() {
-  return request<{ status: string; data: UserCurrency[] }>(
-    '/api/user/currencies',
-    { method: 'GET' }
+  return httpGet<{ status: string; data: UserCurrency[] }>(
+    '/api/user/currencies'
   );
 }
 
@@ -35,9 +32,8 @@ export async function getUserCurrencies() {
  * 获取用户资产概览
  */
 export async function getUserAssets() {
-  return request<{ status: string; data: UserAssets }>(
-    '/api/user/assets',
-    { method: 'GET' }
+  return httpGet<{ status: string; data: UserAssets }>(
+    '/api/user/assets'
   );
 }
 
@@ -46,7 +42,7 @@ export async function getUserAssets() {
  * @param params 查询参数
  */
 export async function getPlatformOrders(params?: { type?: string; currency_id?: number | string }) {
-  return request<{ 
+  return httpGet<{ 
     status: string; 
     data: Array<{
       id: number | string;
@@ -68,10 +64,7 @@ export async function getPlatformOrders(params?: { type?: string; currency_id?: 
     }>
   }>(
     '/api/currencies/trade-orders',
-    { 
-      method: 'GET',
-      params
-    }
+    params
   );
 }
 
@@ -82,13 +75,10 @@ export async function getPlatformOrders(params?: { type?: string; currency_id?: 
  */
 export async function buyTradeOrder(orderId: number | string, amount: number) {
   try {
-    const response = await request<{ status: string; message: string; data: any }>(
+    const response = await httpPost<{ status: string; message: string; data: any }>(
       `/api/currencies/trade-orders/${orderId}/buy`,
       {
-        method: 'POST',
-        data: {
-          amount
-        }
+        amount
       }
     );
     
@@ -114,13 +104,10 @@ export async function buyTradeOrder(orderId: number | string, amount: number) {
  * 领取货币奖励
  */
 export async function claimCurrency(currencyId: number | string) {
-  return request<{ status: string; message: string }>(
+  return httpPost<{ status: string; message: string }>(
     '/api/user/currencies/claim',
     {
-      method: 'POST',
-      data: {
-        currencyId: currencyId
-      }
+      currencyId: currencyId
     }
   );
 }
@@ -130,14 +117,11 @@ export async function claimCurrency(currencyId: number | string) {
  */
 export async function sellCurrencyToPlatform(currencyId: number | string, amount: number, price?: number) {
   try {
-    const response = await request<{ status: string; message: string }>(
+    const response = await httpPost<{ status: string; message: string }>(
       '/api/currencies/sell-to-platform',
       {
-        method: 'POST',
-        data: {
-          currency_id: currencyId,
-          amount
-        }
+        currency_id: currencyId,
+        amount
       }
     );
     
@@ -164,7 +148,7 @@ export async function sellCurrencyToPlatform(currencyId: number | string, amount
  * @param amount 购买数量
  */
 export async function buyUsdt(amount: number) {
-  return request<{ 
+  return httpPost<{ 
     status: string; 
     message: string;
     data?: {
@@ -175,10 +159,7 @@ export async function buyUsdt(amount: number) {
   }>(
     '/api/orders/buy-usdt',
     {
-      method: 'POST',
-      data: {
-        amount
-      }
+      amount
     }
   );
 }
@@ -210,9 +191,8 @@ export interface BalanceResponse {
  * 获取用户余额
  */
 export async function getUserBalance() {
-  return request<any>(
-    '/api/user',
-    { method: 'GET' }
+  return httpGet<any>(
+    '/api/user'
   ).then(res => {
     // 从用户信息中提取余额数据
     if (res.status === 'success' && res.data && res.data.user) {

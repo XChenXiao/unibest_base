@@ -16,6 +16,15 @@ const initState: IUserInfo = {
   has_bank_card: false
 }
 
+// 银行卡状态枚举
+export enum BankCardStatus {
+  NONE = 'none',             // 未申请
+  APPLYING = 'applying',     // 申请中
+  REVIEWING = 'reviewing',   // 审核中
+  APPROVED = 'approved',     // 已审核通过
+  REJECTED = 'rejected'      // 审核拒绝
+}
+
 // 认证状态类型
 interface VerificationResponse {
   status: string;
@@ -40,6 +49,9 @@ export const useUserStore = defineStore(
       rejected: false,
       rejection_reason: ''
     })
+    
+    // 银行卡申请状态 - 本地状态，不通过API获取
+    const bankCardApplicationStatus = ref(BankCardStatus.NONE)
     
     // 设置用户信息
     const setUserInfo = (val: IUserInfo) => {
@@ -198,18 +210,43 @@ export const useUserStore = defineStore(
     // 判断用户实名认证是否被拒绝
     const isRejectedVerification = computed(() => verificationStatus.value.rejected)
 
+    // 设置银行卡申请状态
+    const setBankCardStatus = (status: BankCardStatus) => {
+      bankCardApplicationStatus.value = status
+    }
+
+    // 判断银行卡是否在申请中或审核中
+    const isBankCardProcessing = computed(() => {
+      return bankCardApplicationStatus.value === BankCardStatus.APPLYING || 
+             bankCardApplicationStatus.value === BankCardStatus.REVIEWING
+    })
+
+    // 获取银行卡状态
+    const getBankCardStatus = computed(() => {
+      // 如果用户已有银行卡，直接返回已审核通过
+      if (userInfo.value.has_bank_card) {
+        return BankCardStatus.APPROVED
+      }
+      // 否则返回当前状态
+      return bankCardApplicationStatus.value
+    })
+
     return {
       userInfo,
       verificationStatus,
+      bankCardApplicationStatus,
       setUserInfo,
       clearUserInfo,
       updateUserBalance,
       fetchUserInfo,
       fetchVerificationStatus,
+      setBankCardStatus,
       isLogined,
       isVerified,
       isPendingVerification,
-      isRejectedVerification
+      isRejectedVerification,
+      isBankCardProcessing,
+      getBankCardStatus
     }
   },
   {

@@ -2,7 +2,7 @@
 // @ts-ignore
 import { queryOptions, useMutation } from '@tanstack/vue-query';
 import type { DefaultError } from '@tanstack/vue-query';
-import request from '@/utils/request';
+import http from '@/utils/http';
 import { CustomRequestOptions } from '@/interceptors/request';
 
 import * as apis from './store';

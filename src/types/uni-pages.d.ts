@@ -13,6 +13,9 @@ interface NavigateToOptions {
        "/pages/login/reset-password" |
        "/pages/my/announcement-detail" |
        "/pages/my/announcements" |
+       "/pages/my/bank-account-apply" |
+       "/pages/my/bank-cards" |
+       "/pages/my/customer-service" |
        "/pages/my/identity-verify" |
        "/pages/my/index" |
        "/pages/my/reset-password" |
@@ -20,6 +23,7 @@ interface NavigateToOptions {
        "/pages/my/settings" |
        "/pages/my/wallet" |
        "/pages/register/index" |
+       "/pages/team/index" |
        "/pages/trading/exchange" |
        "/pages/trading/index" |
        "/pages/trading/records" |

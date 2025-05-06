@@ -71,7 +71,7 @@ export const http = <T>(options: CustomRequestOptions) => {
           // 403错误 - 权限不足
           uni.showToast({
             icon: 'none',
-            title: '您没有权限执行此操作',
+            title: (res.data as any).message || '您没有权限执行此操作',
           })
           reject(res)
         } else if (res.statusCode === 404) {

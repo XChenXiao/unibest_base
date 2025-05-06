@@ -33,6 +33,7 @@
     "dev:custom": "uni -p",
     "dev": "uni",
     "dev:h5": "uni",
+    "dev:h5:dev": "uni NODE_ENV=development",
     "dev:h5:pro": "uni NODE_ENV=production",
     "dev:h5:ssr": "uni --ssr",
     "dev:mp": "uni -p mp-weixin",

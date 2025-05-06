@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-ignore
-import request from '@/utils/request';
+import { httpGet, httpPost, httpDelete } from '@/utils/http';
 import { CustomRequestOptions } from '@/interceptors/request';
 
 import * as API from './types';
@@ -11,10 +11,7 @@ export async function getInventory({
 }: {
   options?: CustomRequestOptions;
 }) {
-  return request<Record<string, unknown>>('/store/inventory', {
-    method: 'GET',
-    ...(options || {}),
-  });
+  return httpGet<Record<string, unknown>>('/store/inventory', null, options);
 }
 
 /** Place an order for a pet POST /store/order */
@@ -25,12 +22,10 @@ export async function placeOrder({
   body: API.Order;
   options?: CustomRequestOptions;
 }) {
-  return request<API.Order>('/store/order', {
-    method: 'POST',
-    headers: {
+  return httpPost<API.Order>('/store/order', body, null, {
+    header: {
       'Content-Type': 'application/json',
     },
-    data: body,
     ...(options || {}),
   });
 }
@@ -46,11 +41,7 @@ export async function getOrderById({
 }) {
   const { orderId: param0, ...queryParams } = params;
 
-  return request<API.Order>(`/store/order/${param0}`, {
-    method: 'GET',
-    params: { ...queryParams },
-    ...(options || {}),
-  });
+  return httpGet<API.Order>(`/store/order/${param0}`, queryParams, options);
 }
 
 /** Delete purchase order by ID For valid response try integer IDs with positive integer value. Negative or non-integer values will generate API errors DELETE /store/order/${param0} */
@@ -64,9 +55,5 @@ export async function deleteOrder({
 }) {
   const { orderId: param0, ...queryParams } = params;
 
-  return request<unknown>(`/store/order/${param0}`, {
-    method: 'DELETE',
-    params: { ...queryParams },
-    ...(options || {}),
-  });
+  return httpDelete<unknown>(`/store/order/${param0}`, null, queryParams, options);
 }

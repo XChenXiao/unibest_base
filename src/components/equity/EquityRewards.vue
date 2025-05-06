@@ -11,7 +11,7 @@
       <view class="reward-card">
         <view class="reward-icon-container">
           <view class="reward-icon register-icon">
-            <text class="uni-icons uniui-person-filled"></text>
+            <image src="/static/images/type/register_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
           </view>
         </view>
         <view class="reward-content">
@@ -42,7 +42,7 @@
       >
         <view class="reward-icon-container">
           <view class="reward-icon invite-icon">
-            <text class="uni-icons uniui-upload"></text>
+            <image src="/static/images/type/invite_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
           </view>
         </view>
         <view class="reward-content">
@@ -79,7 +79,7 @@
       <view v-if="!invitationRewards || invitationRewards.length === 0" class="reward-card">
         <view class="reward-icon-container">
           <view class="reward-icon invite-icon">
-            <text class="uni-icons uniui-upload"></text>
+            <image src="/static/images/type/invite_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
           </view>
         </view>
         <view class="reward-content">
@@ -350,22 +350,17 @@ const sortedInvitationRewards = computed(() => {
   justify-content: center;
 }
 
+.reward-icon-image {
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .register-icon {
   background-color: rgba(46, 204, 113, 0.1);
 }
 
-.register-icon .uni-icons {
-  color: #2ecc71;
-  font-size: 40rpx;
-}
-
 .invite-icon {
   background-color: rgba(52, 152, 219, 0.1);
-}
-
-.invite-icon .uni-icons {
-  color: #3498db;
-  font-size: 40rpx;
 }
 
 .reward-content {

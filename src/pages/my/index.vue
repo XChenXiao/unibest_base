@@ -199,20 +199,22 @@ const hasNewAnnouncement = ref(false);
 // 检查是否有未读公告
 const checkAnnouncementStatus = async () => {
   try {
-    const response = await uni.request({
-      url: `${API_URL}/api/messages/unread-count`,
-      method: 'GET'
+    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
+    const response = await new Promise((resolve, reject) => {
+      uni.request({
+        url: `${API_URL}/api/messages/unread-count`,
+        method: 'GET',
+        success: (res) => {
+          resolve(res);
+        },
+        fail: (err) => {
+          reject(err);
+        }
+      });
     });
     
-    // UniApp请求返回的数据结构是 [err, res]
-    const [err, res] = response as unknown as [any, {
-      data: { status: string; data: { unread_count: number } }
-    }];
-    
-    if (err) {
-      console.error('获取未读消息数量失败:', err);
-      return;
-    }
+    // 直接使用response的data属性
+    const res = response as any;
     
     if (res?.data?.status === 'success') {
       hasNewAnnouncement.value = res.data.data.unread_count > 0;
@@ -244,6 +246,9 @@ onMounted(() => {
   // 监听余额更新事件
   uni.$on('user_balance_updated', handleBalanceUpdated);
   
+  // 监听未读公告状态更新事件
+  uni.$on('refresh_unread_announcements', checkAnnouncementStatus);
+  
   // 初始检查用户数据和余额
   checkUserInfo();
   
@@ -255,6 +260,7 @@ onMounted(() => {
 onUnmounted(() => {
   // 移除事件监听
   uni.$off('user_balance_updated', handleBalanceUpdated);
+  uni.$off('refresh_unread_announcements', checkAnnouncementStatus);
 });
 
 // 处理余额更新事件

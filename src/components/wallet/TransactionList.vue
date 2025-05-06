@@ -5,11 +5,11 @@
     <view class="section-header">
       <text class="section-title">收支记录</text>
     </view>
-    
+
     <!-- 交易类型选择器 -->
     <view class="type-selector">
-      <view 
-        v-for="(item, index) in transactionTypes" 
+      <view
+        v-for="(item, index) in transactionTypes"
         :key="index"
         class="type-item"
         :class="{ 'type-active': activeType === item.value }"
@@ -18,51 +18,46 @@
         {{ item.label }}
       </view>
     </view>
-    
+
     <!-- 交易记录列表 -->
     <view class="transaction-list">
       <!-- 加载中状态 -->
       <view v-if="loading" class="empty-state">
         <text class="empty-text">加载中...</text>
       </view>
-      
+
       <!-- 空记录状态 -->
       <view v-else-if="filteredTransactions.length === 0" class="empty-state">
         <text class="empty-text">暂无收支记录</text>
       </view>
-      
+
       <!-- 交易记录 -->
-      <view 
-        v-else
-        v-for="item in filteredTransactions" 
-        :key="item.id"
-        class="transaction-item"
-      >
+      <view v-else v-for="item in filteredTransactions" :key="item.id" class="transaction-item">
         <!-- 交易图标 -->
-        <view 
-          class="transaction-icon" 
+        <view
+          class="transaction-icon"
           :class="{
-            'icon-income': item.is_income, 
+            'icon-income': item.is_income,
             'icon-expense': !item.is_income && item.type !== 'withdraw',
-            'icon-withdraw': item.type === 'withdraw'
+            'icon-withdraw': item.type === 'withdraw',
           }"
         >
-          <text 
-            class="uni-icons" 
+          <text
+            class="uni-icons"
             :class="{
               'uniui-arrow-down': item.is_income,
               'uniui-arrow-up': !item.is_income && item.type !== 'withdraw',
-              'uniui-wallet-filled': item.type === 'withdraw'
+              'uniui-wallet-filled': item.type === 'withdraw',
             }"
           ></text>
         </view>
-        
+
         <!-- 交易信息 -->
         <view class="transaction-info">
           <text class="transaction-title">{{ item.title }}</text>
           <text class="transaction-time">{{ item.time }}</text>
         </view>
-        
+
         <!-- 交易金额 -->
         <view class="transaction-amount" :class="{ 'amount-income': item.is_income }">
           <text>{{ item.is_income ? '+' : '-' }}{{ item.amount }}</text>
@@ -73,76 +68,76 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
-import { getBalanceTransactions } from '@/service/app/wallet';
+import { ref, computed, onMounted } from 'vue'
+import { getBalanceTransactions } from '@/service/app/wallet'
 
 // 定义交易记录类型
 interface Transaction {
-  id: number;
-  title: string; // 用于显示的标题，从description获取
-  original_type: string; // 原始类型
-  type: string; // 前端使用的类型分类
-  is_income: boolean; // 是否收入
-  amount: string;
-  time: string;
+  id: number
+  title: string // 用于显示的标题，从description获取
+  original_type: string // 原始类型
+  type: string // 前端使用的类型分类
+  is_income: boolean // 是否收入
+  amount: string
+  time: string
 }
 
 // 定义props
 const props = defineProps({
   transactionData: {
     type: Array as () => Transaction[],
-    default: () => []
+    default: () => [],
   },
   useLocalData: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
 // 定义事件
-const emit = defineEmits(['viewAll']);
+const emit = defineEmits(['viewAll'])
 
 // 交易类型
 const transactionTypes = [
   { label: '全部', value: 'all' },
   { label: '收入', value: 'income' },
   { label: '支出', value: 'expense' },
-  { label: '提现', value: 'withdraw' }
-];
+  { label: '提现', value: 'withdraw' },
+]
 
 // 当前选中的交易类型
-const activeType = ref('all');
+const activeType = ref('all')
 
 // 交易记录数据
-const transactions = ref<Transaction[]>([]);
+const transactions = ref<Transaction[]>([])
 
 // 数据加载状态
-const loading = ref(false);
+const loading = ref(false)
 
 // 获取交易记录数据
 const fetchTransactions = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const response = await getBalanceTransactions(1, 10);
-    
+    const response = await getBalanceTransactions(1, 10)
+
     if (response?.status === 'success' && response.data?.data) {
-      const recordsData = response.data.data;
-      
+      const recordsData = response.data.data
+
       // 格式化交易记录数据
-      const formattedRecords: Transaction[] = [];
-      
+      const formattedRecords: Transaction[] = []
+
       // 确保recordsData是数组
       if (Array.isArray(recordsData)) {
         for (const record of recordsData) {
           // 根据记录类型映射为前端所需的类型
-          let frontendType = record.is_income ? 'income' : 'expense';
+          let frontendType = record.is_income ? 'income' : 'expense'
           if (record.type === 'withdraw') {
-            frontendType = 'withdraw';
+            frontendType = 'withdraw'
           }
-          
+
           // 优先使用description作为标题
-          const title = record.description || record.type_text || '交易记录';
-          
+          const title = record.description || record.type_text || '交易记录'
+
           formattedRecords.push({
             id: record.id,
             title: title,
@@ -150,64 +145,64 @@ const fetchTransactions = async () => {
             type: frontendType,
             is_income: record.is_income || false,
             amount: record.amount || '0',
-            time: record.created_at || ''
-          });
+            time: record.created_at || '',
+          })
         }
       }
-      
-      transactions.value = formattedRecords;
+
+      transactions.value = formattedRecords
     } else {
-      transactions.value = [];
+      transactions.value = []
     }
   } catch (error) {
-    console.error('获取余额变动记录失败:', error);
+    console.error('获取余额变动记录失败:', error)
     uni.showToast({
       title: '获取余额变动记录失败',
-      icon: 'none'
-    });
-    transactions.value = [];
+      icon: 'none',
+    })
+    transactions.value = []
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 切换交易类型
 const changeType = (type: string) => {
-  activeType.value = type;
-};
+  activeType.value = type
+}
 
 // 查看全部记录
 const viewAllRecords = () => {
-  emit('viewAll');
-};
+  emit('viewAll')
+}
 
 // 刷新交易记录
 const refreshTransactions = () => {
-  fetchTransactions();
-};
+  fetchTransactions()
+}
 
 // 根据类型筛选交易记录
 const filteredTransactions = computed(() => {
   // 使用本地数据还是API数据
-  const dataSource = props.useLocalData ? props.transactionData : transactions.value;
-  
+  const dataSource = props.useLocalData ? props.transactionData : transactions.value
+
   if (activeType.value === 'all') {
-    return dataSource;
+    return dataSource
   } else {
-    return dataSource.filter(transaction => transaction.type === activeType.value);
+    return dataSource.filter((transaction) => transaction.type === activeType.value)
   }
-});
+})
 
 // 组件挂载后执行
 onMounted(() => {
   if (!props.useLocalData) {
-    fetchTransactions();
+    fetchTransactions()
   }
-});
+})
 
 defineExpose({
-  refreshTransactions
-});
+  refreshTransactions,
+})
 </script>
 
 <style lang="scss" scoped>
@@ -356,4 +351,4 @@ defineExpose({
   color: #999;
   font-size: 28rpx;
 }
-</style> 
+</style>

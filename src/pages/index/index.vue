@@ -174,11 +174,9 @@ const fetchCheckInData = async () => {
 
 // 处理菜单项点击
 const handleMenuItem = (type: string) => {
-  // 实际开发中，这里应该根据不同的菜单项进行相应的操作
-  uni.showToast({
-    title: '新功能即将上线',
-    icon: 'none'
-  })
+  // 菜单点击处理已经在FinanceHeader组件中完成
+  console.log('菜单项点击:', type)
+  // 这里可以处理特殊菜单项，其他的在FinanceHeader组件中已处理
 }
 
 // 处理签到

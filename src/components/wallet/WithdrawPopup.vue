@@ -7,9 +7,14 @@
         <text class="popup-close" @click="handleClose">×</text>
       </view>
       <view class="popup-body">
-        <view class="bank-info">
-          <text class="bank-name">{{ bankName }}</text>
+        <view class="bank-info" v-if="bankName && bankNumber">
+          <view class="bank-logo-name">
+            <text class="bank-name">{{ bankName }}</text>
+          </view>
           <text class="bank-number">{{ maskedBankNumber }}</text>
+        </view>
+        <view class="bank-info no-bank" v-else>
+          <text class="no-bank-text">请先添加银行卡</text>
         </view>
         
         <view class="amount-input-container">
@@ -20,7 +25,7 @@
               class="amount-input" 
               type="digit" 
               v-model="amount" 
-              placeholder="请输入提现金额"
+              placeholder="请输入提现金额（需大于0）"
             />
           </view>
           <text class="amount-available">可用余额: ¥{{ formatBalance(balance) }}</text>
@@ -31,8 +36,8 @@
           <view class="password-input-wrapper">
             <input 
               class="password-input" 
-              type="password" 
-              maxlength="6" 
+              type="text" 
+              :maxlength="6" 
               password 
               v-model="password" 
               placeholder="请输入6位提现密码"
@@ -40,7 +45,7 @@
           </view>
         </view>
         
-        <button class="confirm-withdraw-btn" @click="handleConfirm">确认提现</button>
+        <button class="confirm-withdraw-btn" @click="handleConfirm" :disabled="!bankName || !bankNumber">确认提现</button>
         <text class="withdraw-note">提现申请将在1-3个工作日内处理完成</text>
       </view>
     </view>
@@ -48,7 +53,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 
 // 定义props
 const props = defineProps<{
@@ -77,8 +82,28 @@ const formatBalance = (balance: number) => {
 
 // 银行卡号脱敏
 const maskedBankNumber = computed(() => {
-  if (!props.bankNumber) return '';
-  return props.bankNumber.replace(/^(\d{4})\d+(\d{4})$/, '$1 **** **** $2');
+  if (!props.bankNumber) return '请先添加银行卡';
+  
+  // 如果银行卡号中已经包含星号，说明已经是掩码形式，直接返回
+  if (props.bankNumber.includes('*')) {
+    // 添加空格使显示更美观
+    const parts = [];
+    for (let i = 0; i < props.bankNumber.length; i += 4) {
+      parts.push(props.bankNumber.substring(i, i + 4));
+    }
+    return parts.join(' ');
+  }
+  
+  // 保留前4位和后4位，中间用*替代
+  const cardLength = props.bankNumber.length;
+  if (cardLength <= 8) return props.bankNumber;
+  
+  // 每隔4位添加一个空格，使显示更美观
+  const firstFour = props.bankNumber.substring(0, 4);
+  const lastFour = props.bankNumber.substring(cardLength - 4);
+  const middleStars = '*'.repeat(Math.min(8, cardLength - 8));
+  
+  return `${firstFour} ${middleStars} **** ${lastFour}`;
 });
 
 // 打开弹窗
@@ -86,6 +111,11 @@ const open = () => {
   amount.value = '';
   password.value = '';
   showPopup.value = true;
+  
+  console.log('提现弹窗打开，银行卡信息:', {
+    bankName: props.bankName,
+    bankNumber: props.bankNumber,
+  });
 };
 
 // 关闭弹窗
@@ -96,9 +126,28 @@ const handleClose = () => {
 
 // 确认提现
 const handleConfirm = () => {
+  if (!props.bankName || !props.bankNumber) {
+    uni.showToast({
+      title: '请先添加银行卡',
+      icon: 'none'
+    });
+    return;
+  }
   // 输入验证在父组件进行
   emit('confirm', parseFloat(amount.value), password.value);
 };
+
+// 监听银行卡信息变化
+watch(
+  () => [props.bankName, props.bankNumber],
+  () => {
+    console.log('银行卡信息更新:', {
+      bankName: props.bankName,
+      bankNumber: props.bankNumber,
+    });
+  },
+  { immediate: true }
+);
 
 // 向父组件暴露方法
 defineExpose({
@@ -148,17 +197,35 @@ defineExpose({
   margin-bottom: 30rpx;
 }
 
+.no-bank {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx 20rpx;
+}
+
+.no-bank-text {
+  color: #f56c6c;
+  font-size: 28rpx;
+}
+
+.bank-logo-name {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
 .bank-name {
   font-size: 28rpx;
+  font-weight: 500;
   color: #333;
-  margin-bottom: 10rpx;
-  display: block;
 }
 
 .bank-number {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #666;
-  font-family: monospace;
+  font-family: 'PingFang SC', 'Helvetica Neue', monospace;
+  letter-spacing: 1px;
 }
 
 /* 金额输入 */
@@ -215,6 +282,11 @@ defineExpose({
   font-size: 32rpx;
   font-weight: 500;
   margin-bottom: 20rpx;
+}
+
+.confirm-withdraw-btn:disabled {
+  background: linear-gradient(to right, #e0e0e0, #cccccc);
+  color: #999;
 }
 
 .withdraw-note {

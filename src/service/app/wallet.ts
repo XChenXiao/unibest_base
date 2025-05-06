@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { request } from '@/utils/request';
+import { httpGet } from '@/utils/http';
 
 /**
  * 交易记录类型
@@ -78,14 +78,11 @@ export interface WalletApiResponse<T> {
  * @param perPage 每页记录数
  */
 export const getBalanceTransactions = async (page: number = 1, perPage: number = 10) => {
-  const response = await request<WalletApiResponse<PaginatedResponse<TransactionRecord>>>(
+  const response = await httpGet<WalletApiResponse<PaginatedResponse<TransactionRecord>>>(
     '/api/user/records/balance',
     {
-      method: 'GET',
-      params: {
-        page,
-        per_page: perPage
-      }
+      page,
+      per_page: perPage
     }
   );
 
@@ -123,17 +120,14 @@ export const getAllTransactions = async (
   startDate?: string,
   endDate?: string
 ) => {
-  const response = await request<WalletApiResponse<PaginatedResponse<TransactionRecord>>>(
+  const response = await httpGet<WalletApiResponse<PaginatedResponse<TransactionRecord>>>(
     '/api/user/records/all',
     {
-      method: 'GET',
-      params: {
-        page,
-        per_page: perPage,
-        type,
-        start_date: startDate,
-        end_date: endDate
-      }
+      page,
+      per_page: perPage,
+      type,
+      start_date: startDate,
+      end_date: endDate
     }
   );
 
@@ -186,15 +180,12 @@ export const getCurrencyTransactions = async (
   perPage: number = 10,
   type?: string
 ) => {
-  const response = await request<WalletApiResponse<PaginatedResponse<TransactionRecord>>>(
+  const response = await httpGet<WalletApiResponse<PaginatedResponse<TransactionRecord>>>(
     '/api/user/records/currency',
     {
-      method: 'GET',
-      params: {
-        page,
-        per_page: perPage,
-        type
-      }
+      page,
+      per_page: perPage,
+      type
     }
   );
 
