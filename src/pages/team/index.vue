@@ -32,10 +32,10 @@
 
       <!-- 顶部导航选项卡 -->
       <view class="nav-tabs">
-        <view 
-          v-for="(tab, index) in tabs" 
-          :key="index" 
-          class="nav-tab-item" 
+        <view
+          v-for="(tab, index) in tabs"
+          :key="index"
+          class="nav-tab-item"
           :class="{ active: activeTabIndex === index }"
           @click="handleTabChange(index)"
         >
@@ -62,31 +62,46 @@
       </view>
 
       <!-- 邀请码信息 -->
+      <view class="invite-code-box">
+        <view class="invite-code-title">我的邀请码</view>
+        <view class="invite-code-content">
+          <text class="invite-code">{{ teamInfo.invite_code || '-' }}</text>
+          <view class="copy-btn" @click="copyInviteCode">复制</view>
+        </view>
+        <view class="invite-btn" @click="navigateToInvitePoster">
+          <text class="invite-btn-text">邀请好友</text>
+          <image src="/static/images/invite-icon.png" mode="aspectFit" class="invite-icon" />
+        </view>
+      </view>
 
       <!-- 团队列表 -->
       <view class="team-list">
         <view class="list-title">{{ tabs[activeTabIndex].name }}</view>
-        
+
         <view v-if="invitedUsers.list.length === 0" class="empty-list">
           <image src="/static/images/empty-list.png" mode="aspectFit"></image>
           <view class="empty-text">暂无{{ tabs[activeTabIndex].name }}记录</view>
         </view>
-        
+
         <view v-else class="member-list">
-          <view 
-            v-for="(member, index) in invitedUsers.list" 
-            :key="index" 
-            class="member-item"
-          >
+          <view v-for="(member, index) in invitedUsers.list" :key="index" class="member-item">
             <view class="member-avatar">
               <image src="/static/images/avatar-placeholder.png" mode="aspectFill"></image>
             </view>
             <view class="member-info">
               <view class="member-name">
-                {{ member.is_verified ? member.name : (member.phone.substr(0, 3) + '****' + member.phone.substr(-4)) }}
+                {{
+                  member.is_verified
+                    ? member.name
+                    : member.phone.substr(0, 3) + '****' + member.phone.substr(-4)
+                }}
               </view>
               <view class="member-time">
-                {{ member.is_verified ? '认证时间: ' + (member.verified_at || '未知') : '注册时间: ' + member.registered_at }}
+                {{
+                  member.is_verified
+                    ? '认证时间: ' + (member.verified_at || '未知')
+                    : '注册时间: ' + member.registered_at
+                }}
               </view>
             </view>
             <view class="member-status" :class="{ verified: member.is_verified }">
@@ -94,9 +109,13 @@
             </view>
           </view>
         </view>
-        
+
         <!-- 加载更多 -->
-        <view v-if="invitedUsers.list.length > 0 && invitedUsers.list.length < invitedUsers.total" class="load-more" @click="loadMore">
+        <view
+          v-if="invitedUsers.list.length > 0 && invitedUsers.list.length < invitedUsers.total"
+          class="load-more"
+          @click="loadMore"
+        >
           加载更多
         </view>
       </view>
@@ -150,7 +169,7 @@ interface InvitedUsers {
 const tabs = [
   { name: '邀请列表', type: 'all' },
   { name: '未实名列表', type: 'unverified' },
-  { name: '已实名列表', type: 'verified' }
+  { name: '已实名列表', type: 'verified' },
 ]
 
 // 当前激活的标签索引
@@ -164,7 +183,7 @@ const teamInfo = ref<TeamInfo>({
   referrer_name: '',
   invite_code: '',
   total_invited_users: 0,
-  verified_invited_users: 0
+  verified_invited_users: 0,
 })
 
 // 邀请统计
@@ -173,7 +192,7 @@ const invitationStats = ref<InvitationStats>({
   invite_code: '',
   total_invited_users: 0,
   verified_invited_users: 0,
-  unverified_invited_users: 0
+  unverified_invited_users: 0,
 })
 
 // 邀请用户列表
@@ -182,7 +201,7 @@ const invitedUsers = ref<InvitedUsers>({
   total_page: 0,
   current_page: 1,
   per_page: 10,
-  list: []
+  list: [],
 })
 
 // 当前查询类型
@@ -191,7 +210,7 @@ const currentType = computed(() => tabs[activeTabIndex.value].type)
 // 获取团队信息
 const fetchTeamInfo = async () => {
   try {
-    const res = await getTeamInfoAPI() as IResData<TeamInfo>
+    const res = (await getTeamInfoAPI()) as IResData<TeamInfo>
     if (res.status === 'success' && res.data) {
       teamInfo.value = res.data
     }
@@ -203,7 +222,7 @@ const fetchTeamInfo = async () => {
 // 获取邀请统计信息
 const fetchInvitationStats = async () => {
   try {
-    const res = await getTeamStatsAPI() as IResData<InvitationStats>
+    const res = (await getTeamStatsAPI()) as IResData<InvitationStats>
     if (res.status === 'success' && res.data) {
       invitationStats.value = res.data
       // 同步更新团队信息
@@ -221,21 +240,21 @@ const fetchInvitedUsers = async (page = 1) => {
   const params = {
     page,
     per_page: 10,
-    type: currentType.value
+    type: currentType.value,
   }
-  
+
   try {
-    const res = await getInvitedUsersAPI(params) as IResData<InvitedUsers>
+    const res = (await getInvitedUsersAPI(params)) as IResData<InvitedUsers>
     if (res.status === 'success' && res.data) {
       // 前端额外处理：确保已实名列表只显示已实名用户，未实名列表只显示未实名用户
       if (currentType.value === 'verified') {
         // 筛选已实名用户
-        res.data.list = res.data.list.filter(user => user.is_verified === true)
+        res.data.list = res.data.list.filter((user) => user.is_verified === true)
       } else if (currentType.value === 'unverified') {
         // 筛选未实名用户
-        res.data.list = res.data.list.filter(user => user.is_verified === false)
+        res.data.list = res.data.list.filter((user) => user.is_verified === false)
       }
-      
+
       if (page === 1) {
         invitedUsers.value = res.data
       } else {
@@ -259,7 +278,7 @@ const loadMore = () => {
 // 标签切换处理
 const handleTabChange = (index: number) => {
   if (index === activeTabIndex.value) return
-  
+
   activeTabIndex.value = index
   // 重置分页并加载新类型的数据
   invitedUsers.value.current_page = 1
@@ -270,15 +289,22 @@ const handleTabChange = (index: number) => {
 // 复制邀请码
 const copyInviteCode = () => {
   if (!teamInfo.value.invite_code) return
-  
+
   uni.setClipboardData({
     data: teamInfo.value.invite_code,
     success: () => {
       uni.showToast({
         title: '复制成功',
-        icon: 'success'
+        icon: 'success',
       })
-    }
+    },
+  })
+}
+
+// 导航到邀请海报页面
+const navigateToInvitePoster = () => {
+  uni.navigateTo({
+    url: '/pages/team/invite-poster',
   })
 }
 
@@ -286,11 +312,7 @@ const copyInviteCode = () => {
 onMounted(async () => {
   loading.value = true
   try {
-    await Promise.all([
-      fetchTeamInfo(),
-      fetchInvitationStats(),
-      fetchInvitedUsers(1)
-    ])
+    await Promise.all([fetchTeamInfo(), fetchInvitationStats(), fetchInvitedUsers(1)])
   } catch (error) {
     console.error('加载团队数据失败:', error)
   } finally {
@@ -305,78 +327,79 @@ onMounted(async () => {
   padding: 30rpx;
   background-color: #f5f7fa;
 }
-
 /* 导航标签 */
 .nav-tabs {
   display: flex;
-  background-color: #ffffff;
-  border-radius: 12rpx;
   margin-bottom: 30rpx;
   overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 12rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .nav-tab-item {
+  position: relative;
   flex: 1;
-  text-align: center;
   padding: 24rpx 0;
   font-size: 28rpx;
   color: #666;
-  position: relative;
+  text-align: center;
 }
 
 .nav-tab-item.active {
-  color: #3498db;
   font-weight: 500;
+  color: #3498db;
 }
 
 .nav-tab-item.active::after {
-  content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
   width: 40rpx;
   height: 6rpx;
+  content: '';
   background-color: #3498db;
   border-radius: 3rpx;
+  transform: translateX(-50%);
 }
-
 /* 加载状态 */
 .loading-container {
-  text-align: center;
   padding: 60rpx 0;
+  text-align: center;
 }
 
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
+  margin: 0 auto;
   border: 5rpx solid #f3f3f3;
   border-top: 5rpx solid #3498db;
   border-radius: 50%;
-  margin: 0 auto;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
 /* 上级信息卡片 */
 .referrer-card {
-  background-color: #ffffff;
-  border-radius: 12rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 12rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .referrer-title {
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
 .referrer-content {
@@ -387,9 +410,9 @@ onMounted(async () => {
 .referrer-avatar {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 50%;
-  overflow: hidden;
   margin-right: 20rpx;
+  overflow: hidden;
+  border-radius: 50%;
 }
 
 .referrer-avatar image {
@@ -402,17 +425,16 @@ onMounted(async () => {
 }
 
 .referrer-name {
+  margin-bottom: 4rpx;
   font-size: 28rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 4rpx;
 }
 
 .referrer-status {
   font-size: 24rpx;
   color: #999;
 }
-
 /* 团队统计 */
 .team-stats {
   margin-bottom: 30rpx;
@@ -420,16 +442,16 @@ onMounted(async () => {
 
 .stats-card {
   display: flex;
+  overflow: hidden;
   background-color: #ffffff;
   border-radius: 12rpx;
-  overflow: hidden;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .stats-item {
   flex: 1;
-  text-align: center;
   padding: 30rpx 0;
+  text-align: center;
   border-right: 1rpx solid #f0f0f0;
 }
 
@@ -438,37 +460,37 @@ onMounted(async () => {
 }
 
 .stats-value {
+  margin-bottom: 8rpx;
   font-size: 40rpx;
   font-weight: 600;
   color: #3498db;
-  margin-bottom: 8rpx;
 }
 
 .stats-label {
   font-size: 24rpx;
   color: #666;
 }
-
 /* 邀请码 */
 .invite-code-box {
-  background-color: #ffffff;
-  border-radius: 12rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 12rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .invite-code-title {
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
 .invite-code-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 20rpx;
 }
 
 .invite-code {
@@ -479,27 +501,46 @@ onMounted(async () => {
 }
 
 .copy-btn {
-  background-color: #3498db;
-  color: #fff;
-  font-size: 24rpx;
   padding: 10rpx 30rpx;
+  font-size: 24rpx;
+  color: #fff;
+  background-color: #3498db;
   border-radius: 30rpx;
-  margin: 0;
 }
 
+.invite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 0;
+  color: #fff;
+  background: linear-gradient(to right, #3498db, #2980b9);
+  border-radius: 10rpx;
+}
+
+.invite-btn-text {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.invite-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-left: 10rpx;
+}
 /* 团队列表 */
 .team-list {
+  padding: 30rpx;
   background-color: #ffffff;
   border-radius: 12rpx;
-  padding: 30rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .list-title {
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
 .empty-list {
@@ -536,9 +577,9 @@ onMounted(async () => {
 .member-avatar {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 50%;
-  overflow: hidden;
   margin-right: 20rpx;
+  overflow: hidden;
+  border-radius: 50%;
 }
 
 .member-avatar image {
@@ -551,10 +592,10 @@ onMounted(async () => {
 }
 
 .member-name {
+  margin-bottom: 4rpx;
   font-size: 28rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 4rpx;
 }
 
 .member-time {
@@ -563,22 +604,22 @@ onMounted(async () => {
 }
 
 .member-status {
-  font-size: 24rpx;
   padding: 6rpx 16rpx;
-  border-radius: 20rpx;
-  background-color: #f5f5f5;
+  font-size: 24rpx;
   color: #999;
+  background-color: #f5f5f5;
+  border-radius: 20rpx;
 }
 
 .member-status.verified {
-  background-color: rgba(52, 152, 219, 0.1);
   color: #3498db;
+  background-color: rgba(52, 152, 219, 0.1);
 }
 
 .load-more {
-  text-align: center;
   padding: 20rpx 0;
   font-size: 28rpx;
   color: #3498db;
+  text-align: center;
 }
-</style> 
+</style>

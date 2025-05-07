@@ -228,6 +228,13 @@
       }
     },
     {
+      "path": "pages/team/invite-poster",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/trading/exchange",
       "type": "page",
       "style": {

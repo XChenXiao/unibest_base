@@ -24,6 +24,7 @@ interface NavigateToOptions {
        "/pages/my/wallet" |
        "/pages/register/index" |
        "/pages/team/index" |
+       "/pages/team/invite-poster" |
        "/pages/trading/exchange" |
        "/pages/trading/index" |
        "/pages/trading/records" |
