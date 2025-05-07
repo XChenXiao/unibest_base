@@ -1,3 +1,11 @@
+<route lang="json5" type="page">
+{
+  style: {
+    navigationBarTitleText: '设置',
+  },
+}
+</route>
+
 <!-- 理财应用设置页面 -->
 <!-- pages/my/settings.vue -->
 <template>
@@ -10,18 +18,10 @@
       <text class="uni-icons uniui-arrow-left"></text>
     </view>
     
-    <!-- 页面标题 -->
-    <view class="page-title">
-      <text class="title-text">设置</text>
-    </view>
-    
     <!-- 设置选项 -->
     <view class="settings-list">
       <!-- 修改登录密码 -->
       <view class="settings-item" @click="navigateTo('/pages/my/reset-password')">
-        <view class="settings-icon password-icon">
-          <text class="uni-icons uniui-locked-filled"></text>
-        </view>
         <view class="settings-content">
           <text class="settings-title">修改登录密码</text>
         </view>
@@ -30,9 +30,6 @@
       
       <!-- 修改提现密码 -->
       <view class="settings-item" @click="navigateTo('/pages/my/reset-withdraw-password')">
-        <view class="settings-icon withdraw-password-icon">
-          <text class="uni-icons uniui-wallet-filled"></text>
-        </view>
         <view class="settings-content">
           <text class="settings-title">修改提现密码</text>
         </view>
@@ -41,9 +38,6 @@
       
       <!-- 清除缓存 -->
       <view class="settings-item" @click="clearCache">
-        <view class="settings-icon cache-icon">
-          <text class="uni-icons uniui-trash-filled"></text>
-        </view>
         <view class="settings-content">
           <text class="settings-title">清除缓存</text>
           <text class="settings-desc">{{ cacheSize }}</text>
@@ -53,9 +47,6 @@
       
       <!-- 关于我们 -->
       <view class="settings-item" @click="navigateTo('/pages/my/about')">
-        <view class="settings-icon about-icon">
-          <text class="uni-icons uniui-info-filled"></text>
-        </view>
         <view class="settings-content">
           <text class="settings-title">关于我们</text>
         </view>
@@ -64,9 +55,6 @@
       
       <!-- 检查更新 -->
       <view class="settings-item" @click="checkUpdate">
-        <view class="settings-icon update-icon">
-          <text class="uni-icons uniui-refresh-filled"></text>
-        </view>
         <view class="settings-content">
           <text class="settings-title">检查更新</text>
           <text class="settings-desc">当前版本: v1.0.0</text>
@@ -195,24 +183,11 @@ page {
   z-index: 10;
 }
 
-/* 页面标题 */
-.page-title {
-  text-align: center;
-  margin-top: 130rpx;
-  margin-bottom: 40rpx;
-}
-
-.title-text {
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #333;
-}
-
 /* 设置列表 */
 .settings-list {
   background-color: white;
   border-radius: 20rpx;
-  margin: 0 30rpx 30rpx;
+  margin: 30rpx 30rpx 30rpx;
   padding: 10rpx 0;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 }
@@ -227,65 +202,11 @@ page {
 .settings-item:not(:last-child)::after {
   content: '';
   position: absolute;
-  left: 100rpx;
+  left: 30rpx;
   right: 0;
   bottom: 0;
   height: 1px;
   background-color: #f0f0f0;
-}
-
-.settings-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 20rpx;
-}
-
-.password-icon {
-  background-color: rgba(52, 152, 219, 0.15);
-}
-
-.withdraw-password-icon {
-  background-color: rgba(243, 156, 18, 0.15);
-}
-
-.cache-icon {
-  background-color: rgba(231, 76, 60, 0.15);
-}
-
-.about-icon {
-  background-color: rgba(46, 204, 113, 0.15);
-}
-
-.update-icon {
-  background-color: rgba(155, 89, 182, 0.15);
-}
-
-.uni-icons {
-  font-size: 36rpx;
-}
-
-.password-icon .uni-icons {
-  color: #3498db;
-}
-
-.withdraw-password-icon .uni-icons {
-  color: #f39c12;
-}
-
-.cache-icon .uni-icons {
-  color: #e74c3c;
-}
-
-.about-icon .uni-icons {
-  color: #2ecc71;
-}
-
-.update-icon .uni-icons {
-  color: #9b59b6;
 }
 
 .settings-content {

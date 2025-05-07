@@ -184,12 +184,25 @@
     {
       "path": "pages/my/reset-withdraw-password",
       "type": "page",
-      "style": {}
+      "style": {
+        "navigationBarTitleText": "修改提现密码",
+        "navigationBarBackgroundColor": "#f5f5f5",
+        "navigationBarTextStyle": "black",
+        "app-plus": {
+          "titleNView": {
+            "titleSize": "16px",
+            "titleWeight": "bold",
+            "titleAlign": "center"
+          }
+        }
+      }
     },
     {
       "path": "pages/my/settings",
       "type": "page",
-      "style": {}
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
     },
     {
       "path": "pages/my/wallet",

@@ -165,3 +165,36 @@ export async function uploadImage({
 }) {
   return httpPost<API.UploadImageResult>('/api/files/upload/file', data, null, options);
 }
+
+/**
+ * 修改提现密码
+ */
+export async function resetWithdrawPassword({
+  data,
+  options,
+}: {
+  data: {
+    current_password?: string;
+    verification_code?: string;
+    new_password: string;
+  };
+  options?: CustomRequestOptions;
+}) {
+  return httpPost<{status: string; message: string}>('/api/reset-withdraw-password', data, null, options);
+}
+
+/**
+ * 发送验证码
+ */
+export async function sendVerificationCode({
+  data,
+  options,
+}: {
+  data: {
+    phone: string;
+    type: string;
+  };
+  options?: CustomRequestOptions;
+}) {
+  return httpPost<{status: string; message: string}>('/api/send-verification-code', data, null, options);
+}
