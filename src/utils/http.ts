@@ -16,10 +16,8 @@ export const http = <T>(options: CustomRequestOptions) => {
       
       // 如果找到token，添加到请求头
       if (token) {
-        console.log(`添加token到请求: ${options.url}`);
         options.header.Authorization = `Bearer ${token}`;
       } else {
-        console.warn(`未找到token，请求可能会失败: ${options.url}`);
       }
     }
     

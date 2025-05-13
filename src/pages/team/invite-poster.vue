@@ -108,7 +108,7 @@
             "
           >
             <l-painter-qrcode
-              :text="`https://app.example.com/register?invite_code=${teamInfo.invite_code}`"
+              :text="`https://xxx.noneloxbqlo.cn/mobile/#/register?invite_code=${teamInfo.invite_code}`"
               css="width: 180rpx; height: 180rpx;background:white;border:4rpx solid white;"
             />
           </l-painter-view>

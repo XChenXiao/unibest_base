@@ -24,7 +24,7 @@ export default defineManifestConfig({
   h5: {
     router: {
       mode: 'hash',
-      base: VITE_APP_PUBLIC_BASE,
+      base: '/mobile/',
     },
   },
   /* 5+App特有相关 */

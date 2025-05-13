@@ -62,17 +62,18 @@
       </view>
 
       <!-- 邀请码信息 -->
-      <view class="invite-code-box">
+      <!-- <view class="invite-code-box">
         <view class="invite-code-title">我的邀请码</view>
         <view class="invite-code-content">
           <text class="invite-code">{{ teamInfo.invite_code || '-' }}</text>
           <view class="copy-btn" @click="copyInviteCode">复制</view>
         </view>
-        <view class="invite-btn" @click="navigateToInvitePoster">
-          <text class="invite-btn-text">邀请好友</text>
-          <image src="/static/images/invite-icon.png" mode="aspectFit" class="invite-icon" />
+        <view class="invite-btn" 
+          :class="{ 'invite-btn-disabled': !userStore.isVerified }"
+          @click="userStore.isVerified ? navigateToInvitePoster() : showVerifyTip()">
+          <text class="invite-btn-text">{{ userStore.isVerified ? '邀请好友' : '请先实名' }}</text>
         </view>
-      </view>
+      </view> -->
 
       <!-- 团队列表 -->
       <view class="team-list">
@@ -127,10 +128,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { getTeamInfoAPI, getTeamStatsAPI, getInvitedUsersAPI } from '@/service/index/team'
 import { IResData } from '@/types/response'
+import { useUserStore } from '@/store/user'
 
 defineOptions({
   name: 'TeamPage',
 })
+
+// 获取用户数据存储
+const userStore = useUserStore();
 
 // 定义数据类型
 interface TeamInfo {
@@ -306,6 +311,22 @@ const navigateToInvitePoster = () => {
   uni.navigateTo({
     url: '/pages/team/invite-poster',
   })
+}
+
+// 显示实名认证提示
+const showVerifyTip = () => {
+  uni.showModal({
+    title: '提示',
+    content: '请先完成实名认证才能邀请好友',
+    confirmText: '去认证',
+    success: (res) => {
+      if (res.confirm) {
+        uni.navigateTo({
+          url: '/pages/my/identity-verify'
+        });
+      }
+    }
+  });
 }
 
 // 页面首次加载
@@ -527,6 +548,11 @@ onMounted(async () => {
   width: 36rpx;
   height: 36rpx;
   margin-left: 10rpx;
+}
+
+.invite-btn-disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 /* 团队列表 */
 .team-list {

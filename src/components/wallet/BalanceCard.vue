@@ -6,58 +6,77 @@
     </view>
     <view class="balance-amount">
       <text class="amount-symbol">¥</text>
-      <text class="amount-value">{{ formatBalance(balance) }}</text>
-    </view>
-    
-    <!-- 操作按钮 -->
-    <view class="action-buttons">
-      <view class="action-button withdraw-btn" @click="handleWithdraw">
-        <text class="uni-icons uniui-download-filled"></text>
-        <text class="button-text">提现</text>
-      </view>
-      <view class="action-button recharge-btn" @click="handleRecharge">
-        <text class="uni-icons uniui-upload-filled"></text>
-        <text class="button-text">充值</text>
-      </view>
+      <text class="amount-value">{{ displayBalance }}</text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
+import { computed, onMounted, watch } from 'vue';
+import { useUserStore } from '@/store/user';
+
+// 使用用户store
+const userStore = useUserStore();
+
 // 定义props
 const props = defineProps<{
   balance: number | string
 }>();
 
-// 定义事件
-const emit = defineEmits<{
-  (e: 'withdraw'): void
-  (e: 'recharge'): void
-}>();
+// 创建计算属性，结合Pinia的用户余额和传入的余额
+const displayBalance = computed(() => {
+  // 优先使用传入的balance参数
+  if (props.balance !== undefined && props.balance !== null) {
+    return formatBalance(props.balance);
+  }
+  
+  // 如果传入的balance无效，尝试使用Pinia中的用户余额
+  if (userStore.userInfo && userStore.userInfo.balance !== undefined) {
+    return formatBalance(userStore.userInfo.balance);
+  }
+  
+  // 如果都没有，返回零
+  return '0.00';
+});
 
 // 格式化余额显示
 const formatBalance = (balance: number | string) => {
-  // 确保余额是数字类型
-  const numBalance = typeof balance === 'string' ? parseFloat(balance) : balance;
-  
-  // 如果是有效数字，则格式化为两位小数
-  if (!isNaN(numBalance)) {
-    return numBalance.toFixed(2);
+  // 处理undefined、null或空字符串的情况
+  if (balance === undefined || balance === null || balance === '') {
+    return '0.00';
   }
   
-  // 如果转换失败，返回0.00
-  return '0.00';
+  // 确保余额是数字类型
+  let numBalance: number;
+  try {
+    numBalance = typeof balance === 'string' ? parseFloat(balance) : Number(balance);
+    // 处理NaN的情况
+    if (isNaN(numBalance)) {
+      numBalance = 0;
+    }
+  } catch (error) {
+    console.error('余额格式化错误:', error);
+    numBalance = 0;
+  }
+  
+  // 格式化为两位小数
+  return numBalance.toFixed(2);
 };
 
-// 处理提现
-const handleWithdraw = () => {
-  emit('withdraw');
-};
+// 页面加载时尝试获取余额
+onMounted(() => {
+  console.log('BalanceCard组件加载, 传入余额:', props.balance, '商店余额:', userStore.userInfo.balance);
+});
 
-// 处理充值
-const handleRecharge = () => {
-  emit('recharge');
-};
+// 监听余额变化
+watch(() => props.balance, (newVal) => {
+  console.log('BalanceCard传入余额更新:', newVal);
+}, { immediate: true });
+
+// 监听Pinia中用户余额变化
+watch(() => userStore.userInfo.balance, (newVal) => {
+  console.log('Pinia用户余额更新:', newVal);
+}, { immediate: true });
 </script>
 
 <style lang="scss" scoped>
@@ -78,12 +97,14 @@ const handleRecharge = () => {
   color: #333;
   font-size: 30rpx;
   font-weight: 500;
+  text-align: left;
 }
 
 .balance-amount {
   display: flex;
   align-items: baseline;
-  margin-bottom: 30rpx;
+  justify-content: flex-start;
+  padding-left: 20rpx;
 }
 
 .amount-symbol {
@@ -96,38 +117,5 @@ const handleRecharge = () => {
   font-size: 60rpx;
   font-weight: 600;
   color: #333;
-}
-
-/* 操作按钮 */
-.action-buttons {
-  display: flex;
-  justify-content: space-around;
-  border-top: 1px solid #f0f0f0;
-  padding-top: 30rpx;
-}
-
-.action-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20rpx 0;
-  width: 40%;
-}
-
-.action-button .uni-icons {
-  font-size: 40rpx;
-  margin-bottom: 10rpx;
-}
-
-.withdraw-btn {
-  color: #e74c3c;
-}
-
-.recharge-btn {
-  color: #3498db;
-}
-
-.button-text {
-  font-size: 28rpx;
 }
 </style> 

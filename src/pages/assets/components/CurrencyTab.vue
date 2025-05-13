@@ -4,13 +4,13 @@
     <view class="record-button-container">
       <button class="record-button" @click="gotoCurrencyRecords">
         <text class="uni-icons uniui-list"></text>
-        <text class="button-text">货币记录</text>
+        <text class="button-text">黄金记录</text>
       </button>
     </view>
 
     <view 
       class="currency-item"
-      v-for="(currency, index) in currencyList"
+      v-for="(currency, index) in filteredCurrencyList"
       :key="getItemId(currency, index)"
       @click="gotoTrading(currency)"
     >
@@ -34,7 +34,7 @@
       
       <!-- USDT购买按钮 -->
       <view v-if="isUsdt(currency)" class="buy-button-container" @click.stop="openBuyDialog(currency)">
-        <button class="buy-button">购买</button>
+        <!-- <button class="buy-button">购买</button> -->
       </view>
       <!-- 非USDT货币的领取按钮 - 可领取奖励时显示"领取奖励" -->
       <view v-else-if="canShowClaimButton(currency) && hasClaimableReward(currency)" class="claim-button-container" @click.stop="handleClaimCurrency(currency)">
@@ -414,6 +414,18 @@ const gotoCurrencyRecords = () => {
     url: '/pages/currency-records/index'
   });
 };
+
+// 过滤货币列表，让USDT在持有量为0时不显示
+const filteredCurrencyList = computed(() => {
+  return props.currencyList.filter(item => {
+    // 如果是USDT且持有量为0，则不显示
+    if (isUsdt(item) && getCurrencyUserBalance(item) <= 0) {
+      return false;
+    }
+    // 其他货币正常显示
+    return true;
+  });
+});
 </script>
 
 <style lang="scss" scoped>

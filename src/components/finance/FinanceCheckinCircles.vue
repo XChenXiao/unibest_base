@@ -120,6 +120,8 @@ const getCurrentDayInCycle = () => {
   margin: 30rpx;
   padding: 30rpx;
   box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 5; /* 设置 z-index 值低于打卡进度 */
 }
 
 .circles-header {

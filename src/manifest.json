@@ -106,7 +106,8 @@
   "vueVersion": "3",
   "h5": {
     "router": {
-      "mode": "hash"
+      "mode": "hash",
+      "base": "/mobile/"
     }
   }
 }

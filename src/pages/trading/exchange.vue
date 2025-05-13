@@ -32,7 +32,7 @@
               :class="{ 'tab-active': activeTab === 'currency' }"
               @click="switchTab('currency')"
             >
-              <text>货币</text>
+              <text>黄金</text>
             </view>
             <view 
               class="tab-item" 
@@ -64,7 +64,7 @@
               
               <!-- 添加刷新按钮 -->
               <view class="refresh-btn" @click="fetchCurrencyOrders" :class="{ 'refreshing': loading }">
-                <text class="uni-icons" :class="loading ? 'uniui-spinner-cycle spin' : 'uniui-reload'"></text>
+                <image src="/static/images/fresh.png" mode="widthFix" style="width: 30rpx; height: 30rpx;"/>
               </view>
             </view>
             
@@ -94,7 +94,7 @@
                     </view>
                     <view class="limit-info">
                       <text class="limit-text">交易额: {{ formatAmount(item.minAmount) }}~{{ formatAmount(item.maxAmount) }}</text>
-                      <text class="remaining-text">剩余: {{ formatAmount(item.remainingAmount) }}</text>
+                      <text class="remaining-text" v-if="item.symbol !== 'USDT'">剩余: {{ formatAmount(item.remainingAmount) }}</text>
                     </view>
                   </view>
                 </view>
@@ -154,15 +154,26 @@
             @close="closeSellEquityPopup"
             @confirm="confirmSellEquity"
           />
+          
+          <!-- 购买USDT弹窗 -->
+          <buy-usdt-dialog 
+            ref="buyUsdtDialog"
+            :price="usdtInfo.price"
+            :userBalance="userBalance"
+            :iconUrl="usdtInfo.icon"
+            @success="handleBuyUsdtSuccess"
+          />
         </view>
       </template>
       
       <script lang="ts" setup>
       import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
       import { getEquityInfo, getMyEquity, sellEquity, EquityData, EquityInfo } from '@/service/app/equity';
-      import { getPlatformOrders, getUserCurrencies } from '@/service/app/currency';
+      import { getPlatformOrders, getUserCurrencies, buyUsdt, getUserBalance } from '@/service/app/currency';
+      import { httpGet } from "@/utils/http";
       import type { UserCurrency } from '@/service/app/types';
       import SellEquityPopup from '@/components/equity/SellEquityPopup.vue';
+      import BuyUsdtDialog from '@/components/currency/BuyUsdtDialog.vue';
       import { useTabItemTap } from '@/hooks/useTabItemTap';
       
       // 控制资产显示隐藏
@@ -202,6 +213,19 @@
       // 股权出售弹窗
       const sellEquityPopup = ref(null);
       
+      // USDT购买弹窗
+      const buyUsdtDialog = ref(null);
+      
+      // USDT信息
+      const usdtInfo = ref({
+        id: 0,
+        price: 1.0,
+        icon: '',
+      });
+      
+      // 用户余额
+      const userBalance = ref(0);
+      
       // 获取货币图标URL
       const getCurrencyIconUrl = (iconPath: string) => {
         if (!iconPath) return '';
@@ -236,12 +260,12 @@
             // 清空现有数组
             currencies.length = 0;
             
-            // 手动处理数据，过滤掉USDT的货币订单并转换格式
+            // 处理数据，不再过滤掉USDT的货币订单并转换格式
             if (Array.isArray(response.data)) {
               for (let i = 0; i < response.data.length; i++) {
                 const order = response.data[i];
+                // 排除USDT订单，因为我们会手动添加USDT
                 if (order.currency_symbol !== 'USDT') {
-                  // 保存currency_id而不是订单id
                   currencies.push({
                     id: order.currency_id, // 使用货币ID而不是订单ID
                     orderId: order.id, // 保留订单ID用于交易
@@ -263,8 +287,17 @@
               }
             }
             
+            // 如果是买入标签，添加USDT货币
+            if (activeCurrencyTab.value === 'buy') {
+              // 获取USDT信息
+              await fetchUsdtInfo();
+            }
+            
             // 无论是买入还是卖出标签，都获取用户持有的货币数量以便在界面上显示
             await fetchUserCurrencies();
+            
+            // 获取用户余额
+            await fetchUserBalance();
           }
         } catch (error) {
           console.error('获取货币订单失败:', error);
@@ -273,6 +306,80 @@
           setTimeout(() => {
             loading.value = false;
           }, 500);
+        }
+      };
+      
+      // 获取USDT信息并添加到货币列表中
+      const fetchUsdtInfo = async () => {
+        try {
+          // 获取USDT信息，使用GET请求访问buy-usdt接口
+          const response = await httpGet<{
+            status: string;
+            data: {
+              currency: {
+                id: number;
+                name: string;
+                symbol: string;
+                icon: string;
+                price: number;
+                min_transaction_amount: number;
+                max_transaction_amount: number;
+              };
+              user_balance: number;
+              user_has_usdt: boolean;
+            }
+          }>('/api/orders/buy-usdt');
+          
+          console.log('获取USDT信息响应:', JSON.stringify(response));
+          
+          if (response.status === 'success' && response.data && response.data.currency) {
+            const usdtData = response.data.currency;
+            
+            // 保存USDT信息，用于购买弹窗
+            usdtInfo.value = {
+              id: usdtData.id,
+              price: usdtData.price,
+              icon: usdtData.icon,
+            };
+            
+            // 创建USDT币种信息并添加到货币列表中
+            currencies.push({
+              id: usdtData.id,
+              orderId: 0, // USDT没有平台订单ID
+              name: usdtData.name,
+              symbol: 'USDT',
+              iconUrl: getCurrencyIconUrl(usdtData.icon),
+              buyPrice: usdtData.price,
+              sellPrice: usdtData.price,
+              holdAmount: 0, // 这将在fetchUserCurrencies中更新
+              totalAmount: 1000000, // 一个比较大的数字
+              remainingAmount: 1000000, // 一个比较大的数字
+              minAmount: usdtData.min_transaction_amount,
+              maxAmount: usdtData.max_transaction_amount,
+              fee: 0, // USDT通常不收手续费
+              unit: '个',
+              bgColor: getBgColorBySymbol('USDT')
+            });
+            
+            console.log('添加USDT到货币列表:', currencies[currencies.length - 1]);
+          }
+        } catch (error) {
+          console.error('获取USDT信息失败:', error);
+        }
+      };
+      
+      // 获取用户余额
+      const fetchUserBalance = async () => {
+        try {
+          // 直接使用getUserBalance API获取用户余额
+          const response = await getUserBalance();
+          
+          if (response.status === 'success' && response.data !== undefined) {
+            userBalance.value = parseFloat(response.data.toString() || '0');
+            console.log('用户余额:', userBalance.value);
+          }
+        } catch (error) {
+          console.error('获取用户余额失败:', error);
         }
       };
       
@@ -313,12 +420,6 @@
         } catch (error) {
           console.error('获取用户持有货币失败:', error);
         }
-      };
-      
-      // 专门为卖出页面获取用户持有的货币（不再使用）
-      const fetchUserCurrenciesForSell = async () => {
-        // 此函数不再使用，保留只是为了避免潜在调用
-        console.log('此函数不再使用');
       };
       
       // 根据货币符号获取背景颜色
@@ -447,6 +548,12 @@
           return;
         }
         
+        // USDT特殊处理，使用专门的USDT购买弹窗
+        if (activeCurrencyTab.value === 'buy' && item.symbol === 'USDT') {
+          openBuyUsdtDialog(item);
+          return;
+        }
+        
         // 获取正确的价格参数
         let price = 0;
         if (activeCurrencyTab.value === 'buy') {
@@ -481,6 +588,29 @@
         
         // 跳转到交易详情页面
         navigateTo(`/pages/trading/trade-detail?${params}`);
+      };
+      
+      // 打开购买USDT弹窗
+      const openBuyUsdtDialog = (item: any) => {
+        if (item.symbol !== 'USDT') return;
+        
+        // 设置USDT信息
+        usdtInfo.value = {
+          id: item.id,
+          price: item.buyPrice,
+          icon: item.iconUrl,
+        };
+        
+        // 打开弹窗
+        if (buyUsdtDialog.value) {
+          (buyUsdtDialog.value as any).open();
+        }
+      };
+      
+      // 处理USDT购买成功
+      const handleBuyUsdtSuccess = () => {
+        // 刷新货币订单和用户货币数据
+        fetchCurrencyOrders();
       };
       
       // 处理出售股权操作

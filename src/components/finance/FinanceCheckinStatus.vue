@@ -7,7 +7,7 @@
       </view>
     </view>
     
-    <view class="progress-bar">
+    <view class="progress-bar" style="margin-top: 50rpx;">
       <view class="progress-fill" :style="{ width: checkInData.completionRate + '%' }"></view>
       <view 
         v-for="(marker, index) in markers" 
@@ -83,7 +83,7 @@ const handleCheckIn = () => {
   box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
   margin-top: -20rpx;
   position: relative;
-  z-index: 20;
+  z-index: 10;
 }
 
 .status-header {

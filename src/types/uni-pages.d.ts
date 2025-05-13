@@ -22,6 +22,7 @@ interface NavigateToOptions {
        "/pages/my/reset-withdraw-password" |
        "/pages/my/settings" |
        "/pages/my/wallet" |
+       "/pages/my/withdraw" |
        "/pages/register/index" |
        "/pages/team/index" |
        "/pages/team/invite-poster" |
@@ -29,6 +30,10 @@ interface NavigateToOptions {
        "/pages/trading/index" |
        "/pages/trading/records" |
        "/pages/trading/trade-detail" |
+       "/pages/transfer/alipay" |
+       "/pages/transfer/bank" |
+       "/pages/transfer/index" |
+       "/pages/transfer/phone-pay" |
        "/pages/verification/index";
 }
 interface RedirectToOptions extends NavigateToOptions {}

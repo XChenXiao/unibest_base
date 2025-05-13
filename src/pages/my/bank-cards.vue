@@ -18,7 +18,7 @@
 <template>
   <view class="container">
     <!-- 顶部卡片 -->
-    <view class="card-top">
+    <!-- <view class="card-top">
       <view class="card-top-title">
         网商银行卡
         <text class="activation-status" :class="{'status-processing': isProcessing}">
@@ -32,12 +32,12 @@
         <view class="balance-card-info" v-if="defaultCard">{{ defaultCard.bank_name }} **** {{ defaultCard.masked_card_number.slice(-4) }}</view>
       </view>
     </view>
-    
+     -->
     <!-- 激活区域 - 未激活且未申请中 -->
     <view class="card-activation" v-if="!isActivated && !isProcessing">
       <view class="activation-title">激活银行卡</view>
       <view class="activation-fee">
-        激活银行卡需支付 {{ bankCardStatus.open_fee || 10 }} USDT 手续费
+        激活银行卡需要缴纳 {{ bankCardStatus.open_fee || 10 }} 人民币作为预存金
       </view>
       <button class="btn-activate" @click="goToApply">立即激活</button>
     </view>
@@ -252,6 +252,15 @@ const fetchBankCards = async () => {
 
 // 跳转到开户申请页面
 const goToApply = () => {
+  console.log(userStore.isVerified, '用户信息')
+  // 如果用户没有实名认证，则提示未实名认证并弹出弹框指引去实名认证
+  if (!userStore.isVerified) {
+    uni.showToast({
+      title: '请先实名认证',
+      icon: 'none'
+    });
+    return;
+  }
   // 传递当前银行卡开户费用
   uni.navigateTo({
     url: `/pages/my/bank-account-apply?fee=${bankCardStatus.open_fee || 0}`

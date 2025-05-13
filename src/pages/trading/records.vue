@@ -1,13 +1,3 @@
-<!-- 
- * @description: 交易记录页面
- * @param: 'pages/trading/records'
- * @return: 
- * @route: 
- *   alias: "交易记录"
- *   path: pages/trading/records
- *   style:
- *     navigationBarTitleText: 交易记录
--->
 <route lang="json5">
 {
   style: {

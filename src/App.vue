@@ -1,22 +1,39 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only'
 import { useUserStore } from '@/store'
+import { useAppStore } from '@/store/app'
 import { getNeedLoginPages } from '@/utils'
 import { pages } from '@/pages.json'
+import { tabbarStore } from '@/components/fg-tabbar/tabbar'
+import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
+import { API_URL } from '@/config/api'
 
 // 初始化用户状态
 const userStore = useUserStore()
+// 初始化应用状态
+const appStore = useAppStore()
 
 // 最小更新时间间隔(毫秒)：5分钟
 const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
 
+// 公告弹窗状态
+const showAnnouncementPopup = ref(false)
+const appOpenCount = ref(0)
+
 onLaunch(async () => {
   console.log('App Launch')
+  
+  // 初始化tabbar，设置首页索引为0
+  tabbarStore.initTabbar()
   
   // 调试输出：显示页面配置和需要登录的页面
   console.log('Pages配置:', JSON.stringify(pages, null, 2))
   console.log('需要登录的页面列表:', getNeedLoginPages())
+  
+  // 获取银行卡开户预存金
+  appStore.fetchBankCardOpenFee()
   
   // 检查是否有本地存储的token，如果有则尝试自动登录
   if (userStore.isLogined) {
@@ -45,6 +62,9 @@ onLaunch(async () => {
     // 检查当前页面是否需要登录
     checkInitialPageRequiresLogin()
   }
+  
+  // 应用启动时检查是否需要显示公告
+  checkAndShowAnnouncement()
 })
 
 // 检查初始页面是否需要登录
@@ -84,6 +104,50 @@ const checkInitialPageRequiresLogin = () => {
       }
     }
   }, 100) // 延迟一小段时间，确保页面已加载
+}
+
+// 检查并显示公告
+const checkAndShowAnnouncement = async () => {
+  try {
+    console.log('应用检查最新公告')
+    
+    // 导入公告服务API
+    const { getLatestAnnouncementAPI } = await import('@/service/index/message')
+    
+    try {
+      // 获取最新公告
+      const result = await getLatestAnnouncementAPI()
+      
+      // 如果有公告，则显示弹窗
+      if (result.status === 'success' && result.data) {
+        // 检查此公告是否已经展示过
+        const shownAnnouncements = uni.getStorageSync('shown_announcements') || []
+        const hasShown = shownAnnouncements.includes(result.data.id)
+        
+        // 如果没有展示过，则显示弹窗
+        if (!hasShown) {
+          console.log('显示最新公告弹窗')
+          // 延迟显示，确保应用已完全加载
+          setTimeout(() => {
+            showAnnouncementPopup.value = true
+          }, 800)
+        } else {
+          console.log('此公告已经展示过，不再显示')
+        }
+      } else {
+        console.log('没有公告可显示')
+      }
+    } catch (error) {
+      console.error('获取公告失败:', error)
+    }
+  } catch (error) {
+    console.error('检查公告失败:', error)
+  }
+}
+
+// 处理公告弹窗关闭事件
+const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
+  console.log('公告弹窗关闭:', data)
 }
 
 onShow(async () => {
@@ -135,12 +199,25 @@ onShow(async () => {
       }
     }, 150)
   }
+  
+  // 应用恢复前台时也检查是否需要显示公告
+  if (!showAnnouncementPopup.value) {
+    checkAndShowAnnouncement()
+  }
 })
 
 onHide(() => {
   console.log('App Hide')
 })
 </script>
+
+<template>
+  <!-- 全局公告弹窗 -->
+  <AnnouncementPopup
+    v-model="showAnnouncementPopup"
+    @close="handleAnnouncementClose"
+  />
+</template>
 
 <style lang="scss">
 /* stylelint-disable selector-type-no-unknown */
@@ -184,5 +261,14 @@ image {
   text-overflow: ellipsis;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+/* 全局弹窗样式覆盖 */
+.wd-popup {
+  z-index: 9999 !important;
+}
+
+.wd-popup__content {
+  z-index: 9999 !important;
 }
 </style>

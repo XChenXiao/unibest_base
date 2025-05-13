@@ -35,16 +35,33 @@
     
     <!-- 余额展示 -->
     <view class="balance-card">
-      <view class="balance-header">
-        <text class="balance-title">我的余额</text>
-        <view class="recharge-btn" @click="handleRecharge">
-          <wd-icon name="recharge" size="28rpx" style="margin-right: 6rpx;"/>
-          充值
+      <!-- 银行卡顶部 -->
+      <view class="card-header">
+        <view class="bank-logo">
+          <image src="/static/images/bank-icon.png" mode="aspectFit"></image>
+          <text>网商银行</text>
+        </view>
+        <!-- <view class="check-account">
+          <button class="check-btn" @click="navigateTo('/pages/my/wallet')">查看账号</button>
+        </view> -->
+      </view>
+      
+      <!-- 余额部分 -->
+      <view class="balance-section">
+        <view class="balance-label">
+          <text>可用余额(元)</text>
+          <image class="eye-icon" :src="`/static/images/${showBalance ? 'show-icon' : 'hidden-icon'}.png`" mode="widthFix" @click="toggleBalanceVisibility"></image>
+        </view>
+        <view class="balance-amount">
+          <text>{{ showBalance ? formatBalance(userStore.userInfo.balance) : '******' }}</text>
+          <text class="arrow-icon" @click="navigateTo('/pages/my/wallet')">></text>
         </view>
       </view>
-      <view class="balance-amount">
-        <text class="amount-symbol">¥</text>
-        <text class="amount-value">{{ formatBalance(userStore.userInfo.balance) }}</text>
+      
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="action-btn transfer-in" @click="handleRecharge">转入</button>
+        <button class="action-btn transfer-out" @click="handleTransferOut">转出</button>
       </view>
     </view>
     
@@ -99,7 +116,7 @@
       </view>
       
       <!-- 交易记录 -->
-      <view class="menu-item" @click="navigateTo('/pages/my/transactions')">
+      <view class="menu-item" @click="navigateTo('/pages/trading/records')">
         <view class="menu-icon transaction-icon">
           <wd-icon name="list" size="40rpx" />
         </view>
@@ -145,22 +162,29 @@
     <wd-popup v-model="showRechargePopup" round position="center">
       <view class="popup-content">
         <view class="popup-header">
-          <text class="popup-title">账户充值</text>
+          <text class="popup-title">转入预存金</text>
           <text class="popup-close" @click="closeRechargePopup">×</text>
         </view>
         <view class="popup-body">
           <view class="amount-input-container">
-            <text class="amount-label">充值金额</text>
+            <text class="amount-label">预存金额</text>
             <view class="amount-input-wrapper">
               <text class="amount-prefix">¥</text>
               <input 
                 class="amount-input" 
                 type="digit" 
                 v-model="rechargeAmount" 
-                placeholder="请输入充值金额"
+                placeholder="请输入预存金额"
               />
             </view>
           </view>
+          
+          <!-- 银行卡开户预存金提示 -->
+          <view class="open-fee-tip">
+            <text class="tip-title">温馨提示</text>
+            <text class="tip-content">激活银行卡需要缴纳 {{ appStore.bankCardOpenFee }} 人民币作为预存金</text>
+          </view>
+          
           <view class="amount-buttons">
             <view 
               v-for="(amount, index) in quickAmounts" 
@@ -172,7 +196,7 @@
               <text>¥{{ amount }}</text>
             </view>
           </view>
-          <button class="confirm-recharge-btn" @click="confirmRecharge">确认充值</button>
+          <button class="confirm-recharge-btn" @click="confirmRecharge">确认转入</button>
         </view>
       </view>
     </wd-popup>
@@ -187,11 +211,14 @@
 <script lang="ts" setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/store/user';
+import { useAppStore } from '@/store/app';
 import { useTabItemTap } from '@/hooks/useTabItemTap';
 import { API_URL } from '@/config/api';
 
 // 获取用户数据存储
 const userStore = useUserStore();
+// 获取App数据存储
+const appStore = useAppStore();
 
 // 是否有新公告
 const hasNewAnnouncement = ref(false);
@@ -264,13 +291,13 @@ onUnmounted(() => {
 });
 
 // 处理余额更新事件
-const handleBalanceUpdated = (data) => {
+const handleBalanceUpdated = (data: any) => {
   console.log('收到余额更新事件:', data);
   // 无需额外操作，因为Pinia中的数据已经更新，这里只记录日志
 };
 
 // 检查用户信息，确保数据是最新的
-const checkUserInfo = async () => {
+const checkUserInfo = () => {
   // 如果用户已登录，尝试刷新用户信息
   if (userStore.isLogined) {
     // 获取上次更新时间
@@ -281,7 +308,7 @@ const checkUserInfo = async () => {
     // 如果距离上次更新超过5分钟，则重新获取用户信息
     if (timeElapsed > 5 * 60 * 1000) {
       console.log('用户数据已过期，重新获取');
-      await userStore.fetchUserInfo();
+      userStore.fetchUserInfo();
     } else {
       console.log('用户数据在有效期内，无需重新获取');
     }
@@ -364,6 +391,11 @@ const handleProfileClick = () => {
 const handleRecharge = () => {
   rechargeAmount.value = '';
   showRechargePopup.value = true;
+  
+  // 如果用户没有开通银行卡且没有获取预存金金额，则获取预存金金额
+  if (!userStore.userInfo.has_bank_card && !appStore.hasFetchedBankCardOpenFee) {
+    appStore.fetchBankCardOpenFee();
+  }
 };
 
 // 关闭充值弹窗
@@ -430,6 +462,21 @@ const handleLogout = () => {
         });
       }
     }
+  });
+};
+
+// 控制余额显示/隐藏
+const showBalance = ref(true);
+
+// 切换余额可见性
+const toggleBalanceVisibility = () => {
+  showBalance.value = !showBalance.value;
+};
+
+// 处理转账/转出功能
+const handleTransferOut = () => {
+  uni.navigateTo({
+    url: '/pages/transfer/index'
   });
 };
 </script>
@@ -538,51 +585,122 @@ page {
 .balance-card {
   position: relative;
   z-index: 1;
-  background-color: white;
+  background: linear-gradient(to bottom right, #35c8e6, #17b8e0);
   border-radius: 20rpx;
   margin: 30rpx;
   padding: 30rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+  color: #ffffff;
 }
 
-.balance-header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 30rpx;
 }
 
-.balance-title {
-  color: #333;
-  font-size: 30rpx;
-  font-weight: 500;
-}
-
-.recharge-btn {
-  color: #3498db;
-  font-size: 28rpx;
-  background-color: rgba(52, 152, 219, 0.1);
-  padding: 8rpx 20rpx;
-  border-radius: 30rpx;
+.bank-logo {
   display: flex;
   align-items: center;
+}
+
+.bank-logo image {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 10rpx;
+}
+
+.bank-logo text {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.check-btn {
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  font-size: 24rpx;
+  color: #ffffff;
+  padding: 8rpx 24rpx;
+  border-radius: 30rpx;
+  line-height: 1.5;
+}
+
+.balance-section {
+  margin-bottom: 30rpx;
+}
+
+.balance-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.balance-label text {
+  font-size: 28rpx;
+}
+
+.eye-icon {
+  margin-left: 10rpx;
+  width: 40rpx;
+  height: 40rpx;
 }
 
 .balance-amount {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.amount-symbol {
-  font-size: 36rpx;
-  color: #333;
-  margin-right: 8rpx;
-}
-
-.amount-value {
+.balance-amount text:first-child {
   font-size: 60rpx;
-  font-weight: 600;
-  color: #333;
+  font-weight: bold;
+}
+
+.arrow-icon {
+  margin-left: 10rpx;
+  font-size: 40rpx;
+  opacity: 0.8;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 20rpx 0;
+  font-size: 32rpx;
+  border-radius: 10rpx;
+  margin-right: 20rpx;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.transfer-in {
+  background-color: #ffffff;
+  color: #17b8e0;
+  border: none;
+}
+
+.transfer-out {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  border: none;
+}
+
+.statement-btn {
+  width: 100rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.statement-btn text {
+  font-size: 28rpx;
 }
 
 /* 菜单列表 */
@@ -810,6 +928,28 @@ page {
   background-color: rgba(243, 156, 18, 0.2);
   color: #f39c12;
   font-weight: 500;
+}
+
+/* 开户预存金提示 */
+.open-fee-tip {
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 8rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.tip-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #f39c12;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.tip-content {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
 }
 
 .confirm-recharge-btn {

@@ -1,6 +1,5 @@
 <template>
   <view class="header" :style="{ paddingTop: safeAreaInsets?.top + 'px' }">
-    <view class="wave-decoration"></view>
     <view class="header-bg"></view>
 
     <!-- 菜单容器 -->
@@ -45,34 +44,45 @@
     <!-- 菜单容器（第二行） -->
     <view class="menu-container">
       <!-- 第二行菜单 -->
+      
       <view class="menu-row">
-        <view class="menu-item" @click="handleMenuClick('service')">
-          <view class="menu-icon customer-icon">
-            <image src="/static/images/menu/m2-1.png" mode="aspectFit" class="menu-image"></image>
-          </view>
-          <view class="menu-label">联系客服</view>
-        </view>
+
 
         <view class="menu-item" @click="handleMenuClick('record')">
-          <view class="menu-icon record-icon">
-            <image src="/static/images/menu/m2-2.png" mode="aspectFit" class="menu-image"></image>
+          <view class="menu-icon-simple">
+            <image src="/static/images/menu/m2-1.png" mode="aspectFit" class="menu-image-simple" style="width: 82rpx; height: 82rpx;"></image>
           </view>
           <view class="menu-label">收支记录</view>
         </view>
 
         <view class="menu-item" @click="handleMenuClick('verify')">
-          <view class="menu-icon verify-icon">
-            <image src="/static/images/menu/m2-3.png" mode="aspectFit" class="menu-image"></image>
+          <view class="menu-icon-simple">
+            <image src="/static/images/menu/m2-2.png" mode="aspectFit" class="menu-image-simple"></image>
           </view>
           <view class="menu-label">实名认证</view>
         </view>
 
-        <view class="menu-item" @click="navigateToTeam">
-          <view class="menu-icon promote-icon">
-            <image src="/static/images/menu/m2-4.png" mode="aspectFit" class="menu-image"></image>
+        <view class="menu-item" @click="navigateToInviteFriend">
+          <view class="menu-icon-simple">
+            <image src="/static/images/menu/m2-3.png" mode="aspectFit" class="menu-image-simple"></image>
           </view>
           <view class="menu-label">推广</view>
         </view>
+
+        <view class="menu-item" @click="navigateToTeam">
+          <view class="menu-icon-simple">
+            <image src="/static/images/menu/m2-4.png" mode="aspectFit" class="menu-image-simple"></image>
+          </view>
+          <view class="menu-label">我的团队</view>
+        </view>
+
+        <view class="menu-item" @click="handleMenuClick('service')">
+          <view class="menu-icon-simple">
+            <image src="/static/images/menu/m2-5.png" mode="aspectFit" class="menu-image-simple"></image>
+          </view>
+          <view class="menu-label">联系客服</view>
+        </view>
+
       </view>
     </view>
   </view>
@@ -127,27 +137,58 @@ const handleMenuClick = (type: string) => {
 const checkVerificationStatus = async () => {
   try {
     // 获取用户信息，检查认证状态
-    if (userStore.userInfo?.is_verified) {
+    if (userStore.isVerified) {
       uni.showToast({
         title: '您已完成实名认证',
         icon: 'success',
       })
-    } else {
-      uni.navigateTo({
-        url: '/pages/verification/index',
-      })
-    }
+      return // 添加return语句，确保已认证用户不会继续执行跳转
+    } 
+    
+    // 未认证用户才会执行到这里
+    uni.navigateTo({
+      url: '/pages/my/identity-verify',
+    })
   } catch (error) {
     console.error('获取认证状态失败', error)
     // 出错时默认跳转到认证页面
     uni.navigateTo({
-      url: '/pages/verification/index',
+      url: '/pages/my/identity-verify',
     })
   }
 }
 
-// 跳转到团队页面
+// 跳转到邀请好友页面
+const navigateToInviteFriend = () => {
+  // 检查实名认证状态
+  if (!userStore.isVerified) {
+    uni.showToast({
+      title: '请先完成实名认证',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  // 已认证用户才可以进入邀请好友页面
+  uni.navigateTo({
+    url: '/pages/team/invite-poster',
+  })
+}
+
+// 跳转到我的团队页面
 const navigateToTeam = () => {
+  // 检查实名认证状态
+  if (!userStore.isVerified) {
+    uni.showToast({
+      title: '请先完成实名认证',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  // 已认证用户才可以进入我的团队页面
   uni.navigateTo({
     url: '/pages/team/index',
   })
@@ -161,18 +202,8 @@ const navigateToTeam = () => {
   padding-bottom: 30rpx;
   overflow: hidden;
   background: linear-gradient(135deg, #3498db, #1a5276);
-  border-bottom-right-radius: 40rpx;
-  border-bottom-left-radius: 40rpx;
-}
-/* 波浪装饰 */
-.wave-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  width: 100%;
-  height: 16rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border-bottom-right-radius: 10rpx;
+  border-bottom-left-radius: 10rpx;
 }
 /* 顶部背景 */
 .header-bg {
@@ -182,7 +213,6 @@ const navigateToTeam = () => {
   z-index: 1;
   width: 100%;
   height: 200rpx;
-  background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9InJnYmEoMjU1LCAyNTUsIDI1NSwgMC4xKSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjApIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZmlsbD0idXJsKCNhKSIgZD0iTTAgMGgxMDB2MTAwSDB6Ii8+PHBhdGggZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjIpIiBkPSJNMCAyMGMxNSAwIDIwIDEwIDQwIDEwczI1LTEwIDQwLTEwIDIwIDEwIDQwIDEwdjIwYy0yMCAwLTI1LTEwLTQwLTEwcy0yNSAxMC00MCAxMFMxNSA0MCAwIDQweiIvPjwvc3ZnPg==);
   opacity: 0.6;
 }
 /* 菜单容器 */
@@ -195,7 +225,8 @@ const navigateToTeam = () => {
 .menu-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30rpx;
+  /* margin-bottom: 30rpx; */
+  background-color: transparent;
 }
 /* 背景图片容器 */
 .index-bg-container {
@@ -219,61 +250,63 @@ const navigateToTeam = () => {
   align-items: center;
   width: 23%;
   padding: 20rpx 0;
-  background-color: rgba(255, 255, 255, 0.95);
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
 }
-/* 菜单图标 */
+.menu-item:active {
+  transform: scale(0.95);
+}
+/* 第一行菜单图标 (带背景色) */
 .menu-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80rpx;
-  height: 80rpx;
+  width: 90rpx;
+  height: 90rpx;
   margin-bottom: 12rpx;
-  border-radius: 50%;
+  border-radius: 14rpx;
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.2);
+}
+/* 第二行菜单图标 (无背景) */
+.menu-icon-simple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90rpx;
+  height: 90rpx;
+  margin-bottom: 12rpx;
 }
 /* 菜单图片样式 */
 .menu-image {
-  width: 50rpx;
-  height: 50rpx;
+  width: 65rpx;
+  height: 65rpx;
+}
+
+.menu-image-simple {
+  width: 92rpx;
+  height: 92rpx;
 }
 
 .scanner-icon {
-  background-color: rgba(52, 152, 219, 0.15);
+  background-color: rgba(231, 76, 60, 1);
 }
 
 .payment-icon {
-  background-color: rgba(243, 156, 18, 0.15);
+  background-color: rgba(231, 76, 60, 1);
 }
 
 .transfer-icon {
-  background-color: rgba(46, 204, 113, 0.15);
+  background-color: rgba(231, 76, 60, 1);
 }
 
 .account-icon {
-  background-color: rgba(155, 89, 182, 0.15);
+  background-color: rgba(231, 76, 60, 1);
 }
 
-.customer-icon {
-  background-color: rgba(231, 76, 60, 0.15);
-}
-
-.record-icon {
-  background-color: rgba(52, 73, 94, 0.15);
-}
-
-.verify-icon {
-  background-color: rgba(26, 188, 156, 0.15);
-}
-
-.promote-icon {
-  background-color: rgba(241, 196, 15, 0.15);
-}
 /* 菜单文字 */
 .menu-label {
   font-size: 24rpx;
   font-weight: 500;
-  color: #333;
+  color: #ffffff;
 }
 </style>

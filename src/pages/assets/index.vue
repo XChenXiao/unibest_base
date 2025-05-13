@@ -38,7 +38,7 @@
         :class="{ 'tab-active': activeTab === 'currency' }"
         @click="switchTab('currency')"
       >
-        <text>货币</text>
+        <text>黄金</text>
       </view>
     </view>
 
@@ -62,12 +62,12 @@
     </view>
 
     <!-- 出售股权弹窗（使用新组件） -->
-    <sell-equity-popup
+    <!-- <sell-equity-popup
       ref="sellEquityPopup"
       :equity-info="equityInfo"
       @close="closeSellEquityPopup"
       @confirm="confirmSellEquity"
-    />
+    /> -->
 
     <!-- 底部版权信息 -->
     <view class="assets-footer">
@@ -615,39 +615,31 @@ const closeSellEquityPopup = () => {
 
 // 确认出售股权
 const confirmSellEquity = async (sellQuantity: number) => {
-  try {
-    // 显示加载状态
-    uni.showLoading({
-      title: '处理中...',
-    })
+  // 显示加载状态
+  uni.showLoading({
+    title: '处理中...',
+  })
 
-    // 调用API出售股权
-    const res = await sellEquity(sellQuantity)
+  // 调用API出售股权
+  const res = await sellEquity(sellQuantity)
 
-    if (res.status === 'success') {
-      // 刷新所有数据
-      await refreshData()
+  if (res.status === 'success') {
+    // 刷新所有数据
+    await refreshData()
 
-      // 出售成功提示
-      uni.showToast({
-        title: '出售成功',
-        icon: 'success',
-      })
-    } else {
-      uni.showToast({
-        title: res.message || '出售失败',
-        icon: 'none',
-      })
-    }
-
-    uni.hideLoading()
-  } catch (error) {
-    uni.hideLoading()
+    // 出售成功提示
     uni.showToast({
-      title: '出售失败，请重试',
+      title: res.message || '出售失败',
+      icon: 'success',
+    })
+  } else {
+    uni.showToast({
+      title: res.message || '出售失败',
       icon: 'none',
     })
   }
+  uni.hideLoading()
+
 }
 
 // 领取奖励

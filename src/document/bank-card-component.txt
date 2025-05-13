@@ -1,0 +1,188 @@
+<template>
+  <view class="card-container">
+    <!-- Header Section -->
+    <view class="card-header">
+      <view class="bank-logo">
+        <image src="/static/bank-logo.png" mode="aspectFit"></image>
+        <text>网商银行</text>
+      </view>
+      <view class="check-account">
+        <button class="check-btn">查看账号</button>
+      </view>
+    </view>
+    
+    <!-- Balance Section -->
+    <view class="balance-section">
+      <view class="balance-label">
+        <text>可用余额(元)</text>
+        <text class="eye-icon">&#128065;</text>
+      </view>
+      <view class="balance-amount">
+        <text>16,492.28</text>
+        <text class="arrow-icon">></text>
+      </view>
+    </view>
+    
+    <!-- Action Buttons -->
+    <view class="action-buttons">
+      <button class="action-btn transfer-in">转入</button>
+      <button class="action-btn transfer-out">转出</button>
+      <view class="statement-btn">
+        <text>账单</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+// Import required Vue 3 APIs if needed
+import { ref, onMounted } from 'vue';
+
+// Component data
+const balance = ref('16,492.28');
+const isBalanceVisible = ref(true);
+
+// Methods
+const toggleBalanceVisibility = () => {
+  isBalanceVisible.value = !isBalanceVisible.value;
+};
+
+const navigateToStatement = () => {
+  uni.navigateTo({
+    url: '/pages/statement/statement'
+  });
+};
+
+const handleTransferIn = () => {
+  uni.navigateTo({
+    url: '/pages/transfer/transfer-in'
+  });
+};
+
+const handleTransferOut = () => {
+  uni.navigateTo({
+    url: '/pages/transfer/transfer-out'
+  });
+};
+</script>
+
+<style>
+.card-container {
+  background: linear-gradient(to bottom right, #35c8e6, #17b8e0);
+  border-radius: 12px;
+  padding: 20px;
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.bank-logo {
+  display: flex;
+  align-items: center;
+}
+
+.bank-logo image {
+  width: 30px;
+  height: 30px;
+  margin-right: 5px;
+}
+
+.bank-logo text {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.check-btn {
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  font-size: 12px;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 15px;
+  line-height: 1.5;
+}
+
+.balance-section {
+  margin-bottom: 30px;
+}
+
+.balance-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.balance-label text {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.eye-icon {
+  margin-left: 5px;
+  font-size: 16px;
+}
+
+.balance-amount {
+  display: flex;
+  align-items: center;
+}
+
+.balance-amount text {
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.arrow-icon {
+  margin-left: 5px;
+  font-size: 20px;
+  opacity: 0.8;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 16px;
+  border-radius: 5px;
+  margin-right: 10px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.transfer-in {
+  background-color: #ffffff;
+  color: #17b8e0;
+  border: none;
+}
+
+.transfer-out {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  border: none;
+}
+
+.statement-btn {
+  width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.statement-btn text {
+  font-size: 14px;
+}
+</style>

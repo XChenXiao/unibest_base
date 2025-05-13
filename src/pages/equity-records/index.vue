@@ -45,7 +45,7 @@
           :key="record.id"
         >
           <view class="record-left">
-            <text class="record-desc">{{ record.description ? formatDescription(record.description) : getTypeText(record.type) }}</text>
+            <text class="record-desc">{{ record.remark || (record.description ? formatDescription(record.description) : getTypeText(record.type)) }}</text>
             <view class="record-footer">
               <view class="record-tag" :class="`tag-${record.type}`">{{ getTypeText(record.type) }}</view>
               <text class="record-time">{{ formatDate(record.created_at) }}</text>

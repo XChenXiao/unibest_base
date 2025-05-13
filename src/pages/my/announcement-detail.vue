@@ -35,8 +35,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { API_URL } from '@/config/api';
+import { onLoad } from '@dcloudio/uni-app';
+import { getAnnouncementDetailAPI, markAnnouncementAsReadAPI } from '@/service/index/message';
 
 // 定义类型
 interface Announcement {
@@ -45,8 +47,9 @@ interface Announcement {
   content: string;
   is_read: boolean;
   created_at: string;
-  read_at: string | null;
+  read_at?: string | null;
   is_system: boolean;
+  message_type?: string;
 }
 
 // 页面参数
@@ -67,27 +70,10 @@ const fetchAnnouncementDetail = async () => {
   console.log('正在请求公告详情，ID:', announcementId.value);
   
   try {
-    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
-    const response = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_URL}/api/messages/${announcementId.value}`,
-        method: 'GET',
-        success: (res) => {
-          console.log('获取公告详情成功:', res);
-          resolve(res);
-        },
-        fail: (err) => {
-          console.error('获取公告详情失败:', err);
-          reject(err);
-        }
-      });
-    });
+    const result = await getAnnouncementDetailAPI(announcementId.value);
     
-    // 直接使用response的data属性
-    const res = response as any;
-    
-    if (res && res.data && res.data.status === 'success') {
-      announcement.value = res.data.data;
+    if (result.status === 'success' && result.data) {
+      announcement.value = result.data;
       
       // 如果消息未读，则标记为已读
       if (announcement.value && !announcement.value.is_read) {
@@ -107,20 +93,7 @@ const fetchAnnouncementDetail = async () => {
 // 标记消息为已读
 const markAsRead = async (id: number) => {
   try {
-    await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_URL}/api/messages/${id}/read`,
-        method: 'POST',
-        success: (res) => {
-          console.log('标记公告已读成功:', res);
-          resolve(res);
-        },
-        fail: (err) => {
-          console.error('标记公告已读失败:', err);
-          reject(err);
-        }
-      });
-    });
+    await markAnnouncementAsReadAPI(id);
     
     // 更新未读公告状态
     uni.$emit('refresh_unread_announcements');
@@ -161,16 +134,24 @@ const goBack = () => {
   uni.navigateBack();
 };
 
-// 页面加载
-onMounted(() => {
+// 使用onLoad获取页面参数
+onLoad((query) => {
   try {
-    // 尝试获取页面参数
-    const query = uni.getEnterOptionsSync()?.query || {};
-    const id = Number(query.id || 0);
+    // 从URL参数中获取公告ID
+    let id = Number(query.id || 0);
+    console.log('onLoad获取到参数:', query);
+    
+    // 如果URL参数中没有ID，尝试从本地存储获取
+    if (!id) {
+      const storedParams = uni.getStorageSync('announcement_params');
+      if (storedParams && storedParams.id) {
+        id = Number(storedParams.id);
+        console.log('从本地存储获取ID:', id);
+      }
+    }
     
     announcementId.value = id;
-    
-    console.log('公告详情页获取ID:', announcementId.value, '原始参数:', query);
+    console.log('公告详情页获取ID:', announcementId.value);
     
     // 获取公告详情
     if (announcementId.value) {
@@ -184,6 +165,12 @@ onMounted(() => {
     error.value = '参数获取异常';
     loading.value = false;
   }
+});
+
+// 组件卸载时清除本地存储的参数
+onUnmounted(() => {
+  // 清除存储的公告参数
+  uni.removeStorageSync('announcement_params');
 });
 </script>
 

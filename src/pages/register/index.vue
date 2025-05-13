@@ -124,6 +124,7 @@
 <script lang="ts" setup>
 import { ref, reactive, computed } from 'vue';
 import { registerAPI } from '@/service/index/auth';
+import { onLoad } from '@dcloudio/uni-app';
 
 // 表单数据
 const formData = reactive({
@@ -140,6 +141,15 @@ const showPassword = ref(false);
 
 // 控制用户协议同意状态
 const agreedToTerms = ref(false);
+
+// 页面加载时获取参数
+onLoad((options) => {
+  console.log(Object.values(options),'options');
+  if (Object.values(options).length > 0) {
+    formData.referrer_invite_code = Object.values(options)[0];
+    console.log(formData,'formData.referrer_invite_code');
+  }
+});
 
 // 切换密码可见性
 const togglePasswordVisibility = () => {

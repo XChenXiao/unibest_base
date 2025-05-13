@@ -8,4 +8,7 @@ export const tabbarStore = reactive({
     this.curIdx = idx
     uni.setStorageSync('app-tabbar-index', idx)
   },
+  initTabbar() {
+    this.setCurIdx(0)
+  }
 })

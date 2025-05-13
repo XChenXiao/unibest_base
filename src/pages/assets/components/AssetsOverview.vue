@@ -17,13 +17,13 @@
     <!-- 资产明细 -->
     <view class="assets-breakdown">
       <view class="breakdown-item">
-        <text class="breakdown-label">货币总资产</text>
-        <text class="breakdown-value" v-if="showAssets">{{ formatAmount(currencyAssets) }}</text>
+        <text class="breakdown-label">股权总资产</text>
+        <text class="breakdown-value" v-if="showAssets">{{ formatAmount(equityAssets) }}</text>
         <text class="breakdown-value" v-else>******</text>
       </view>
       <view class="breakdown-item">
-        <text class="breakdown-label">股权总资产</text>
-        <text class="breakdown-value" v-if="showAssets">{{ formatAmount(equityAssets) }}</text>
+        <text class="breakdown-label">黄金总资产</text>
+        <text class="breakdown-value" v-if="showAssets">{{ formatAmount(currencyAssets) }}</text>
         <text class="breakdown-value" v-else>******</text>
       </view>
     </view>

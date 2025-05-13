@@ -212,6 +212,14 @@
       }
     },
     {
+      "path": "pages/my/withdraw",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "提现",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/register/index",
       "type": "page",
       "style": {
@@ -262,6 +270,34 @@
       "type": "page",
       "style": {
         "navigationBarTitleText": "交易详情"
+      }
+    },
+    {
+      "path": "pages/transfer/alipay",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "转到支付宝"
+      }
+    },
+    {
+      "path": "pages/transfer/bank",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "银行卡提现"
+      }
+    },
+    {
+      "path": "pages/transfer/index",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "转账"
+      }
+    },
+    {
+      "path": "pages/transfer/phone-pay",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "手机号收款"
       }
     },
     {

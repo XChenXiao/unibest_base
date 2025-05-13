@@ -6,6 +6,7 @@
     safeAreaInsetBottom
     placeholder
     @change="selectTabBar"
+    class="custom-tabbar"
   >
     <block v-for="(item, idx) in tabbarList" :key="item.path">
       <wd-tabbar-item
@@ -84,3 +85,13 @@ onLoad(() => {
   // #endif
 })
 </script>
+
+<style lang="scss" scoped>
+:deep(.custom-tabbar) {
+  z-index: 500 !important; /* 设置较低的层级，确保弹窗能覆盖tabbar */
+}
+
+:deep(.wd-tabbar), :deep(.wd-tabbar__content) {
+  z-index: 500 !important;
+}
+</style>

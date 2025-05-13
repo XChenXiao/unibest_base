@@ -17,6 +17,11 @@
 
 <template>
   <view class="container">
+    <!-- 顶部银行卡图片 -->
+    <view class="card-image-container">
+      <image class="card-image" src="/static/images/bg/card.png" mode="widthFix"></image>
+    </view>
+    
     <!-- 申请表单 -->
     <view class="form-container" v-if="currentStep === 'form'">
       <view class="form-header">
@@ -25,12 +30,12 @@
       </view>
       
       <view class="fee-info">
-        <view class="fee-label">开户手续费</view>
-        <view class="fee-amount">{{ openFee }} USDT</view>
+        <view class="fee-label">开户预存金</view>
+        <view class="fee-amount">{{ openFee }} 人民币</view>
         <view class="fee-message">{{ openFeeMessage }}</view>
         <view class="balance-info" :class="{ 'insufficient': !canApply }">
-          当前余额: {{ userStore.userInfo.balance || 0 }} USDT
-          <text v-if="!canApply" class="balance-warning">余额不足，请先充值</text>
+          当前网商银行余额: {{ userStore.userInfo.balance || 0 }} 人民币
+          <text v-if="!canApply" class="balance-warning">网商银行余额不足，请先转入</text>
         </view>
       </view>
       
@@ -79,7 +84,7 @@
       </view>
       
       <button class="btn-submit" @click="processSubmit" :disabled="!canApply || loading">{{ loading ? '提交中...' : '提交申请' }}</button>
-      <view class="submit-hint">提交申请将直接从您的余额中扣除 {{ openFee.toFixed(2) }} USDT 手续费</view>
+      <view class="submit-hint">提交申请将直接从您的网商银行余额中扣除 {{ openFee.toFixed(2) }} 人民币作为预存金</view>
     </view>
     
     <!-- 审核中状态 -->
@@ -99,7 +104,7 @@
         </view>
         <view class="tip-item">
           <text class="tip-dot"></text>
-          <text class="tip-text">审核通过后，您可以进行银行卡充值和提现</text>
+          <text class="tip-text">审核通过后，您可以将网商银行余额提现到您的银行卡账户中</text>
         </view>
       </view>
       <button class="btn-back" @click="backToCards">返回银行卡管理</button>
@@ -130,7 +135,7 @@ const loading = ref(false);
 const openFee = ref(0);
 
 // 开户说明信息
-const openFeeMessage = ref('开通银行卡需要支付手续费，将从您的账户余额中扣除');
+const openFeeMessage = ref('开通银行卡需要缴纳预存金，将从您的账户余额中扣除');
 
 // 是否有足够余额支付开户费用
 const canApply = ref(false);
@@ -169,7 +174,7 @@ const updateCanApply = () => {
 // 获取开户费用
 const fetchOpenFee = async () => {
   loading.value = true;
-  try {
+
     const res = await getBankCardOpenFeeAPI();
     console.log('获取开户费用响应:', res);
     
@@ -192,16 +197,6 @@ const fetchOpenFee = async () => {
       }
       
       updateCanApply();
-    } else if (data && data.message && data.message.includes('暂未开放')) {
-      // 银行卡开通功能暂未开放
-      uni.showModal({
-        title: '提示',
-        content: '银行卡开通功能暂未开放',
-        showCancel: false,
-        success: () => {
-          uni.navigateBack();
-        }
-      });
     } else if (data && data.status === 'success' && data.data) {
       // 旧格式响应处理（带有status和data的嵌套结构）
       const responseData = data.data;
@@ -218,15 +213,8 @@ const fetchOpenFee = async () => {
     } else {
       throw new Error('获取开户费用失败');
     }
-  } catch (error) {
-    console.error('获取开户费用失败:', error);
-    uni.showToast({
-      title: '获取开户费用失败，请稍后再试',
-      icon: 'none'
-    });
-  } finally {
     loading.value = false;
-  }
+  
 };
 
 // 检查用户是否有正在处理的申请
@@ -297,7 +285,7 @@ const processSubmit = async () => {
   // 二次确认
   uni.showModal({
     title: '确认提交申请',
-    content: `提交申请将从您的余额中扣除 ${openFee.value.toFixed(2)} USDT 手续费，是否继续？`,
+    content: `提交申请将从您的网商银行余额中扣除 ${openFee.value.toFixed(2)} 人民币作为预存金，是否继续？`,
     success: async (res) => {
       if (res.confirm) {
         await submitBankCardOpen();
@@ -384,26 +372,44 @@ const submitBankCardOpen = async () => {
   }
 };
 
-// 返回银行卡管理页面
+// 返回银行卡管理页面并触发刷新
 const backToCards = () => {
-  // 返回上一页并刷新
-  uni.navigateBack({
-    delta: 1,
-    success: () => {
-      // 发送事件通知银行卡管理页面刷新状态
-      uni.$emit('refresh-bank-cards');
-    }
-  });
+  try {
+    // 触发刷新事件
+    uni.$emit('refresh-bank-cards');
+    uni.$emit('refresh-bank-status');
+    
+    // 刷新用户信息
+    userStore.fetchUserInfo();
+    
+    // 返回上一页
+    uni.navigateBack();
+  } catch (error) {
+    console.error('返回处理失败:', error);
+    uni.navigateBack();
+  }
 };
 </script>
 
 <style lang="scss" scoped>
 .container {
-  width: 100%;
+  padding: 30rpx;
   background-color: #f5f5f5;
   min-height: 100vh;
-  padding: 30rpx;
   box-sizing: border-box;
+}
+
+/* 银行卡图片样式 */
+.card-image-container {
+  margin: -30rpx -30rpx 20rpx -30rpx;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .form-container {

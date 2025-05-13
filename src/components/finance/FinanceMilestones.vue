@@ -86,6 +86,8 @@ defineProps({
   padding: 30rpx;
   box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
   margin-bottom: 60rpx;
+  position: relative;
+  z-index: 1;
 }
 
 .milestone-header {

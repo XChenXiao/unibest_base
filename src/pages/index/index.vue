@@ -10,6 +10,9 @@
 </route>
 <template>
   <view class="page-container">
+    <!-- 顶部波浪装饰 -->
+    <view class="wave-decoration"></view>
+    
     <!-- 顶部区域 -->
     <finance-header 
       :safeAreaInsets="safeAreaInsets"
@@ -35,17 +38,33 @@
     <finance-milestones
       :milestones="milestones"
     />
+    
+    <!-- 公告弹窗组件 - 降低层级 -->
+    <AnnouncementPopup 
+      v-model="showAnnouncementPopup"
+      @close="handleAnnouncementClose"
+    />
+    
+    <!-- 实名认证指引弹窗 - 层级高于公告弹窗 -->
+    <VerificationGuidePopup
+      v-model="showVerificationGuidePopup"
+      @close="handleVerificationGuideClose"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated, onUnmounted } from 'vue'
 import FinanceHeader from '@/components/finance/FinanceHeader.vue'
 import FinanceCheckinStatus from '@/components/finance/FinanceCheckinStatus.vue'
 import FinanceCheckinCircles from '@/components/finance/FinanceCheckinCircles.vue'
 import FinanceMilestones from '@/components/finance/FinanceMilestones.vue'
+import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
+import VerificationGuidePopup from '@/components/common/VerificationGuidePopup.vue'
 import { getCheckInStatsAPI, getCheckInDailyStatusAPI, checkInAPI } from '@/service/index/checkin'
 import { useUserStore } from '@/store'
+import { API_URL } from '@/config/api'
+import { getVerificationStatus } from '@/service/app/user'
 
 defineOptions({
   name: 'FinanceHome',
@@ -53,6 +72,9 @@ defineOptions({
 
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
+
+// 获取用户状态
+const userStore = useUserStore()
 
 // 数据
 const isCheckingIn = ref(false)
@@ -78,13 +100,36 @@ const missedDays = ref<number[]>([])
 // 里程碑数据
 const milestones = ref([])
 
+// 公告弹窗状态
+const showAnnouncementPopup = ref(false)
+// 实名认证指引弹窗状态
+const showVerificationGuidePopup = ref(false)
+// 用户实名认证状态
+const verificationStatus = ref<any>(null)
+
 // 生命周期
 onMounted(() => {
   console.log('首页组件已挂载，准备获取签到数据')
   // 获取签到数据
   fetchCheckInData()
+  
+  // 检查用户实名认证状态并显示相应弹窗
+  checkVerificationStatusAndShowPopups()
 })
 
+// 监听页面激活（每次进入页面都会调用）
+onActivated(() => {
+  console.log('首页被激活')
+  // 每次页面激活时都检查用户实名认证状态
+  checkVerificationStatusAndShowPopups()
+})
+
+// 页面卸载时清除本地存储
+onUnmounted(() => {
+  // 清除存储的公告展示记录
+  uni.removeStorageSync('shown_announcements')
+  console.log('首页组件卸载，清除公告展示记录')
+})
 
 // 方法
 // 获取签到数据
@@ -210,6 +255,100 @@ const handleCheckIn = async () => {
     isCheckingIn.value = false
   }
 }
+
+// 获取用户实名认证状态
+const fetchVerificationStatus = async () => {
+  try {
+    console.log('首页获取实名认证状态')
+    const res: any = await getVerificationStatus({})
+    console.log('实名认证状态返回:', res)
+    
+    if (res.status === 'success') {
+      verificationStatus.value = res
+      
+      // 更新用户的认证状态到store中
+      if (res.data?.is_verified) {
+        // 用户已认证
+        userStore.verificationStatus.verified = true
+        return true
+      } else {
+        // 用户未认证
+        userStore.verificationStatus.verified = false
+        return false
+      }
+    }
+    return false
+  } catch (error) {
+    console.error('获取实名认证状态失败:', error)
+    return false
+  }
+}
+
+// 检查用户实名认证状态并显示相应弹窗
+const checkVerificationStatusAndShowPopups = async () => {
+  // 获取最新的实名认证状态
+  const isVerified = await fetchVerificationStatus()
+  
+  // 如果用户未实名认证，显示实名认证指引弹窗
+  if (!isVerified) {
+    console.log('用户未实名认证，显示实名认证指引弹窗')
+    setTimeout(() => {
+      showVerificationGuidePopup.value = true
+    }, 800)
+  } else {
+    // 用户已实名认证，检查是否需要显示公告弹窗
+    checkAndShowAnnouncement()
+  }
+}
+
+// 检查并显示公告
+const checkAndShowAnnouncement = async () => {
+  try {
+    console.log('首页检查最新公告')
+    
+    // 检查是否有最新公告
+    const { getLatestAnnouncementAPI } = await import('@/service/index/message')
+    const result = await getLatestAnnouncementAPI()
+    
+    // 如果有公告，则显示弹窗
+    if (result.status === 'success' && result.data) {
+      const latestAnnouncement = result.data
+      
+      // 检查此公告是否已经展示过
+      const shownAnnouncements = uni.getStorageSync('shown_announcements') || []
+      const hasShown = shownAnnouncements.includes(latestAnnouncement.id)
+      
+      // 如果没有展示过，则显示弹窗
+      if (!hasShown) {
+        console.log('首页显示最新公告弹窗')
+        // 延迟显示，确保首页已完全加载
+        setTimeout(() => {
+          showAnnouncementPopup.value = true
+        }, 800)
+      } else {
+        console.log('此公告已经展示过，不再显示')
+      }
+    }
+  } catch (error) {
+    console.error('首页检查公告失败:', error)
+  }
+}
+
+// 处理公告弹窗关闭事件
+const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
+  console.log('公告弹窗关闭:', data)
+  
+  if (data.dontShowAgain) {
+    // 进一步处理"不再显示"的逻辑可以在这里添加
+  }
+}
+
+// 处理实名认证指引弹窗关闭事件
+const handleVerificationGuideClose = (data: { later: boolean }) => {
+  console.log('实名认证指引弹窗关闭');
+  // 当弹窗关闭后，检查是否显示公告弹窗
+  checkAndShowAnnouncement();
+}
 </script>
 
 <style>
@@ -221,5 +360,14 @@ page {
 /* 页面容器 */
 .page-container {
   min-height: 100vh;
+}
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  z-index: 2;
 }
 </style>
