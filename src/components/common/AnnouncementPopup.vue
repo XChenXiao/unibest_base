@@ -7,6 +7,7 @@
     :close-on-click-overlay="false"
     class="announcement-popup"
     :style="{ zIndex: 9000 }"
+    modal-style="z-index: 9000;"
   >
     <view class="popup-content">
       <!-- 标题 -->
@@ -93,15 +94,6 @@ const fetchLatestAnnouncement = async () => {
       if (announcement.value.id && !announcement.value.is_read) {
         await markAsRead(announcement.value.id);
       }
-      
-      // 检查是否已经展示过
-      const shownAnnouncements = uni.getStorageSync('shown_announcements') || [];
-      const hasShown = shownAnnouncements.includes(announcement.value.id);
-      
-      // 如果已经展示过并且用户选择了不再显示，则关闭弹窗
-      if (hasShown) {
-        closePopup();
-      }
     } else {
       error.value = '暂无公告';
       closePopup();
@@ -161,17 +153,6 @@ const toggleRemember = () => {
 const closePopup = () => {
   showPopup.value = false;
   emit('close', { dontShowAgain: dontShowAgain.value });
-  
-  // 如果用户选择不再显示，记录当前公告ID
-  if (dontShowAgain.value && announcement.value.id) {
-    const shownAnnouncements = uni.getStorageSync('shown_announcements') || [];
-    
-    // 检查是否已经包含了当前公告ID
-    if (!shownAnnouncements.includes(announcement.value.id)) {
-      shownAnnouncements.push(announcement.value.id);
-      uni.setStorageSync('shown_announcements', shownAnnouncements);
-    }
-  }
 };
 
 // 跳转到公告详情页
@@ -198,10 +179,9 @@ onMounted(() => {
   }
 });
 
-// 组件卸载时重置展示判断
+// 组件卸载时不进行任何操作
 onUnmounted(() => {
-  // 移除本地存储的展示记录，这样下次进入应用时会再次展示
-  uni.removeStorageSync('shown_announcements');
+  // 不做任何操作，确保每次进入首页都显示公告
 });
 
 // 监听弹窗显示状态

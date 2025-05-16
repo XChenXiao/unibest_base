@@ -11,6 +11,8 @@ interface NavigateToOptions {
        "/pages/login/change-password" |
        "/pages/login/index" |
        "/pages/login/reset-password" |
+       "/pages/my/alipay-accounts" |
+       "/pages/my/alipay-payment-setting" |
        "/pages/my/announcement-detail" |
        "/pages/my/announcements" |
        "/pages/my/bank-account-apply" |
@@ -22,6 +24,7 @@ interface NavigateToOptions {
        "/pages/my/reset-withdraw-password" |
        "/pages/my/settings" |
        "/pages/my/wallet" |
+       "/pages/my/wechat-payment-setting" |
        "/pages/my/withdraw" |
        "/pages/register/index" |
        "/pages/team/index" |
@@ -34,6 +37,7 @@ interface NavigateToOptions {
        "/pages/transfer/bank" |
        "/pages/transfer/index" |
        "/pages/transfer/phone-pay" |
+       "/pages/transfer/wechat" |
        "/pages/verification/index";
 }
 interface RedirectToOptions extends NavigateToOptions {}

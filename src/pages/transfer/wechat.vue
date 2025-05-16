@@ -1,24 +1,23 @@
 <route lang="json5">
 {
   style: {
-    navigationBarTitleText: '银行卡提现',
+    navigationBarTitleText: '微信提现',
   },
 }
 </route>
 
 <template>
-  <view class="bank-transfer-container">
+  <view class="wechat-transfer-container">
     <!-- 提现表单 -->
     <view class="form-card">
       <view class="form-item">
-        <view class="form-label">选择银行卡</view>
-        <view class="bank-card-selector" @click="showBankCardList">
-          <view class="selected-card" v-if="selectedCard">
-            <view class="bank-name">{{ selectedCard.bankName }}</view>
-            <view class="card-number">{{ maskCardNumber(selectedCard.cardNumber) }}</view>
+        <view class="form-label">微信收款码</view>
+        <view class="account-selector" @click="showPaymentSetting">
+          <view class="selected-account" v-if="hasWechatQRCode">
+            <text class="account-text">已设置微信收款码</text>
           </view>
-          <view class="no-card" v-else>
-            <text>请选择收款银行卡</text>
+          <view class="no-account" v-else>
+            <text>请设置微信收款码</text>
           </view>
           <wd-icon name="arrow-right" size="36rpx" color="#999" />
         </view>
@@ -53,7 +52,6 @@
             placeholder="请输入提现密码"
           />
         </view>
-        <!-- <view class="forgot-password" @click="navigateToResetPassword">忘记密码?</view> -->
       </view>
 
       <!-- 提交按钮 -->
@@ -62,20 +60,20 @@
       </button>
 
       <!-- 提现说明 -->
-      <view class="transfer-notes">
-        <!-- <view class="note-item">
+      <!-- <view class="transfer-notes">
+        <view class="note-item">
           <text class="note-dot">•</text>
           <text class="note-text">1. 提现金额最低100元，每日限额50000元</text>
-        </view> -->
-        <!-- <view class="note-item">
+        </view>
+        <view class="note-item">
           <text class="note-dot">•</text>
           <text class="note-text">2. 提现到账时间为1-2个工作日</text>
-        </view> -->
-        <!-- <view class="note-item">
+        </view>
+        <view class="note-item">
           <text class="note-dot">•</text>
           <text class="note-text">3. 提现手续费为提现金额的0.5%</text>
-        </view> -->
-      </view>
+        </view>
+      </view> -->
     </view>
   </view>
 </template>
@@ -83,10 +81,9 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import { getUserBankCards, withdraw } from '@/service/app'
-import { checkBankCardStatusAPI } from '@/service/index/bankcard'
+import { withdraw } from '@/service/app'
+import { getPaymentInfo } from '@/service/app/wechat'
 import { IWithdrawParams } from '@/service/index/withdraw'
-import { http } from '@/utils/http'
 
 // 用户store
 const userStore = useUserStore()
@@ -97,14 +94,11 @@ const accountBalance = ref(userStore.userInfo.balance || 0)
 // 提现金额
 const transferAmount = ref('')
 
-// 选中的银行卡
-const selectedCard = ref(null)
-
 // 提现密码
 const withdrawPassword = ref('')
 
-// 银行卡列表是否显示
-const bankCardListVisible = ref(false)
+// 是否已设置微信收款码
+const hasWechatQRCode = ref(false)
 
 // 是否正在提交
 const isSubmitting = ref(false)
@@ -113,7 +107,7 @@ const isSubmitting = ref(false)
 const isFormValid = computed(() => {
   const amount = Number(transferAmount.value)
   return (
-    selectedCard.value &&
+    hasWechatQRCode.value &&
     // amount >= 100 &&
     // amount <= 50000 &&
     amount <= accountBalance.value &&
@@ -128,73 +122,37 @@ const formatBalance = (balance: number | string) => {
   return num.toFixed(2)
 }
 
-// 遮蔽银行卡号
-const maskCardNumber = (cardNumber: string) => {
-  if (!cardNumber) return ''
-  return `**** **** **** ${cardNumber.slice(-4)}`
-}
-
 // 设置最大金额
 const setMaxAmount = () => {
   transferAmount.value = formatBalance(accountBalance.value)
 }
 
-// 显示银行卡列表
-const showBankCardList = async () => {
-  try {
-    // 获取用户银行卡列表
-    const res = await getUserBankCards()
-
-    if (res.status === 'success' && res.data && Array.isArray(res.data) && res.data.length > 0) {
-      // 获取默认的银行卡或第一张卡
-      const defaultCard = res.data.find((card) => card.is_default) || res.data[0]
-      selectedCard.value = {
-        id: defaultCard.id,
-        bankName: defaultCard.bank_name,
-        cardNumber: defaultCard.card_number,
-      }
-    }
-
-    // 跳转到银行卡管理页面
-    uni.navigateTo({
-      url: '/pages/my/bank-cards',
-    })
-  } catch (error) {
-    console.error('获取银行卡列表失败:', error)
-    uni.showToast({
-      title: '获取银行卡失败',
-      icon: 'none',
-    })
-  }
+// 跳转到微信收款设置页面
+const showPaymentSetting = () => {
+  uni.navigateTo({
+    url: '/pages/my/wechat-payment-setting'
+  })
 }
 
-// 获取默认银行卡信息
-const getDefaultBankCard = async () => {
+// 检查微信收款码状态
+const checkWechatQRCode = async () => {
   try {
-    const res = await getUserBankCards()
-    if (res.status === 'success' && res.data && Array.isArray(res.data) && res.data.length > 0) {
-      // 获取默认的银行卡或第一张卡
-      const defaultCard = res.data.find((card) => card.is_default) || res.data[0]
-      selectedCard.value = {
-        id: defaultCard.id,
-        bankName: defaultCard.bank_name,
-        cardNumber: defaultCard.card_number,
-      }
+    const res = await getPaymentInfo()
+    if (res.status === 'success' && res.data) {
+      hasWechatQRCode.value = !!res.data.wechat_qrcode_url
     }
   } catch (error) {
-    console.error('获取默认银行卡失败:', error)
+    console.error('获取微信收款码状态失败:', error)
   }
 }
 
 // 处理提交
 const handleSubmit = () => {
-  console.log('点击提交按钮，表单有效性:', isFormValid.value)
-
   if (!isFormValid.value) {
     let message = ''
 
-    if (!selectedCard.value) {
-      message = '请选择银行卡'
+    if (!hasWechatQRCode.value) {
+      message = '请先设置微信收款码'
     } else if (Number(transferAmount.value) < 100) {
       message = '提现金额不能低于100元'
     } else if (Number(transferAmount.value) > 50000) {
@@ -207,7 +165,7 @@ const handleSubmit = () => {
 
     uni.showToast({
       title: message || '表单信息有误',
-      icon: 'none',
+      icon: 'none'
     })
     return
   }
@@ -219,14 +177,13 @@ const handleSubmit = () => {
   const processWithdraw = async () => {
     try {
       uni.showLoading({
-        title: '处理中...',
+        title: '处理中...'
       })
 
       // 构建提现参数
       const params: IWithdrawParams = {
         amount: Number(transferAmount.value),
-        withdraw_type: 'bank',
-        bank_card_id: selectedCard.value.id,
+        withdraw_type: 'wechat',
         withdraw_password: withdrawPassword.value
       }
 
@@ -238,7 +195,7 @@ const handleSubmit = () => {
       if (response.status === 'success') {
         uni.showToast({
           title: '提现申请已提交',
-          icon: 'success',
+          icon: 'success'
         })
 
         // 刷新用户信息（余额）
@@ -251,7 +208,7 @@ const handleSubmit = () => {
       } else {
         uni.showToast({
           title: response.message || '提现失败',
-          icon: 'none',
+          icon: 'none'
         })
       }
     } catch (error) {
@@ -259,7 +216,7 @@ const handleSubmit = () => {
       console.error('提现请求失败:', error)
       uni.showToast({
         title: '提现失败，请重试',
-        icon: 'none',
+        icon: 'none'
       })
     } finally {
       isSubmitting.value = false
@@ -270,63 +227,19 @@ const handleSubmit = () => {
   processWithdraw()
 }
 
-// 提交提现申请不再需要这么复杂的实现，简化它
-const submitWithdraw = async () => {
-  // 这个方法不再需要，处理逻辑已移至handleSubmit
-}
-
-// 刷新用户银行卡状态
-const refreshUserBankCardStatus = async () => {
-  try {
-    // 从API获取最新的银行卡状态
-    const res = await checkBankCardStatusAPI()
-    if (res.status === 'success' && res.data) {
-      // 更新用户的银行卡状态 - 需要类型转换，因为接口定义的类型与实际返回的结构不同
-      const statusData = res.data as any
-      const hasBankCard = statusData.has_bank_card
-
-      // 更新本地存储的用户银行卡状态
-      userStore.setUserInfo({
-        ...userStore.userInfo,
-        has_bank_card: hasBankCard,
-      })
-
-      // 如果已有银行卡，获取银行卡列表
-      // if (hasBankCard && !selectedCard.value) {
-      //   showBankCardList()
-      // }
-    }
-  } catch (error) {
-    console.error('刷新银行卡状态失败:', error)
-  }
-}
-
-// 检查用户银行卡状态
+// 页面加载时检查微信收款码状态
 onMounted(async () => {
-  // 刷新用户银行卡状态
-  await refreshUserBankCardStatus()
-
-  // 获取默认银行卡信息
-  await getDefaultBankCard()
-
-  // 添加页面显示事件监听
-  uni.$on('refresh-bank-status', refreshUserBankCardStatus)
+  await checkWechatQRCode()
 })
 
-// 在组件卸载时清理
-onUnmounted(() => {
-  // 移除事件监听
-  uni.$off('refresh-bank-status', refreshUserBankCardStatus)
+// 页面显示时刷新收款码状态
+onShow(() => {
+  checkWechatQRCode()
 })
 
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
-}
-
-// 页面相关方法
-const navigateToResetPassword = () => {
-  uni.navigateTo({ url: '/pages/my/reset-withdraw-password' })
 }
 </script>
 
@@ -336,29 +249,8 @@ page {
   min-height: 100%;
 }
 
-.bank-transfer-container {
+.wechat-transfer-container {
   padding: 30rpx;
-}
-
-/* 返回按钮 */
-.back-button {
-  margin-bottom: 30rpx;
-  width: 60rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 页面标题 */
-.page-title {
-  margin-bottom: 40rpx;
-}
-
-.title-text {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #333;
 }
 
 /* 表单卡片 */
@@ -379,8 +271,8 @@ page {
   margin-bottom: 20rpx;
 }
 
-/* 银行卡选择器 */
-.bank-card-selector {
+/* 微信账户选择器 */
+.account-selector {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -388,22 +280,16 @@ page {
   border-bottom: 1px solid #e0e0e0;
 }
 
-.selected-card {
+.selected-account {
   flex: 1;
 }
 
-.bank-name {
+.account-text {
   font-size: 30rpx;
   color: #333;
-  margin-bottom: 8rpx;
 }
 
-.card-number {
-  font-size: 26rpx;
-  color: #999;
-}
-
-.no-card {
+.no-account {
   color: #999;
   font-size: 28rpx;
 }
@@ -423,7 +309,7 @@ page {
   margin-right: 10rpx;
 }
 
-.amount-input {
+.amount-input, .form-input {
   flex: 1;
   height: 80rpx;
   font-size: 34rpx;
@@ -437,7 +323,7 @@ page {
 }
 
 .amount-all {
-  color: #2196f3;
+  color: #07c160;
 }
 
 /* 提交按钮 */
@@ -448,7 +334,7 @@ page {
   color: #ffffff;
   font-size: 32rpx;
   font-weight: 500;
-  background: linear-gradient(to right, #2196f3, #03a9f4);
+  background: linear-gradient(to right, #07c160, #10d876);
   margin: 40rpx 0;
 }
 
@@ -460,14 +346,6 @@ page {
 /* 提现说明 */
 .transfer-notes {
   margin-top: 20rpx;
-}
-
-/* 忘记密码 */
-.forgot-password {
-  position: absolute;
-  right: 0;
-  font-size: 26rpx;
-  color: #2196f3;
 }
 
 .note-item {
@@ -485,4 +363,4 @@ page {
   color: #999;
   flex: 1;
 }
-</style>
+</style> 

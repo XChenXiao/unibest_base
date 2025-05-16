@@ -7,26 +7,39 @@
     :close-on-click-overlay="false"
     class="verification-guide-popup"
     :style="{ zIndex: 10000 }"
+    modal-style="z-index: 10000;"
+    :close-on-click-modal="false"
+    custom-style="background-color: transparent;z-index: 10000;"
   >
     <view class="popup-content">
       <!-- 标题 -->
-      <view class="popup-header">
+      <!-- <view class="popup-header">
         <text class="popup-title">实名认证指引</text>
-      </view>
+      </view> -->
       
       <!-- 内容 -->
       <view class="popup-body">
-        <view class="guide-icon">
+        <!-- <view class="guide-icon">
           <text class="i-carbon-id-management text-6xl text-blue-500"></text>
-        </view>
-        <view class="guide-text">
+        </view> -->
+        <!-- <view class="guide-text">
           <text class="guide-main-text">您尚未完成实名认证</text>
           <text class="guide-sub-text">根据相关规定，使用我们的服务需要先完成实名认证</text>
-        </view>
+        </view> -->
         
         <!-- 实名认证奖励列表 -->
         <view class="rewards-container">
-          <view class="rewards-title">实名认证可获得以下奖励：</view>
+          <view 
+            style="
+            font-size: 48rpx;
+            color: white;
+            position: relative;
+            top: 60rpx;
+            font-weight: 700;
+            left: 215rpx;
+            "
+          >实名奖励</view>
+          <!-- <view class="rewards-title">实名认证可获得以下奖励：</view> -->
           <view v-if="loading" class="loading-text">
             <wd-loading color="#1989fa" size="24px" />
             <text>加载中...</text>
@@ -35,17 +48,23 @@
           <view v-else-if="!rewards.length" class="empty-text">暂无奖励</view>
           <view v-else class="rewards-list">
             <view v-for="(reward, index) in rewards" :key="reward.id" class="reward-item">
-              <view class="reward-index">{{ index + 1 }}</view>
-              <view class="reward-desc">{{ reward.description }}</view>
+              <!-- <view class="reward-index">{{ index + 1 }}</view> -->
+              <view class="reward-desc" style="line-height: 45rpx;color: #FC451D;">{{ reward.description }}</view>
             </view>
           </view>
+          
+        </view>
+        
+        <!-- 实名认证按钮 -->
+        <view class="auth-button-container">
+          <button class="auth-button" @click.stop="goToVerificationPage">实名认证</button>
         </view>
       </view>
       
       <!-- 底部按钮 -->
-      <view class="popup-footer">
+      <!-- <view class="popup-footer">
         <button class="verify-btn" @click="goToVerificationPage">立即实名认证</button>
-      </view>
+      </view> -->
     </view>
   </wd-popup>
 </template>
@@ -86,10 +105,10 @@ const closePopup = () => {
   emit('close', { later: true });
 };
 
-// 跳转到实名认证页面
+// 跳转到实名认证页面 - 使用首页菜单中的实名认证页面
 const goToVerificationPage = () => {
   uni.navigateTo({
-    url: '/pages/verification/index',
+    url: '/pages/my/identity-verify',
     success: () => {
       // 跳转成功后关闭弹窗
       showPopup.value = false;
@@ -174,7 +193,6 @@ watch(() => showPopup.value, (newVal) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow-y: auto;
   flex: 1;
 }
 
@@ -205,10 +223,13 @@ watch(() => showPopup.value, (newVal) => {
 
 .rewards-container {
   width: 100%;
+  height: 700rpx;
   margin-top: 20rpx;
   padding: 20rpx;
-  background-color: #f9f9f9;
   border-radius: 10rpx;
+  background-image: url('@/static/images/bg/realName.png');
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 .rewards-title {
@@ -219,6 +240,8 @@ watch(() => showPopup.value, (newVal) => {
 }
 
 .rewards-list {
+  margin-top: 98rpx;
+  padding-left: 85rpx;
   width: 100%;
 }
 
@@ -284,5 +307,28 @@ watch(() => showPopup.value, (newVal) => {
   width: 100%;
   background-color: #007aff;
   color: #fff;
+}
+
+.auth-button-container {
+  margin-top: 30rpx;
+  width: 100%;
+  padding: 0 30rpx;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  top: -290rpx;
+}
+
+.auth-button {
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin: 0;
+  padding: 0 60rpx;
+  border-radius: 40rpx;
+  background-color: #FC451D;
+  color: #fff;
+  box-shadow: 0 4rpx 10rpx rgba(252, 69, 29, 0.3);
 }
 </style> 

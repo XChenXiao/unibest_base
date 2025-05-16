@@ -1,4 +1,5 @@
 import { getEnvBaseUploadUrl } from './index'
+import { http } from '@/utils/http';
 
 /**
  * 图片上传服务基础URL
@@ -25,12 +26,26 @@ export interface IImageUploadResult {
 }
 
 /**
+ * 上传接口返回结果类型
+ */
+export interface IUploadResult {
+  status: string;
+  message: string;
+  data?: {
+    url: string;
+    [key: string]: any;
+  };
+}
+
+/**
  * 图片类型枚举
  */
 export enum ImageType {
   AVATAR = 'avatars',
   ID_CARD_FRONT = 'id_card_front',
   ID_CARD_BACK = 'id_card_back',
+  ALIPAY_QRCODE = 'alipay_qrcode',
+  WECHAT_QRCODE = 'wechat_qrcode',
   COMMON = 'images'
 }
 
@@ -77,8 +92,15 @@ export const uploadImage = async (
     // 先压缩图片
     const compressedFilePath = await compressImage(filePath)
     
-    // 使用API代理URL - 直接使用相对路径，让Vite的代理配置处理
-    const uploadUrl = `/api/files/upload/file`
+    // 根据图片类型选择不同的上传URL
+    let uploadUrl = '/api/files/upload/file'
+    let formDataName = 'file'
+    
+    // 支付宝和微信二维码使用不同的上传接口
+    if (type === ImageType.ALIPAY_QRCODE || type === ImageType.WECHAT_QRCODE) {
+      uploadUrl = '/api/payment-info'
+      formDataName = type === ImageType.ALIPAY_QRCODE ? 'alipay_qrcode' : 'wechat_qrcode'
+    }
     
     // 确定folder参数
     const folder = type === ImageType.ID_CARD_FRONT || type === ImageType.ID_CARD_BACK 
@@ -89,26 +111,19 @@ export const uploadImage = async (
     console.log('上传图片参数:', {
       url: uploadUrl,
       type: type.toString(),
-      folder: folder
+      folder: folder,
+      formDataName
     })
     
     return new Promise((resolve, reject) => {
-      // 获取token
-      const token = uni.getStorageSync('token') || ''
-      
-      // 使用uni.uploadFile进行上传 - 这会自动设置正确的Content-Type: multipart/form-data
+      // 使用uni.uploadFile进行上传 - 让拦截器处理URL和token
       uni.uploadFile({
         url: uploadUrl,
         filePath: compressedFilePath,
-        name: 'file', // 文件字段名，与后端对应
+        name: formDataName,
         formData: {
-          type: type.toString(), // 确保type是字符串类型
+          type: type.toString(),
           folder: folder
-        },
-        header: {
-          Authorization: token ? `Bearer ${token}` : '',
-          'X-Requested-With': 'XMLHttpRequest'
-          // 注意：不要手动设置Content-Type，uni.uploadFile会自动设置为multipart/form-data
         },
         success: (res) => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -124,6 +139,10 @@ export const uploadImage = async (
                     fileUrl = data.data.url
                   } else if (data.data.file_path) {
                     fileUrl = data.data.file_path
+                  } else if (data.data.alipay_qrcode_url) {
+                    fileUrl = data.data.alipay_qrcode_url
+                  } else if (data.data.wechat_qrcode_url) {
+                    fileUrl = data.data.wechat_qrcode_url
                   }
                 }
                 
@@ -212,6 +231,24 @@ export const uploadIdCardBack = (
   filePath: string
 ): Promise<IImageUploadResult> => {
   return uploadImage(filePath, ImageType.ID_CARD_BACK)
+}
+
+/**
+ * 上传支付宝二维码
+ */
+export const uploadAlipayQRCode = (
+  filePath: string
+): Promise<IImageUploadResult> => {
+  return uploadImage(filePath, ImageType.ALIPAY_QRCODE)
+}
+
+/**
+ * 上传微信二维码
+ */
+export const uploadWechatQRCode = (
+  filePath: string
+): Promise<IImageUploadResult> => {
+  return uploadImage(filePath, ImageType.WECHAT_QRCODE)
 }
 
 /**
@@ -319,6 +356,71 @@ export const chooseAndUploadIdCardBack = (
   return chooseAndUploadImage(ImageType.ID_CARD_BACK, {
     sourceType: options?.sourceType,
     sizeType: ['compressed']
+  })
+}
+
+/**
+ * 选择并上传支付宝收款码
+ */
+export const chooseAndUploadAlipayQRCode = (): Promise<IUploadResult> => {
+  return new Promise((resolve, reject) => {
+    uni.chooseImage({
+      count: 1,
+      sizeType: ['original', 'compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFilePaths[0];
+        
+        // 上传文件
+        uni.uploadFile({
+          url: '/api/upload/alipay-qrcode',
+          filePath: tempFilePath,
+          name: 'file',
+          success: (uploadRes) => {
+            try {
+              const data = JSON.parse(uploadRes.data);
+              resolve(data as IUploadResult);
+            } catch (error) {
+              reject(new Error('解析上传响应失败'));
+            }
+          },
+          fail: (error) => {
+            reject(error);
+          }
+        });
+      },
+      fail: (error) => {
+        reject(error);
+      }
+    });
+  });
+};
+
+/**
+ * 选择并上传微信收款码
+ */
+export const chooseAndUploadWechatQRCode = (): Promise<IUploadResult> => {
+  return new Promise((resolve, reject) => {
+    uni.chooseImage({
+      count: 1,
+      sizeType: ['original', 'compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFilePaths[0]
+        
+        // 上传文件
+        uploadWechatQRCode(tempFilePath)
+          .then((uploadRes) => {
+            resolve(uploadRes as IUploadResult)
+          })
+          .catch((error) => {
+            reject(error)
+          })
+      },
+      fail: (error) => {
+        reject(error)
+      }
+    })
   })
 }
 

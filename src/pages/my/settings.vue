@@ -36,6 +36,22 @@
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
       
+      <!-- 微信收款设置 -->
+      <view class="settings-item" @click="navigateTo('/pages/my/wechat-payment-setting')">
+        <view class="settings-content">
+          <text class="settings-title">微信收款设置</text>
+        </view>
+        <text class="uni-icons uniui-arrow-right settings-arrow"></text>
+      </view>
+      
+      <!-- 支付宝收款设置 -->
+      <view class="settings-item" @click="navigateTo('/pages/my/alipay-payment-setting')">
+        <view class="settings-content">
+          <text class="settings-title">支付宝收款设置</text>
+        </view>
+        <text class="uni-icons uniui-arrow-right settings-arrow"></text>
+      </view>
+      
       <!-- 清除缓存 -->
       <view class="settings-item" @click="clearCache">
         <view class="settings-content">

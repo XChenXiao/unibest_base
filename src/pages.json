@@ -106,6 +106,20 @@
       }
     },
     {
+      "path": "pages/my/alipay-accounts",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "支付宝账户设置"
+      }
+    },
+    {
+      "path": "pages/my/alipay-payment-setting",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "支付宝收款设置"
+      }
+    },
+    {
       "path": "pages/my/announcement-detail",
       "type": "page",
       "style": {
@@ -212,6 +226,13 @@
       }
     },
     {
+      "path": "pages/my/wechat-payment-setting",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "微信收款设置"
+      }
+    },
+    {
       "path": "pages/my/withdraw",
       "type": "page",
       "style": {
@@ -276,7 +297,7 @@
       "path": "pages/transfer/alipay",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "转到支付宝"
+        "navigationBarTitleText": "支付宝提现"
       }
     },
     {
@@ -298,6 +319,13 @@
       "type": "page",
       "style": {
         "navigationBarTitleText": "手机号收款"
+      }
+    },
+    {
+      "path": "pages/transfer/wechat",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "微信提现"
       }
     },
     {

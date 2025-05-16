@@ -41,9 +41,10 @@
         <button class="claim-button">领取奖励</button>
       </view>
       <!-- 非USDT货币按钮 - 有奖励但不可领取（已领取）时显示"去交易所" -->
-      <view v-else-if="canShowClaimButton(currency) && !hasClaimableReward(currency)" class="exchange-button-container" @click.stop="gotoExchange(currency)">
-        <button class="exchange-button">去交易所</button>
-      </view>
+      <!-- 取消去交易所的按钮 -->
+      <!-- <view v-else-if="canShowClaimButton(currency) && !hasClaimableReward(currency)" class="exchange-button-container" @click.stop="gotoExchange(currency)">
+        <button class="exchange-button">交易所</button>
+      </view> -->
       <text v-else class="uni-icons uniui-arrow-right currency-arrow"></text>
     </view>
     

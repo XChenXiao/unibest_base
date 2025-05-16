@@ -7,6 +7,7 @@
     placeholder
     @change="selectTabBar"
     class="custom-tabbar"
+    zIndex="500"
   >
     <block v-for="(item, idx) in tabbarList" :key="item.path">
       <wd-tabbar-item

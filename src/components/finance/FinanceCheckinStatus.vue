@@ -31,7 +31,7 @@
       :disabled="checkInData.isCheckedToday || isCheckingIn"
       @click="handleCheckIn"
     >
-      {{ isCheckingIn ? '签到中...' : (checkInData.isCheckedToday ? '今日已签到' : '立即签到') }}
+      {{ isCheckingIn ? '签到中...' : (checkInData.isCheckedToday ? '今日已打卡' : '立即签到') }}
     </button>
   </view>
 </template>

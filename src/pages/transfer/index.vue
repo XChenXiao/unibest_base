@@ -23,14 +23,14 @@
           <text class="option-text">转到银行账户</text>
         </view>
         
-        <view class="option-item" @click="showComingSoon">
+        <view class="option-item" @click="navigateTo('/pages/transfer/alipay')">
           <view class="option-icon">
             <image class="icon-image" src="@/static/images/tran1-2.png" mode="aspectFit"></image>
           </view>
           <text class="option-text">转到支付宝</text>
         </view>
 
-        <view class="option-item" @click="showComingSoon">
+        <view class="option-item" @click="navigateTo('/pages/transfer/wechat')">
           <view class="option-icon">
             <image class="icon-image" src="@/static/images/tran1-3.png" mode="aspectFit"></image>
           </view>

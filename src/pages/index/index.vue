@@ -54,7 +54,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onActivated, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import FinanceHeader from '@/components/finance/FinanceHeader.vue'
 import FinanceCheckinStatus from '@/components/finance/FinanceCheckinStatus.vue'
 import FinanceCheckinCircles from '@/components/finance/FinanceCheckinCircles.vue'
@@ -117,18 +118,16 @@ onMounted(() => {
   checkVerificationStatusAndShowPopups()
 })
 
-// 监听页面激活（每次进入页面都会调用）
-onActivated(() => {
-  console.log('首页被激活')
+// 监听页面显示（每次进入页面都会调用）
+onShow(() => {
+  console.log('首页被显示')
   // 每次页面激活时都检查用户实名认证状态
   checkVerificationStatusAndShowPopups()
 })
 
-// 页面卸载时清除本地存储
+// 页面卸载事件
 onUnmounted(() => {
-  // 清除存储的公告展示记录
-  uni.removeStorageSync('shown_announcements')
-  console.log('首页组件卸载，清除公告展示记录')
+  console.log('首页组件卸载')
 })
 
 // 方法
@@ -259,6 +258,13 @@ const handleCheckIn = async () => {
 // 获取用户实名认证状态
 const fetchVerificationStatus = async () => {
   try {
+    // 首先从userStore中检查认证状态，避免重复请求
+    if (userStore.isVerified) {
+      console.log('首页从store中获取到用户已实名认证')
+      return true
+    }
+    
+    // 如果store中没有明确的认证状态，再发起请求
     console.log('首页获取实名认证状态')
     const res: any = await getVerificationStatus({})
     console.log('实名认证状态返回:', res)
@@ -268,7 +274,7 @@ const fetchVerificationStatus = async () => {
       
       // 更新用户的认证状态到store中
       if (res.data?.is_verified) {
-        // 用户已认证
+        // 用户已认证，更新状态到store
         userStore.verificationStatus.verified = true
         return true
       } else {
@@ -286,8 +292,8 @@ const fetchVerificationStatus = async () => {
 
 // 检查用户实名认证状态并显示相应弹窗
 const checkVerificationStatusAndShowPopups = async () => {
-  // 获取最新的实名认证状态
-  const isVerified = await fetchVerificationStatus()
+  // 获取最新的实名认证状态，优先使用store中的状态
+  const isVerified = userStore.isVerified || await fetchVerificationStatus()
   
   // 如果用户未实名认证，显示实名认证指引弹窗
   if (!isVerified) {
@@ -296,7 +302,7 @@ const checkVerificationStatusAndShowPopups = async () => {
       showVerificationGuidePopup.value = true
     }, 800)
   } else {
-    // 用户已实名认证，检查是否需要显示公告弹窗
+    // 用户已实名认证，直接显示公告弹窗
     checkAndShowAnnouncement()
   }
 }
@@ -312,22 +318,11 @@ const checkAndShowAnnouncement = async () => {
     
     // 如果有公告，则显示弹窗
     if (result.status === 'success' && result.data) {
-      const latestAnnouncement = result.data
-      
-      // 检查此公告是否已经展示过
-      const shownAnnouncements = uni.getStorageSync('shown_announcements') || []
-      const hasShown = shownAnnouncements.includes(latestAnnouncement.id)
-      
-      // 如果没有展示过，则显示弹窗
-      if (!hasShown) {
-        console.log('首页显示最新公告弹窗')
-        // 延迟显示，确保首页已完全加载
-        setTimeout(() => {
-          showAnnouncementPopup.value = true
-        }, 800)
-      } else {
-        console.log('此公告已经展示过，不再显示')
-      }
+      console.log('首页显示最新公告弹窗')
+      // 延迟显示，确保首页已完全加载
+      setTimeout(() => {
+        showAnnouncementPopup.value = true
+      }, 800)
     }
   } catch (error) {
     console.error('首页检查公告失败:', error)
@@ -337,17 +332,16 @@ const checkAndShowAnnouncement = async () => {
 // 处理公告弹窗关闭事件
 const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
   console.log('公告弹窗关闭:', data)
-  
-  if (data.dontShowAgain) {
-    // 进一步处理"不再显示"的逻辑可以在这里添加
-  }
 }
 
 // 处理实名认证指引弹窗关闭事件
 const handleVerificationGuideClose = (data: { later: boolean }) => {
-  console.log('实名认证指引弹窗关闭');
-  // 当弹窗关闭后，检查是否显示公告弹窗
-  checkAndShowAnnouncement();
+  console.log('实名认证指引弹窗关闭:', data)
+  
+  if (data.later) {
+    // 用户选择了"稍后认证"，可以在这里添加额外逻辑
+    checkAndShowAnnouncement() // 可以考虑显示公告弹窗
+  }
 }
 </script>
 

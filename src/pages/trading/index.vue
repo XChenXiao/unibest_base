@@ -32,7 +32,7 @@
       
       <!-- 去交易所按钮 -->
       <view class="exchange-btn-container">
-        <button class="exchange-btn" @click="goToExchange">去交易所</button>
+        <button class="exchange-btn" @click="goToExchange">交易所</button>
       </view>
     </view>
   </view>

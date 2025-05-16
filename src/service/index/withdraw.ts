@@ -5,7 +5,10 @@ import { http } from '@/utils/http'
  */
 export interface IWithdrawParams {
   amount: number
-  bank_card_id: number
+  withdraw_type: 'bank' | 'alipay' | 'wechat'
+  bank_card_id?: number
+  alipay_account_id?: number
+  wechat_account_id?: number
   withdraw_password: string
 }
 
@@ -15,7 +18,10 @@ export interface IWithdrawParams {
 export interface IWithdrawRecord {
   id: number
   user_id: number
-  bank_card_id: number
+  withdraw_type: 'bank' | 'alipay' | 'wechat'
+  bank_card_id?: number
+  alipay_account_id?: number
+  wechat_account_id?: number
   amount: number
   fee: number
   actual_amount: number
@@ -29,6 +35,20 @@ export interface IWithdrawRecord {
     bank_name: string
     card_number: string
     masked_card_number: string
+  }
+  alipay_account?: {
+    account: string
+    real_name: string
+  }
+  wechat_account?: {
+    account: string
+    real_name: string
+  }
+  account_info?: {
+    type: string
+    name: string
+    account: string
+    holder: string
   }
 }
 
@@ -54,12 +74,7 @@ export const applyWithdrawAPI = (params: IWithdrawParams) => {
 export const getWithdrawRecordsAPI = () => {
   return http.get<{
     status: string
-    data: {
-      current_page: number
-      data: IWithdrawRecord[]
-      per_page: number
-      total: number
-    }
+    data: IWithdrawRecord[]
   }>('/api/withdraw/records')
 }
 

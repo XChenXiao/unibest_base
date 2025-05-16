@@ -1,5 +1,26 @@
 import { http } from '@/utils/http'
 import qs from 'qs'
+import { useUserStore } from '@/store'
+
+// 登录状态检查函数
+const checkLoginStatus = (): boolean => {
+  const userStore = useUserStore()
+  const isLoggedIn = userStore.isLogined // 使用计算属性来判断是否已登录
+  
+  if (!isLoggedIn) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none'
+    })
+    
+    // 可选：自动跳转到登录页
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/index' })
+    }, 1500)
+  }
+  
+  return isLoggedIn
+}
 
 /**
  * 银行卡数据接口
@@ -62,6 +83,11 @@ export interface IBankCardStatusResponse {
  * 获取银行卡开通手续费
  */
 export const getBankCardOpenFeeAPI = () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   return http.get<any>('/api/bank-card/open-fee')
 }
 
@@ -74,6 +100,11 @@ export const openBankCardAPI = (data: {
   id_card: string
   address: string
 }) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   // 使用标准JSON格式提交，与其他API保持一致
   console.log('提交银行卡开户申请:', data)
   return http.post<any>('/api/bank-card/open', data)
@@ -83,6 +114,11 @@ export const openBankCardAPI = (data: {
  * 获取用户的银行卡开户申请记录
  */
 export const getBankCardOpenRecordsAPI = () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   return http.get<any>('/api/bank-card/open-records')
 }
 
@@ -90,6 +126,11 @@ export const getBankCardOpenRecordsAPI = () => {
  * 查询用户银行卡开户申请状态和银行卡账户开通状态
  */
 export const checkBankCardStatusAPI = () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   return http.get<IBankCardStatusResponse>('/api/bank-card/status')
 }
 
@@ -97,6 +138,11 @@ export const checkBankCardStatusAPI = () => {
  * 获取当前用户的所有银行卡
  */
 export const getBankCardsAPI = () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   console.log('正在调用获取银行卡列表API')
   return http.get<{status: string, data: IBankCard[]}>('/api/bank-cards')
     .then(response => {
@@ -118,6 +164,11 @@ export const addBankCardAPI = (data: {
   card_holder: string
   branch_name?: string
 }) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   return http.post<any>('/api/bank-cards', data)
 }
 
@@ -125,6 +176,11 @@ export const addBankCardAPI = (data: {
  * 删除银行卡
  */
 export const deleteBankCardAPI = (id: number) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   return http.delete<any>(`/api/bank-cards/${id}`)
 }
 
@@ -132,5 +188,10 @@ export const deleteBankCardAPI = (id: number) => {
  * 设置默认银行卡
  */
 export const setDefaultBankCardAPI = (id: number) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   return http.post<any>(`/api/bank-cards/${id}/default`)
 } 

@@ -12,10 +12,10 @@
   <view class="my-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-    
+
     <!-- 顶部背景渐变 -->
     <view class="bg-gradient"></view>
-    
+
     <!-- 个人信息卡片 -->
     <view class="user-card">
       <view class="avatar-container">
@@ -32,7 +32,7 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 余额展示 -->
     <view class="balance-card">
       <!-- 银行卡顶部 -->
@@ -45,30 +45,35 @@
           <button class="check-btn" @click="navigateTo('/pages/my/wallet')">查看账号</button>
         </view> -->
       </view>
-      
+
       <!-- 余额部分 -->
       <view class="balance-section">
         <view class="balance-label">
           <text>可用余额(元)</text>
-          <image class="eye-icon" :src="`/static/images/${showBalance ? 'show-icon' : 'hidden-icon'}.png`" mode="widthFix" @click="toggleBalanceVisibility"></image>
+          <image
+            class="eye-icon"
+            :src="`/static/images/${showBalance ? 'show-icon' : 'hidden-icon'}.png`"
+            mode="widthFix"
+            @click="toggleBalanceVisibility"
+          ></image>
         </view>
         <view class="balance-amount">
           <text>{{ showBalance ? formatBalance(userStore.userInfo.balance) : '******' }}</text>
           <text class="arrow-icon" @click="navigateTo('/pages/my/wallet')">></text>
         </view>
       </view>
-      
+
       <!-- 操作按钮 -->
       <view class="action-buttons">
-        <button class="action-btn transfer-in" @click="handleRecharge">转入</button>
+        <button class="action-btn transfer-in" @click="handleTransferIn">转入</button>
         <button class="action-btn transfer-out" @click="handleTransferOut">转出</button>
       </view>
     </view>
-    
+
     <!-- 功能菜单 -->
     <view class="menu-list">
       <!-- 银行卡管理 -->
-      <view class="menu-item" @click="navigateTo('/pages/my/bank-cards')">
+      <!-- <view class="menu-item" @click="navigateTo('/pages/my/bank-cards')">
         <view class="menu-icon bank-icon">
           <wd-icon name="creditcard" size="40rpx" />
         </view>
@@ -77,8 +82,8 @@
           <text class="menu-desc">{{ userStore.userInfo.has_bank_card ? '已开通' : '未开通' }}</text>
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
-      </view>
-      
+      </view> -->
+
       <!-- 平台公告 -->
       <view class="menu-item" @click="navigateTo('/pages/my/announcements')">
         <view class="menu-icon announcement-icon">
@@ -90,7 +95,7 @@
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
-      
+
       <!-- 个人信息 -->
       <view class="menu-item" @click="handleProfileClick">
         <view class="menu-icon profile-icon">
@@ -98,11 +103,21 @@
         </view>
         <view class="menu-content">
           <text class="menu-title">个人信息</text>
-          <text class="menu-desc">{{ userStore.isVerified ? '已实名' : userStore.isPendingVerification ? '审核中' : userStore.isRejectedVerification ? '已拒绝' : '未实名' }}</text>
+          <text class="menu-desc">
+            {{
+              userStore.isVerified
+                ? '已实名'
+                : userStore.isPendingVerification
+                  ? '审核中'
+                  : userStore.isRejectedVerification
+                    ? '已拒绝'
+                    : '未实名'
+            }}
+          </text>
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
-      
+
       <!-- 我的钱包 -->
       <view class="menu-item" @click="navigateTo('/pages/my/wallet')">
         <view class="menu-icon wallet-icon">
@@ -114,7 +129,7 @@
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
-      
+
       <!-- 交易记录 -->
       <view class="menu-item" @click="navigateTo('/pages/trading/records')">
         <view class="menu-icon transaction-icon">
@@ -126,7 +141,7 @@
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
-      
+
       <!-- 设置 -->
       <view class="menu-item" @click="navigateTo('/pages/my/settings')">
         <view class="menu-icon settings-icon">
@@ -138,7 +153,7 @@
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
-      
+
       <!-- 客服中心 -->
       <view class="menu-item" @click="navigateTo('/pages/my/customer-service')">
         <view class="menu-icon service-icon">
@@ -151,13 +166,13 @@
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
     </view>
-    
+
     <!-- 退出登录按钮 -->
     <button class="logout-btn" @click="handleLogout">
-      <wd-icon name="power-off" size="32rpx" style="margin-right: 8rpx;"/>
+      <wd-icon name="power-off" size="32rpx" style="margin-right: 8rpx" />
       退出登录
     </button>
-    
+
     <!-- 充值弹窗 -->
     <wd-popup v-model="showRechargePopup" round position="center">
       <view class="popup-content">
@@ -170,26 +185,28 @@
             <text class="amount-label">预存金额</text>
             <view class="amount-input-wrapper">
               <text class="amount-prefix">¥</text>
-              <input 
-                class="amount-input" 
-                type="digit" 
-                v-model="rechargeAmount" 
+              <input
+                class="amount-input"
+                type="digit"
+                v-model="rechargeAmount"
                 placeholder="请输入预存金额"
               />
             </view>
           </view>
-          
+
           <!-- 银行卡开户预存金提示 -->
           <view class="open-fee-tip">
             <text class="tip-title">温馨提示</text>
-            <text class="tip-content">激活银行卡需要缴纳 {{ appStore.bankCardOpenFee }} 人民币作为预存金</text>
+            <text class="tip-content">
+              激活银行卡需要缴纳 {{ appStore.bankCardOpenFee }} 人民币作为预存金
+            </text>
           </view>
-          
+
           <view class="amount-buttons">
-            <view 
-              v-for="(amount, index) in quickAmounts" 
-              :key="index" 
-              class="amount-btn" 
+            <view
+              v-for="(amount, index) in quickAmounts"
+              :key="index"
+              class="amount-btn"
               :class="{ 'amount-btn-active': rechargeAmount === amount }"
               @click="selectAmount(amount)"
             >
@@ -200,7 +217,7 @@
         </view>
       </view>
     </wd-popup>
-    
+
     <!-- 版权信息 -->
     <view class="my-footer">
       <text>© 2025 理财管理平台 版权所有</text>
@@ -209,19 +226,20 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
-import { useUserStore } from '@/store/user';
-import { useAppStore } from '@/store/app';
-import { useTabItemTap } from '@/hooks/useTabItemTap';
-import { API_URL } from '@/config/api';
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useUserStore } from '@/store/user'
+import { useAppStore } from '@/store/app'
+import { useTabItemTap } from '@/hooks/useTabItemTap'
+import { API_URL } from '@/config/api'
+import { checkBankCardStatusAPI } from '@/service/index/bankcard'
 
 // 获取用户数据存储
-const userStore = useUserStore();
+const userStore = useUserStore()
 // 获取App数据存储
-const appStore = useAppStore();
+const appStore = useAppStore()
 
 // 是否有新公告
-const hasNewAnnouncement = ref(false);
+const hasNewAnnouncement = ref(false)
 
 // 检查是否有未读公告
 const checkAnnouncementStatus = async () => {
@@ -232,134 +250,134 @@ const checkAnnouncementStatus = async () => {
         url: `${API_URL}/api/messages/unread-count`,
         method: 'GET',
         success: (res) => {
-          resolve(res);
+          resolve(res)
         },
         fail: (err) => {
-          reject(err);
-        }
-      });
-    });
-    
+          reject(err)
+        },
+      })
+    })
+
     // 直接使用response的data属性
-    const res = response as any;
-    
+    const res = response as any
+
     if (res?.data?.status === 'success') {
-      hasNewAnnouncement.value = res.data.data.unread_count > 0;
+      hasNewAnnouncement.value = res.data.data.unread_count > 0
     }
   } catch (error) {
-    console.error('检查公告状态失败:', error);
+    console.error('检查公告状态失败:', error)
   }
-};
+}
 
-// 充值金额
-const rechargeAmount = ref('');
-// 是否显示充值弹窗
-const showRechargePopup = ref(false);
+// 余额显示控制
+const showBalance = ref(true)
 
-// 快捷金额选项
-const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000'];
+// 充值相关
+const rechargeAmount = ref('')
+const showRechargePopup = ref(false)
+const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000']
 
 // 使用TabBar切换钩子，自动处理用户数据刷新
 useTabItemTap({
   refreshUserInfo: true,
   pageName: '我的页面',
   onTabTap: () => {
-    console.log('我的页面Tab被点击，可以在这里执行额外的业务逻辑');
-  }
-});
+    console.log('我的页面Tab被点击，可以在这里执行额外的业务逻辑')
+  },
+})
 
 // 页面挂载时添加事件监听
 onMounted(() => {
   // 监听余额更新事件
-  uni.$on('user_balance_updated', handleBalanceUpdated);
-  
+  uni.$on('user_balance_updated', handleBalanceUpdated)
+
   // 监听未读公告状态更新事件
-  uni.$on('refresh_unread_announcements', checkAnnouncementStatus);
-  
+  uni.$on('refresh_unread_announcements', checkAnnouncementStatus)
+
   // 初始检查用户数据和余额
-  checkUserInfo();
-  
+  checkUserInfo()
+
   // 检查是否有未读公告
-  checkAnnouncementStatus();
-});
+  checkAnnouncementStatus()
+})
 
 // 页面卸载时移除事件监听
 onUnmounted(() => {
   // 移除事件监听
-  uni.$off('user_balance_updated', handleBalanceUpdated);
-  uni.$off('refresh_unread_announcements', checkAnnouncementStatus);
-});
+  uni.$off('user_balance_updated', handleBalanceUpdated)
+  uni.$off('refresh_unread_announcements', checkAnnouncementStatus)
+})
 
 // 处理余额更新事件
 const handleBalanceUpdated = (data: any) => {
-  console.log('收到余额更新事件:', data);
+  console.log('收到余额更新事件:', data)
   // 无需额外操作，因为Pinia中的数据已经更新，这里只记录日志
-};
+}
 
 // 检查用户信息，确保数据是最新的
 const checkUserInfo = () => {
   // 如果用户已登录，尝试刷新用户信息
   if (userStore.isLogined) {
     // 获取上次更新时间
-    const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0;
-    const currentTime = Date.now();
-    const timeElapsed = currentTime - lastUpdateTime;
-    
+    const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0
+    const currentTime = Date.now()
+    const timeElapsed = currentTime - lastUpdateTime
+
     // 如果距离上次更新超过5分钟，则重新获取用户信息
     if (timeElapsed > 5 * 60 * 1000) {
-      console.log('用户数据已过期，重新获取');
-      userStore.fetchUserInfo();
+      console.log('用户数据已过期，重新获取')
+      userStore.fetchUserInfo()
     } else {
-      console.log('用户数据在有效期内，无需重新获取');
+      console.log('用户数据在有效期内，无需重新获取')
     }
   }
-};
+}
 
 // 获取用户名首字母或默认头像文字
 const getUserInitial = () => {
   if (userStore.isVerified && userStore.userInfo.name) {
-    return userStore.userInfo.name.charAt(0);
+    return userStore.userInfo.name.charAt(0)
   }
-  return '用';
-};
+  return '用'
+}
 
 // 获取用户显示名称
 const getUserDisplayName = () => {
   // 已认证用户优先显示姓名（通过API已处理为实名信息中的真实姓名）
   if (userStore.isVerified && userStore.userInfo.name) {
-    return userStore.userInfo.name;
+    return userStore.userInfo.name
   }
   // 未认证用户或姓名为空时显示手机号
-  return userStore.userInfo.phone || '未登录';
-};
+  return userStore.userInfo.phone || '未登录'
+}
 
 // 格式化余额显示
 const formatBalance = (balance) => {
   // 处理undefined、null或空字符串的情况
   if (balance === undefined || balance === null || balance === '') {
-    return '0.00';
+    return '0.00'
   }
-  
+
   // 确保balance是数字类型
-  let numBalance = 0;
+  let numBalance = 0
   try {
-    numBalance = typeof balance === 'string' ? parseFloat(balance) : Number(balance);
+    numBalance = typeof balance === 'string' ? parseFloat(balance) : Number(balance)
     // 处理NaN的情况
     if (isNaN(numBalance)) {
-      numBalance = 0;
+      numBalance = 0
     }
   } catch (error) {
-    console.error('余额格式化错误:', error);
-    numBalance = 0;
+    console.error('余额格式化错误:', error)
+    numBalance = 0
   }
-  
-  return numBalance.toFixed(2);
-};
+
+  return numBalance.toFixed(2)
+}
 
 // 页面导航
 const navigateTo = (url) => {
-  uni.navigateTo({ url });
-};
+  uni.navigateTo({ url })
+}
 
 // 处理个人信息点击
 const handleProfileClick = () => {
@@ -368,83 +386,198 @@ const handleProfileClick = () => {
     uni.showToast({
       title: '您已完成实名认证',
       icon: 'success',
-      duration: 1500
-    });
-    return;
+      duration: 1500,
+    })
+    return
   }
-  
+
   // 如果实名认证审核中，显示提示
   if (userStore.isPendingVerification) {
     uni.showToast({
       title: '您的认证正在审核中',
       icon: 'none',
-      duration: 1500
-    });
-    return;
+      duration: 1500,
+    })
+    return
   }
-  
-  // 未认证或认证被拒绝，跳转到认证页面
-  navigateTo('/pages/my/identity-verify');
-};
 
-// 处理充值
-const handleRecharge = () => {
-  rechargeAmount.value = '';
-  showRechargePopup.value = true;
-  
-  // 如果用户没有开通银行卡且没有获取预存金金额，则获取预存金金额
-  if (!userStore.userInfo.has_bank_card && !appStore.hasFetchedBankCardOpenFee) {
-    appStore.fetchBankCardOpenFee();
+  // 未认证或认证被拒绝，跳转到认证页面
+  navigateTo('/pages/my/identity-verify')
+}
+
+// 处理转入
+const handleTransferIn = async () => {
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '检查中...',
+    })
+
+    // 从API获取最新的银行卡状态
+    const res = await checkBankCardStatusAPI()
+    uni.hideLoading()
+
+    if (res.status === 'success' && res.data) {
+      // 使用类型断言处理响应数据
+      const statusData = res.data as any
+      const hasBankCard = statusData.has_bank_card
+
+      // 更新本地存储的用户银行卡状态
+      userStore.setUserInfo({
+        ...userStore.userInfo,
+        has_bank_card: hasBankCard,
+      })
+
+      // 如果用户没有开通银行卡，则直接跳转到开户申请页面
+      if (!hasBankCard) {
+        // 跳转到银行卡开户申请页面
+        uni.navigateTo({
+          url: '/pages/my/bank-account-apply',
+        })
+        return
+      }
+
+      // 如果已开通银行卡，显示转入弹窗
+      rechargeAmount.value = ''
+      showRechargePopup.value = true
+    }
+  } catch (error) {
+    uni.hideLoading()
+    console.error('获取银行卡状态失败:', error)
+
+    // 发生错误时降级使用本地状态
+    if (!userStore.userInfo.has_bank_card) {
+      // 直接跳转到银行卡开户申请页面
+      uni.navigateTo({
+        url: '/pages/my/bank-account-apply',
+      })
+      return
+    }
+
+    // 如果本地状态显示已开通，则显示转入弹窗
+    rechargeAmount.value = ''
+    showRechargePopup.value = true
   }
-};
+}
+
+// 处理转出
+const handleTransferOut = async () => {
+  try {
+    // 显示加载状态
+    uni.showLoading({
+      title: '检查中...',
+    })
+
+    // 从API获取最新的银行卡状态
+    const res = await checkBankCardStatusAPI()
+    uni.hideLoading()
+
+    if (res.status === 'success' && res.data) {
+      // 使用类型断言处理响应数据
+      const statusData = res.data as any
+      const hasBankCard = statusData.has_bank_card
+
+      // 更新本地存储的用户银行卡状态
+      userStore.setUserInfo({
+        ...userStore.userInfo,
+        has_bank_card: hasBankCard,
+      })
+
+      // 如果用户没有开通银行卡，则提示用户先开通
+      if (!hasBankCard) {
+        uni.showModal({
+          title: '提示',
+          content: '转出需要先开通银行卡，是否立即前往开通？',
+          confirmText: '去开通',
+          success: (res) => {
+            if (res.confirm) {
+              // 跳转到银行卡管理页面
+              uni.navigateTo({
+                url: '/pages/my/bank-cards',
+              })
+            }
+          },
+        })
+        return
+      }
+
+      // 如果已开通银行卡，跳转到转出页面
+      navigateTo('/pages/transfer/index')
+    }
+  } catch (error) {
+    uni.hideLoading()
+    console.error('获取银行卡状态失败:', error)
+
+    // 发生错误时降级使用本地状态
+    if (!userStore.userInfo.has_bank_card) {
+      uni.showModal({
+        title: '提示',
+        content: '转出需要先开通银行卡，是否立即前往开通？',
+        confirmText: '去开通',
+        success: (res) => {
+          if (res.confirm) {
+            // 跳转到银行卡管理页面
+            uni.navigateTo({
+              url: '/pages/my/bank-cards',
+            })
+          }
+        },
+      })
+      return
+    }
+
+    // 如果本地状态显示已开通，则跳转到转出页面
+    navigateTo('/pages/transfer/index')
+  }
+}
 
 // 关闭充值弹窗
 const closeRechargePopup = () => {
-  showRechargePopup.value = false;
-};
+  showRechargePopup.value = false
+}
 
 // 选择快捷金额
 const selectAmount = (amount) => {
-  rechargeAmount.value = amount;
-};
+  rechargeAmount.value = amount
+}
 
 // 确认充值
 const confirmRecharge = async () => {
   if (!rechargeAmount.value || parseFloat(rechargeAmount.value) <= 0) {
     uni.showToast({
       title: '请输入有效的充值金额',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   try {
     // 显示加载状态
     uni.showLoading({
-      title: '处理中...'
-    });
-    
+      title: '处理中...',
+    })
+
     // 这里替换为实际的充值API调用
     // const res = await api.recharge({ amount: parseFloat(rechargeAmount.value) });
-    
+
     // 模拟第三方支付跳转
     setTimeout(() => {
-      uni.hideLoading();
-      closeRechargePopup();
-      
+      uni.hideLoading()
+      closeRechargePopup()
+
       // 模拟跳转到第三方支付
       uni.navigateTo({
-        url: `/pages/payment/third-party?amount=${rechargeAmount.value}`
-      });
-    }, 1000);
+        url: `/pages/payment/third-party?amount=${rechargeAmount.value}`,
+      })
+    }, 1000)
   } catch (error) {
-    uni.hideLoading();
+    uni.hideLoading()
     uni.showToast({
       title: '充值失败，请重试',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   }
-};
+}
 
 // 处理退出登录
 const handleLogout = () => {
@@ -454,31 +587,21 @@ const handleLogout = () => {
     success: (res) => {
       if (res.confirm) {
         // 清除登录信息
-        userStore.clearUserInfo();
-        
+        userStore.clearUserInfo()
+
         // 返回登录页
         uni.reLaunch({
-          url: '/pages/login/index'
-        });
+          url: '/pages/login/index',
+        })
       }
-    }
-  });
-};
-
-// 控制余额显示/隐藏
-const showBalance = ref(true);
+    },
+  })
+}
 
 // 切换余额可见性
 const toggleBalanceVisibility = () => {
-  showBalance.value = !showBalance.value;
-};
-
-// 处理转账/转出功能
-const handleTransferOut = () => {
-  uni.navigateTo({
-    url: '/pages/transfer/index'
-  });
-};
+  showBalance.value = !showBalance.value
+}
 </script>
 
 <style lang="scss">
@@ -569,7 +692,8 @@ page {
   align-items: center;
 }
 
-.user-id, .invite-code {
+.user-id,
+.invite-code {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.9);
   text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.15);

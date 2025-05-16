@@ -1,5 +1,25 @@
 import { http } from '@/utils/http'
-import { API_URL } from '@/config/api'
+import { useUserStore } from '@/store'
+
+// 登录状态检查函数
+const checkLoginStatus = (): boolean => {
+  const userStore = useUserStore()
+  const isLoggedIn = userStore.isLogined // 使用计算属性来判断是否已登录
+  
+  if (!isLoggedIn) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none'
+    })
+    
+    // 可选：自动跳转到登录页
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/index' })
+    }, 1500)
+  }
+  
+  return isLoggedIn
+}
 
 interface Announcement {
   id: number
@@ -31,8 +51,13 @@ interface AnnouncementsResponse {
  * @returns 公告列表数据
  */
 export const getAnnouncementsAPI = async (page = 1, perPage = 10) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   try {
-    const result = await http.get<AnnouncementsResponse>(`${API_URL}/api/messages`, {
+    const result = await http.get<AnnouncementsResponse>(`/api/messages`, {
       is_system: true,
       page,
       per_page: perPage
@@ -49,8 +74,17 @@ export const getAnnouncementsAPI = async (page = 1, perPage = 10) => {
  * @returns 最新公告数据
  */
 export const getLatestAnnouncementAPI = async () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return {
+      status: 'error',
+      data: null,
+      message: '用户未登录'
+    }
+  }
+  
   try {
-    const result = await http.get<ResponseData<{ data: Announcement[] }>>(`${API_URL}/api/messages`, {
+    const result = await http.get<ResponseData<{ data: Announcement[] }>>(`/api/messages`, {
       is_system: true,
       page: 1,
       per_page: 1
@@ -88,8 +122,13 @@ export const getLatestAnnouncementAPI = async () => {
  * @returns 公告详情数据
  */
 export const getAnnouncementDetailAPI = async (id: number) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   try {
-    const result = await http.get<Announcement>(`${API_URL}/api/messages/${id}`)
+    const result = await http.get<Announcement>(`/api/messages/${id}`)
     return result
   } catch (error) {
     console.error('获取公告详情失败:', error)
@@ -103,8 +142,13 @@ export const getAnnouncementDetailAPI = async (id: number) => {
  * @returns 操作结果
  */
 export const markAnnouncementAsReadAPI = async (id: number) => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   try {
-    const result = await http.post<ResponseData<any>>(`${API_URL}/api/messages/${id}/read`)
+    const result = await http.post<ResponseData<any>>(`/api/messages/${id}/read`)
     return result
   } catch (error) {
     console.error('标记公告已读失败:', error)
@@ -117,8 +161,13 @@ export const markAnnouncementAsReadAPI = async (id: number) => {
  * @returns 未读公告数量数据
  */
 export const getUnreadAnnouncementCountAPI = async () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
   try {
-    const result = await http.get<{unread_count: number, personal_unread: number, global_unread: number}>(`${API_URL}/api/messages/unread-count`)
+    const result = await http.get<{unread_count: number, personal_unread: number, global_unread: number}>(`/api/messages/unread-count`)
     return result
   } catch (error) {
     console.error('获取未读公告数量失败:', error)

@@ -8,9 +8,9 @@
       titleNView: {
         titleSize: '16px',
         titleWeight: 'bold',
-        titleAlign: 'center'
-      }
-    }
+        titleAlign: 'center',
+      },
+    },
   },
 }
 </route>
@@ -21,72 +21,103 @@
     <view class="card-image-container">
       <image class="card-image" src="/static/images/bg/card.png" mode="widthFix"></image>
     </view>
-    
+
     <!-- 申请表单 -->
     <view class="form-container" v-if="currentStep === 'form'">
       <view class="form-header">
         <view class="form-title">开户申请</view>
         <view class="form-subtitle">请填写以下信息完成开户申请</view>
       </view>
-      
+
       <view class="fee-info">
         <view class="fee-label">开户预存金</view>
-        <view class="fee-amount">{{ openFee }} 人民币</view>
-        <view class="fee-message">{{ openFeeMessage }}</view>
-        <view class="balance-info" :class="{ 'insufficient': !canApply }">
+        <view class="amount-input-container">
+          <text class="amount-label">预存金额</text>
+          <view class="amount-input-wrapper">
+            <text class="amount-prefix">¥</text>
+            <input
+              class="amount-input"
+              type="digit"
+              v-model="formData.amount"
+              placeholder="请输入预存金额"
+            />
+          </view>
+        </view>
+
+        <!-- 银行卡开户预存金提示 -->
+        <view class="open-fee-tip">
+          <text class="tip-title">温馨提示</text>
+          <text class="tip-content">激活银行卡需要缴纳 {{ openFee }} 人民币作为预存金</text>
+        </view>
+
+        <view class="amount-buttons">
+          <view
+            v-for="(amount, index) in quickAmounts"
+            :key="index"
+            class="amount-btn"
+            :class="{ 'amount-btn-active': formData.amount === amount }"
+            @click="selectAmount(amount)"
+          >
+            <text>¥{{ amount }}</text>
+          </view>
+        </view>
+
+        <!-- <view class="balance-info" :class="{ insufficient: !canApply }">
           当前网商银行余额: {{ userStore.userInfo.balance || 0 }} 人民币
           <text v-if="!canApply" class="balance-warning">网商银行余额不足，请先转入</text>
-        </view>
+        </view> -->
       </view>
-      
+
       <view class="form-group">
         <text class="form-label">真实姓名</text>
-        <input 
-          type="text" 
-          class="form-input" 
-          v-model="formData.name" 
-          placeholder="请输入真实姓名" 
-          placeholder-class="input-placeholder" 
+        <input
+          type="text"
+          class="form-input"
+          v-model="formData.name"
+          placeholder="请输入真实姓名"
+          placeholder-class="input-placeholder"
         />
       </view>
-      
+
       <view class="form-group">
         <text class="form-label">身份证号码</text>
-        <input 
-          type="idcard" 
-          class="form-input" 
-          v-model="formData.id_card" 
-          placeholder="请输入身份证号码" 
-          placeholder-class="input-placeholder" 
+        <input
+          type="idcard"
+          class="form-input"
+          v-model="formData.id_card"
+          placeholder="请输入身份证号码"
+          placeholder-class="input-placeholder"
         />
       </view>
-      
+
       <view class="form-group">
         <text class="form-label">联系地址</text>
-        <input 
-          type="text" 
-          class="form-input" 
-          v-model="formData.address" 
-          placeholder="请输入详细联系地址" 
-          placeholder-class="input-placeholder" 
+        <input
+          type="text"
+          class="form-input"
+          v-model="formData.address"
+          placeholder="请输入详细联系地址"
+          placeholder-class="input-placeholder"
         />
       </view>
-      
+
       <view class="form-group">
         <text class="form-label">手机号码</text>
-        <input 
-          type="number" 
-          class="form-input" 
-          v-model="formData.phone" 
-          placeholder="请输入手机号码" 
-          placeholder-class="input-placeholder" 
+        <input
+          type="number"
+          class="form-input"
+          v-model="formData.phone"
+          placeholder="请输入手机号码"
+          placeholder-class="input-placeholder"
         />
       </view>
-      
-      <button class="btn-submit" @click="processSubmit" :disabled="!canApply || loading">{{ loading ? '提交中...' : '提交申请' }}</button>
-      <view class="submit-hint">提交申请将直接从您的网商银行余额中扣除 {{ openFee.toFixed(2) }} 人民币作为预存金</view>
+
+      <button class="confirm-recharge-btn" @click="processSubmit" :disabled="!canApply || loading">
+        {{ loading ? '提交中...' : '确认开户' }}
+      </button>
+      <view class="submit-hint">提交申请将直接从您的网商银行余额中扣除预存金</view>
     </view>
-    
+
     <!-- 审核中状态 -->
     <view class="review-container" v-if="currentStep === 'review'">
       <view class="review-icon">
@@ -113,282 +144,304 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue';
-import { 
-  getBankCardOpenFeeAPI, 
-  openBankCardAPI, 
+import { ref, reactive, onMounted, watch } from 'vue'
+import {
+  getBankCardOpenFeeAPI,
+  openBankCardAPI,
   getBankCardOpenRecordsAPI,
-  IBankCardOpenRecord 
-} from '@/service/index/bankcard';
-import { useUserStore } from '@/store/user';
+  IBankCardOpenRecord,
+} from '@/service/index/bankcard'
+import { useUserStore } from '@/store/user'
 
 // 用户数据
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 // 申请步骤：form-表单填写，review-审核中
-const currentStep = ref('form');
+const currentStep = ref('form')
 
 // 加载状态
-const loading = ref(false);
+const loading = ref(false)
+
+// 快捷金额选项
+const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000']
 
 // 开户费用
-const openFee = ref(0);
+const openFee = ref(0)
 
 // 开户说明信息
-const openFeeMessage = ref('开通银行卡需要缴纳预存金，将从您的账户余额中扣除');
+const openFeeMessage = ref('开通银行卡需要缴纳预存金，将从您的账户余额中扣除')
 
 // 是否有足够余额支付开户费用
-const canApply = ref(false);
+const canApply = ref(false)
 
 // 表单数据
 const formData = reactive({
   name: '',
   id_card: '',
   address: '',
-  phone: ''
-});
+  phone: '',
+  amount: '', // 添加金额字段
+})
+
+// 选择快捷金额
+const selectAmount = (amount: string) => {
+  formData.amount = amount
+}
 
 // 在页面加载时获取开户费用和检查是否有申请记录
 onMounted(async () => {
   // 从页面参数获取开户费用
-  const params = (uni as any).getLaunchOptionsSync().query;
+  const params = (uni as any).getLaunchOptionsSync().query
   if (params && params.fee) {
-    openFee.value = Number(params.fee);
+    openFee.value = Number(params.fee)
   } else {
     // 如果没有传递费用参数，则从API获取
-    await fetchOpenFee();
+    await fetchOpenFee()
   }
-  
+
+  // 设置默认预存金额为开户费用
+  formData.amount = String(openFee.value)
+
   // 检查用户是否有足够的余额
-  updateCanApply();
-  
+  updateCanApply()
+
   // 获取用户的开户申请记录
-  await checkApplicationStatus();
-});
+  await checkApplicationStatus()
+})
 
 // 更新是否可申请状态
 const updateCanApply = () => {
-  canApply.value = userStore.userInfo.balance >= openFee.value;
-};
+  const amount = parseFloat(formData.amount) || 0
+  canApply.value = userStore.userInfo.balance >= amount
+}
+
+// 监听金额变化
+watch(
+  () => formData.amount,
+  () => {
+    updateCanApply()
+  },
+)
 
 // 获取开户费用
 const fetchOpenFee = async () => {
-  loading.value = true;
+  loading.value = true
 
-    const res = await getBankCardOpenFeeAPI();
-    console.log('获取开户费用响应:', res);
-    
-    // 通过安全的方式访问返回数据
-    const data = res as any;
-    
-    if (data && data.open_fee) {
-      // 正确获取开户费用，注意返回的是字符串，需要转换为数字
-      openFee.value = parseFloat(data.open_fee) || 0;
-      console.log('获取开户费用成功:', openFee.value, data);
-      
-      // 获取开户说明信息
-      if (data.message) {
-        openFeeMessage.value = data.message;
-      }
-      
-      // 如果后端有返回额外的表单字段要求，可以在这里处理
-      if (data.required_fields) {
-        console.log('后端要求的字段:', data.required_fields);
-      }
-      
-      updateCanApply();
-    } else if (data && data.status === 'success' && data.data) {
-      // 旧格式响应处理（带有status和data的嵌套结构）
-      const responseData = data.data;
-      if (responseData.open_fee) {
-        openFee.value = parseFloat(responseData.open_fee) || 0;
-        console.log('获取开户费用成功(嵌套格式):', openFee.value, responseData);
-        
-        if (responseData.message) {
-          openFeeMessage.value = responseData.message;
-        }
-        
-        updateCanApply();
-      }
-    } else {
-      throw new Error('获取开户费用失败');
+  const res = await getBankCardOpenFeeAPI()
+  console.log('获取开户费用响应:', res)
+
+  // 通过安全的方式访问返回数据
+  const data = res as any
+
+  if (data && data.open_fee) {
+    // 正确获取开户费用，注意返回的是字符串，需要转换为数字
+    openFee.value = parseFloat(data.open_fee) || 0
+    console.log('获取开户费用成功:', openFee.value, data)
+
+    // 获取开户说明信息
+    if (data.message) {
+      openFeeMessage.value = data.message
     }
-    loading.value = false;
-  
-};
+
+    // 如果后端有返回额外的表单字段要求，可以在这里处理
+    if (data.required_fields) {
+      console.log('后端要求的字段:', data.required_fields)
+    }
+
+    updateCanApply()
+  } else if (data && data.status === 'success' && data.data) {
+    // 旧格式响应处理（带有status和data的嵌套结构）
+    const responseData = data.data
+    if (responseData.open_fee) {
+      openFee.value = parseFloat(responseData.open_fee) || 0
+      console.log('获取开户费用成功(嵌套格式):', openFee.value, responseData)
+
+      if (responseData.message) {
+        openFeeMessage.value = responseData.message
+      }
+
+      updateCanApply()
+    }
+  } else {
+    throw new Error('获取开户费用失败')
+  }
+  loading.value = false
+}
 
 // 检查用户是否有正在处理的申请
 const checkApplicationStatus = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const res = await getBankCardOpenRecordsAPI();
+    const res = await getBankCardOpenRecordsAPI()
     if (res.status === 'success' && res.data) {
-      const openRecords = res.data.open_records as IBankCardOpenRecord[];
-      
+      const openRecords = res.data.open_records as IBankCardOpenRecord[]
+
       // 检查是否有正在审核中的申请
-      const pendingRecord = openRecords.find(record => record.status === 'pending');
+      const pendingRecord = openRecords.find((record) => record.status === 'pending')
       if (pendingRecord) {
         // 如果有正在审核的申请，直接跳到审核中状态
-        currentStep.value = 'review';
+        currentStep.value = 'review'
       }
     }
   } catch (error) {
-    console.error('获取开户记录失败:', error);
+    console.error('获取开户记录失败:', error)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 直接提交申请并扣款
 const processSubmit = async () => {
   // 表单验证
   if (!formData.name) {
-    uni.showToast({ title: '请输入真实姓名', icon: 'none' });
-    return;
+    uni.showToast({ title: '请输入真实姓名', icon: 'none' })
+    return
   }
   if (!formData.id_card) {
-    uni.showToast({ title: '请输入身份证号码', icon: 'none' });
-    return;
+    uni.showToast({ title: '请输入身份证号码', icon: 'none' })
+    return
   }
   if (!formData.address) {
-    uni.showToast({ title: '请输入联系地址', icon: 'none' });
-    return;
+    uni.showToast({ title: '请输入联系地址', icon: 'none' })
+    return
   }
   if (!formData.phone) {
-    uni.showToast({ title: '请输入手机号码', icon: 'none' });
-    return;
+    uni.showToast({ title: '请输入手机号码', icon: 'none' })
+    return
   }
-  
+
   // 验证身份证号码格式
-  const idCardReg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+  const idCardReg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/
   if (!idCardReg.test(formData.id_card)) {
-    uni.showToast({ title: '身份证号码格式不正确', icon: 'none' });
-    return;
+    uni.showToast({ title: '身份证号码格式不正确', icon: 'none' })
+    return
   }
-  
+
   // 验证手机号码格式
-  const phoneReg = /^1\d{10}$/;
+  const phoneReg = /^1\d{10}$/
   if (!phoneReg.test(formData.phone)) {
-    uni.showToast({ title: '手机号码格式不正确', icon: 'none' });
-    return;
+    uni.showToast({ title: '手机号码格式不正确', icon: 'none' })
+    return
   }
-  
+
   // 检查余额是否足够
   if (userStore.userInfo.balance < openFee.value) {
-    uni.showToast({ 
-      title: '余额不足，请先充值', 
-      icon: 'none' 
-    });
-    return;
+    uni.showToast({
+      title: '余额不足，请先充值',
+      icon: 'none',
+    })
+    return
   }
-  
+
   // 二次确认
   uni.showModal({
     title: '确认提交申请',
     content: `提交申请将从您的网商银行余额中扣除 ${openFee.value.toFixed(2)} 人民币作为预存金，是否继续？`,
     success: async (res) => {
       if (res.confirm) {
-        await submitBankCardOpen();
+        await submitBankCardOpen()
       }
-    }
-  });
-};
+    },
+  })
+}
 
 // 处理提交
 const submitBankCardOpen = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     // 准备提交数据
     const submitData = {
       name: formData.name,
       phone: formData.phone,
       id_card: formData.id_card,
-      address: formData.address
-    };
-    
-    console.log('准备提交开户申请数据:', submitData);
-    
+      address: formData.address,
+      amount: parseFloat(formData.amount) || openFee.value, // 使用用户输入的金额或默认开户费用
+    }
+
+    console.log('准备提交开户申请数据:', submitData)
+
     // 提交开户申请
-    const res = await openBankCardAPI(submitData);
-    
-    console.log('开户申请响应:', res);
-    
+    const res = await openBankCardAPI(submitData)
+
+    console.log('开户申请响应:', res)
+
     if (res && res.status === 'success') {
       // 更新用户余额
-      const newBalance = userStore.userInfo.balance - openFee.value;
-      userStore.updateUserBalance(newBalance);
-      
-      uni.showToast({ 
-        title: res.message || '申请提交成功', 
-        icon: 'success' 
-      });
-      
+      const deductAmount = parseFloat(formData.amount) || openFee.value
+      const newBalance = userStore.userInfo.balance - deductAmount
+      userStore.updateUserBalance(newBalance)
+
+      uni.showToast({
+        title: res.message || '申请提交成功',
+        icon: 'success',
+      })
+
       // 进入审核中步骤
-      currentStep.value = 'review';
-      
+      currentStep.value = 'review'
+
       // 再次检查申请状态，确保状态更新
-      await checkApplicationStatus();
+      await checkApplicationStatus()
     } else {
       // 提取错误信息
-      let errorMsg = '申请提交失败';
+      let errorMsg = '申请提交失败'
       if (res && res.message) {
-        errorMsg = res.message;
+        errorMsg = res.message
       }
-      
-      uni.showToast({ 
-        title: errorMsg, 
-        icon: 'none' 
-      });
+
+      uni.showToast({
+        title: errorMsg,
+        icon: 'none',
+      })
     }
   } catch (error: any) {
-    console.error('提交开户申请失败:', error);
-    
+    console.error('提交开户申请失败:', error)
+
     // 显示更详细的错误信息
-    let errorMsg = '申请提交失败';
-    
+    let errorMsg = '申请提交失败'
+
     if (error.response) {
-      console.error('错误响应:', error.response);
+      console.error('错误响应:', error.response)
       if (error.response.data && error.response.data.message) {
-        errorMsg = error.response.data.message;
+        errorMsg = error.response.data.message
       } else if (error.response.status) {
-        errorMsg = `请求失败 (${error.response.status})`;
+        errorMsg = `请求失败 (${error.response.status})`
       }
     } else if (error.message) {
-      errorMsg = error.message;
+      errorMsg = error.message
     }
-    
+
     // 尝试从网络错误中提取更多信息
     if (error.errMsg) {
-      console.error('错误信息:', error.errMsg);
-      errorMsg = error.errMsg;
+      console.error('错误信息:', error.errMsg)
+      errorMsg = error.errMsg
     }
-    
-    uni.showToast({ 
-      title: errorMsg, 
-      icon: 'none' 
-    });
+
+    uni.showToast({
+      title: errorMsg,
+      icon: 'none',
+    })
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 返回银行卡管理页面并触发刷新
 const backToCards = () => {
   try {
     // 触发刷新事件
-    uni.$emit('refresh-bank-cards');
-    uni.$emit('refresh-bank-status');
-    
+    uni.$emit('refresh-bank-cards')
+    uni.$emit('refresh-bank-status')
+
     // 刷新用户信息
-    userStore.fetchUserInfo();
-    
+    userStore.fetchUserInfo()
+
     // 返回上一页
-    uni.navigateBack();
+    uni.navigateBack()
   } catch (error) {
-    console.error('返回处理失败:', error);
-    uni.navigateBack();
+    console.error('返回处理失败:', error)
+    uni.navigateBack()
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>
@@ -447,35 +500,105 @@ const backToCards = () => {
   color: #6b7280;
 }
 
-.fee-amount {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #3b82f6;
+/* 预存金金额选择样式 */
+.amount-input-container {
+  margin-bottom: 30rpx;
+}
+
+.amount-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.amount-input-wrapper {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10rpx;
   margin: 10rpx 0;
 }
 
-.fee-message {
-  font-size: 24rpx;
-  color: #6b7280;
-  margin: 10rpx 0;
+.amount-prefix {
+  font-size: 40rpx;
+  color: #333;
+  margin-right: 10rpx;
+}
+
+.amount-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 36rpx;
+  border: none;
+}
+
+/* 开户预存金提示 */
+.open-fee-tip {
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 8rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.tip-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #f39c12;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.tip-content {
+  font-size: 26rpx;
+  color: #666;
   line-height: 1.5;
 }
 
+.amount-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 40rpx;
+}
+
+.amount-btn {
+  width: 170rpx;
+  height: 80rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.amount-btn-active {
+  background-color: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+  font-weight: 500;
+}
+
 .balance-info {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  background-color: #f9fafb;
+  border-radius: 8rpx;
   font-size: 26rpx;
-  color: #6b7280;
-  margin-top: 10rpx;
+  color: #666;
 }
 
 .balance-warning {
-  color: #f59e0b;
   display: block;
+  color: #ef4444;
   margin-top: 10rpx;
-  font-weight: bold;
 }
 
 .insufficient {
-  color: #ef4444;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
 }
 
 .form-group {
@@ -506,22 +629,21 @@ const backToCards = () => {
   font-size: 28rpx;
 }
 
-.btn-submit {
+.confirm-recharge-btn {
   width: 100%;
-  background-color: #3b82f6;
-  color: white;
-  padding: 24rpx 0;
+  height: 90rpx;
   border: none;
-  border-radius: 12rpx;
-  font-size: 30rpx;
+  border-radius: 45rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
   margin-top: 30rpx;
-  box-shadow: 0 4rpx 6rpx rgba(59, 130, 246, 0.3);
 }
 
-.btn-submit:disabled {
-  background-color: #d1d5db;
-  color: #9ca3af;
-  box-shadow: none;
+.confirm-recharge-btn:disabled {
+  opacity: 0.6;
+  background: linear-gradient(to right, #d4d4d4, #a0a0a0);
 }
 
 .submit-hint {
@@ -613,12 +735,12 @@ const backToCards = () => {
 
 /* 图标字体，需要在项目中引入相应的图标库 */
 .iconfont {
-  font-family: "iconfont" !important;
+  font-family: 'iconfont' !important;
 }
 .icon-wallet:before {
-  content: "\e6b1";
+  content: '\e6b1';
 }
 .icon-time:before {
-  content: "\e65f";
+  content: '\e65f';
 }
-</style> 
+</style>
