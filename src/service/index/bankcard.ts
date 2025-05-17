@@ -1,6 +1,7 @@
 import { http } from '@/utils/http'
 import qs from 'qs'
 import { useUserStore } from '@/store'
+import { checkLoginStatus } from '@/utils/auth'
 
 // 登录状态检查函数
 const checkLoginStatus = (): boolean => {
@@ -92,6 +93,33 @@ export const getBankCardOpenFeeAPI = () => {
 }
 
 /**
+ * 获取预存服务提示
+ */
+export interface IDepositTip {
+  id: number
+  description: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export const getDepositTipsAPI = () => {
+  // 检查登录状态
+  if (!checkLoginStatus()) {
+    return Promise.reject(new Error('用户未登录'))
+  }
+  
+  return http.get<{
+    status: string
+    message: string
+    data: {
+      deposit_tips: IDepositTip[]
+    }
+  }>('/api/bank-card/deposit-tips')
+}
+
+/**
  * 申请开通银行卡
  */
 export const openBankCardAPI = (data: {
@@ -99,6 +127,7 @@ export const openBankCardAPI = (data: {
   phone: string
   id_card: string
   address: string
+  amount?: number
 }) => {
   // 检查登录状态
   if (!checkLoginStatus()) {

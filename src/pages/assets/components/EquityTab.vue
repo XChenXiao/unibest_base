@@ -22,7 +22,8 @@
       <!-- 股权操作按钮 -->
       <view class="equity-actions">
         <button class="action-btn records-btn" @click="goToEquityRecords">股权记录</button>
-        <button class="action-btn sell-btn" @click="openSellEquity" v-if="equityInfo.holdAmount > 0">出售股权</button>
+        <!-- 注释：出售股权按钮 -->
+        <!-- <button class="action-btn sell-btn" @click="openSellEquity" v-if="equityInfo.holdAmount > 0">出售股权</button> -->
       </view>
     </view>
     
@@ -39,6 +40,7 @@
       :has-claimable-invitation="equityInfo.hasClaimableInvitation"
       :invitation-rewards="equityInfo.invitationRewards"
       :registration-description="registrationRewardDescription"
+      :is-register-reward-active="equityInfo.registrationReward?.is_active || false"
       @claim-reward="handleClaimReward"
     />
   </view>
@@ -64,7 +66,13 @@ const props = defineProps({
       inviteTarget: 5,
       invitationRewardClaimed: false,
       hasClaimableInvitation: false,
-      invitationRewards: []
+      invitationRewards: [],
+      registrationReward: {
+        id: 0,
+        amount: 0,
+        description: '',
+        is_active: false
+      }
     })
   }
 });

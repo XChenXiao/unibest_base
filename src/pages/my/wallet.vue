@@ -10,19 +10,24 @@
   <view class="wallet-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-
+    
     <!-- 返回按钮 -->
     <view class="back-button" @click="goBack">
-      <text class="uni-icons uniui-arrow-left"></text>
+      <text class="uni-icons uniui-back"></text>
     </view>
-
-    <!-- 余额卡片组件 -->
-    <balance-card
+    
+    <!-- 页面标题 -->
+    <view class="page-title">
+      <text class="title-text">我的钱包</text>
+    </view>
+    
+    <!-- 余额卡片 -->
+    <balance-card 
       :balance="walletInfo.balance"
-      style="margin-top: 50rpx"
+      @navigateToBankCard="handleNavToBankCard"
     />
-
-    <!-- 交易记录组件 -->
+    
+    <!-- 交易记录 -->
     <transaction-list
       ref="transactionListRef"
       :use-local-data="false"
@@ -43,6 +48,7 @@ import TransactionList from '@/components/wallet/TransactionList.vue'
 import { getBalanceTransactions } from '@/service/app/wallet'
 import { getUserInfo } from '@/service/app/user'
 import { getBankCardsAPI } from '@/service/index/bankcard'
+import { usePlatformStore } from '@/store/platform'
 
 // 交易记录组件引用
 const transactionListRef = ref(null)
@@ -51,6 +57,9 @@ const transactionListRef = ref(null)
 const walletInfo = reactive({
   balance: 0, // 初始化为0，将从API获取
 })
+
+// 获取平台设置状态
+const platformStore = usePlatformStore()
 
 // 返回上一页
 const goBack = () => {
@@ -76,8 +85,11 @@ const fetchWalletInfo = async () => {
     
     // 处理响应数据
     if (userRes.status === 'success' && userRes.data) {
+      // 类型断言处理响应数据
+      const userData = userRes.data as any;
+      
       // 确保余额是有效数字
-      const balance = userRes.data.user.balance
+      const balance = userData.user?.balance;
       if (balance !== undefined && balance !== null) {
         // 尝试转换为数字
         try {
@@ -114,6 +126,23 @@ const fetchWalletInfo = async () => {
     uni.hideLoading();
   }
 }
+
+// 处理前往银行卡相关页面的逻辑，添加功能开关检查
+const handleNavToBankCard = () => {
+  // 检查银行卡功能是否开放
+  if (!platformStore.enableBankAccount) {
+    uni.showToast({
+      title: '银行卡功能暂未开放',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 功能已开放，跳转到银行卡管理页面
+  uni.navigateTo({
+    url: '/pages/my/bank-cards'
+  });
+};
 
 // 页面加载时
 onMounted(() => {

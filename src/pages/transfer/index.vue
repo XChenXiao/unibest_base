@@ -89,7 +89,14 @@
           <!-- 银行卡开户预存金提示 -->
           <view class="open-fee-tip">
             <text class="tip-title">温馨提示</text>
-            <text class="tip-content">激活银行卡需要缴纳 {{ appStore.bankCardOpenFee }} 人民币作为预存金</text>
+            
+            <!-- 预存服务提示列表 -->
+            <view class="deposit-tips-list" v-if="depositTips.length > 0">
+              <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
+                <text class="tip-dot">•</text>
+                <text class="tip-desc">{{ tip.description }}</text>
+              </view>
+            </view>
           </view>
           
           <view class="amount-buttons">
@@ -114,7 +121,7 @@
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/store/user';
 import { useAppStore } from '@/store/app';
-import { checkBankCardStatusAPI } from '@/service/index/bankcard';
+import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard';
 
 const userStore = useUserStore();
 const appStore = useAppStore();
@@ -128,6 +135,9 @@ const goBack = () => {
 const rechargeAmount = ref('');
 const showRechargePopup = ref(false);
 const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000'];
+
+// 预存服务提示列表
+const depositTips = ref<IDepositTip[]>([]);
 
 // 处理充值/转入
 const handleRecharge = () => {
@@ -215,7 +225,7 @@ const navigateTo = async (url: string) => {
           has_bank_card: hasBankCard
         });
         
-        // 如果用户没有开通银行卡，则提示用户先开通
+                    // 如果用户没有开通银行卡，则提示用户先开通
         if (!hasBankCard) {
           // 显示提示对话框
           uni.showModal({
@@ -224,9 +234,9 @@ const navigateTo = async (url: string) => {
             confirmText: '去开通',
             success: (res) => {
               if (res.confirm) {
-                // 跳转到银行卡管理页面
+                // 直接跳转到银行卡开户申请页面
                 uni.navigateTo({
-                  url: '/pages/my/bank-cards'
+                  url: '/pages/my/bank-account-apply'
                 });
               }
             }
@@ -242,9 +252,9 @@ const navigateTo = async (url: string) => {
             confirmText: '去开通',
             success: (res) => {
               if (res.confirm) {
-                // 跳转到银行卡管理页面
+                // 直接跳转到银行卡开户申请页面
                 uni.navigateTo({
-                  url: '/pages/my/bank-cards'
+                  url: '/pages/my/bank-account-apply'
                 });
               }
             }
@@ -264,9 +274,9 @@ const navigateTo = async (url: string) => {
           confirmText: '去开通',
           success: (res) => {
             if (res.confirm) {
-              // 跳转到银行卡管理页面
+              // 直接跳转到银行卡开户申请页面
               uni.navigateTo({
-                url: '/pages/my/bank-cards'
+                url: '/pages/my/bank-account-apply'
               });
             }
           }
@@ -289,10 +299,34 @@ const showComingSoon = () => {
   });
 };
 
-// 页面加载
-onMounted(() => {
-  console.log('转账页面已加载');
+// 初始化
+onMounted(async () => {
+  // 获取预存金额提示
+  await fetchDepositTips();
+  
+  // 获取银行卡开户费用
+  await appStore.fetchBankCardOpenFee();
 });
+
+// 获取预存服务提示
+const fetchDepositTips = async () => {
+  try {
+    const res = await getDepositTipsAPI();
+    console.log('预存服务提示响应:', res);
+    
+    // 使用安全的方式访问数据
+    if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
+      // 安全地访问data字段
+      const data = res.data;
+      if (data && typeof data === 'object' && 'deposit_tips' in data) {
+        depositTips.value = data.deposit_tips;
+        console.log('获取预存服务提示成功:', depositTips.value);
+      }
+    }
+  } catch (error) {
+    console.error('获取预存服务提示失败:', error);
+  }
+};
 </script>
 
 <style lang="scss">
@@ -502,23 +536,48 @@ page {
 
 /* 开户预存金提示 */
 .open-fee-tip {
-  background-color: rgba(18, 150, 219, 0.1);
+  margin-top: 16rpx;
+  padding: 16rpx;
+  background-color: #fff9f0;
   border-radius: 8rpx;
-  padding: 20rpx;
-  margin-bottom: 30rpx;
 }
 
 .tip-title {
   font-size: 28rpx;
-  font-weight: 500;
-  color: #1296db;
-  margin-bottom: 10rpx;
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 8rpx;
   display: block;
 }
 
 .tip-content {
   font-size: 26rpx;
+  color: #333;
+  line-height: 1.5;
+  display: block;
+}
+
+.deposit-tips-list {
+  margin-top: 16rpx;
+}
+
+.deposit-tip-item {
+  display: flex;
+  margin-bottom: 8rpx;
+  align-items: flex-start;
+}
+
+.tip-dot {
+  font-size: 28rpx;
+  color: #ff9800;
+  margin-right: 8rpx;
+  line-height: 1.3;
+}
+
+.tip-desc {
+  font-size: 24rpx;
   color: #666;
+  flex: 1;
   line-height: 1.5;
 }
 

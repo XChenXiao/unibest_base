@@ -7,110 +7,119 @@
     
     <!-- 奖励卡片列表 -->
     <view class="rewards-list">
-      <!-- 注册实名奖励卡片 -->
-      <view class="reward-card">
-        <view class="reward-icon-container">
-          <view class="reward-icon register-icon">
-            <image src="/static/images/type/register_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
-          </view>
-        </view>
-        <view class="reward-content">
-          <view class="reward-header">
-            <text class="reward-name">注册实名奖励</text>
-            <text class="reward-amount">{{ registerReward }}股</text>
-          </view>
-          <text class="reward-desc">{{ registrationDescription || '完成注册并实名认证可获得股权奖励' }}</text>
-          <button 
-            class="reward-btn" 
-            :class="{
-              'claimed-btn': registerButtonStatus.claimed,
-              'disabled-btn': registerButtonStatus.disabled && !registerButtonStatus.claimed
-            }"
-            :disabled="registerButtonStatus.disabled" 
-            @click="claimReward('register')"
-          >
-            <text>{{ registerButtonStatus.text }}</text>
-          </button>
-        </view>
+      <!-- 无奖励时的提示 -->
+      <view v-if="!hasAnyRewards" class="no-rewards-tip">
+        <image src="/static/images/type/no_rewards.png" mode="aspectFit" class="no-rewards-image"></image>
+        <text class="no-rewards-text">暂无可用奖励</text>
       </view>
-      
-      <!-- 邀请奖励卡片（多个） -->
-      <view 
-        v-for="(reward, index) in sortedInvitationRewards" 
-        :key="reward.id" 
-        class="reward-card"
-      >
-        <view class="reward-icon-container">
-          <view class="reward-icon invite-icon">
-            <image src="/static/images/type/invite_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
-          </view>
-        </view>
-        <view class="reward-content">
-          <view class="reward-header">
-            <text class="reward-name">邀请奖励</text>
-            <text class="reward-amount">{{ reward.amount }}股</text>
-          </view>
-          <text class="reward-desc">{{ reward.description }}</text>
-          <!-- 进度条 -->
-          <view class="progress-container">
-            <view class="progress-bar">
-              <view 
-                class="progress-filled" 
-                :style="{ width: `${(reward.currentInvites / reward.inviteCount) * 100}%` }"
-              ></view>
+
+      <!-- 有奖励时显示奖励卡片 -->
+      <template v-else>
+        <!-- 注册实名奖励卡片 -->
+        <view class="reward-card" v-if="showRegisterReward">
+          <view class="reward-icon-container">
+            <view class="reward-icon register-icon">
+              <image src="/static/images/type/register_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
             </view>
-            <text class="progress-text">{{ reward.currentInvites }}/{{ reward.inviteCount }}</text>
           </view>
-          <button 
-            class="reward-btn" 
-            :class="{
-              'claimed-btn': getInviteRewardButtonStatus(reward).claimed,
-              'disabled-btn': getInviteRewardButtonStatus(reward).disabled && !getInviteRewardButtonStatus(reward).claimed
-            }" 
-            :disabled="getInviteRewardButtonStatus(reward).disabled"
-            @click="claimInviteReward(reward.id)"
-          >
-            <text>{{ getInviteRewardButtonStatus(reward).text }}</text>
-          </button>
-        </view>
-      </view>
-      
-      <!-- 当没有邀请奖励时显示单个邀请奖励卡片 -->
-      <view v-if="!invitationRewards || invitationRewards.length === 0" class="reward-card">
-        <view class="reward-icon-container">
-          <view class="reward-icon invite-icon">
-            <image src="/static/images/type/invite_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
-          </view>
-        </view>
-        <view class="reward-content">
-          <view class="reward-header">
-            <text class="reward-name">邀请注册实名奖励</text>
-            <text class="reward-amount">{{ inviteReward }}股</text>
-          </view>
-          <text class="reward-desc">邀请好友注册并完成实名认证</text>
-          <!-- 进度条 -->
-          <view class="progress-container">
-            <view class="progress-bar">
-              <view 
-                class="progress-filled" 
-                :style="{ width: `${(inviteProgress / inviteTarget) * 100}%` }"
-              ></view>
+          <view class="reward-content">
+            <view class="reward-header">
+              <text class="reward-name">注册实名奖励</text>
+              <text class="reward-amount">{{ registerReward }}股</text>
             </view>
-            <text class="progress-text">{{ inviteProgress }}/{{ inviteTarget }}</text>
+            <text class="reward-desc">{{ registrationDescription || '完成注册并实名认证可获得股权奖励' }}</text>
+            <button 
+              class="reward-btn" 
+              :class="{
+                'claimed-btn': registerButtonStatus.claimed,
+                'disabled-btn': registerButtonStatus.disabled && !registerButtonStatus.claimed
+              }"
+              :disabled="registerButtonStatus.disabled" 
+              @click="claimReward('register')"
+            >
+              <text>{{ registerButtonStatus.text }}</text>
+            </button>
           </view>
-          <button 
-            class="reward-btn" 
-            :class="{
-              'claimed-btn': inviteButtonStatus.claimed,
-              'disabled-btn': inviteButtonStatus.disabled && !inviteButtonStatus.claimed
-            }" 
-            :disabled="inviteButtonStatus.disabled"
-            @click="claimReward('invite')"
-          >
-            <text>{{ inviteButtonStatus.text }}</text>
-          </button>
         </view>
-      </view>
+        
+        <!-- 邀请奖励卡片（多个） -->
+        <view 
+          v-for="(reward, index) in sortedInvitationRewards" 
+          :key="reward.id" 
+          class="reward-card"
+        >
+          <view class="reward-icon-container">
+            <view class="reward-icon invite-icon">
+              <image src="/static/images/type/invite_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
+            </view>
+          </view>
+          <view class="reward-content">
+            <view class="reward-header">
+              <text class="reward-name">邀请奖励</text>
+              <text class="reward-amount">{{ reward.amount }}股</text>
+            </view>
+            <text class="reward-desc">{{ reward.description }}</text>
+            <!-- 进度条 -->
+            <view class="progress-container">
+              <view class="progress-bar">
+                <view 
+                  class="progress-filled" 
+                  :style="{ width: `${(reward.currentInvites / reward.inviteCount) * 100}%` }"
+                ></view>
+              </view>
+              <text class="progress-text">{{ reward.currentInvites }}/{{ reward.inviteCount }}</text>
+            </view>
+            <button 
+              class="reward-btn" 
+              :class="{
+                'claimed-btn': getInviteRewardButtonStatus(reward).claimed,
+                'disabled-btn': getInviteRewardButtonStatus(reward).disabled && !getInviteRewardButtonStatus(reward).claimed
+              }" 
+              :disabled="getInviteRewardButtonStatus(reward).disabled"
+              @click="claimInviteReward(reward.id)"
+            >
+              <text>{{ getInviteRewardButtonStatus(reward).text }}</text>
+            </button>
+          </view>
+        </view>
+        
+        <!-- 当没有邀请奖励时显示单个邀请奖励卡片 -->
+        <view v-if="!invitationRewards || invitationRewards.length === 0" class="reward-card">
+          <view class="reward-icon-container">
+            <view class="reward-icon invite-icon">
+              <image src="/static/images/type/invite_rewards.png" mode="aspectFit" class="reward-icon-image"></image>
+            </view>
+          </view>
+          <view class="reward-content">
+            <view class="reward-header">
+              <text class="reward-name">邀请注册实名奖励</text>
+              <text class="reward-amount">{{ inviteReward }}股</text>
+            </view>
+            <text class="reward-desc">邀请好友注册并完成实名认证</text>
+            <!-- 进度条 -->
+            <view class="progress-container">
+              <view class="progress-bar">
+                <view 
+                  class="progress-filled" 
+                  :style="{ width: `${(inviteProgress / inviteTarget) * 100}%` }"
+                ></view>
+              </view>
+              <text class="progress-text">{{ inviteProgress }}/{{ inviteTarget }}</text>
+            </view>
+            <button 
+              class="reward-btn" 
+              :class="{
+                'claimed-btn': inviteButtonStatus.claimed,
+                'disabled-btn': inviteButtonStatus.disabled && !inviteButtonStatus.claimed
+              }" 
+              :disabled="inviteButtonStatus.disabled"
+              @click="claimReward('invite')"
+            >
+              <text>{{ inviteButtonStatus.text }}</text>
+            </button>
+          </view>
+        </view>
+      </template>
     </view>
   </view>
 </template>
@@ -128,6 +137,7 @@ interface InvitationReward {
   hasClaimable: boolean;
   currentInvites: number;
   claimInfo: string;
+  is_active: boolean;
 }
 
 // 定义属性
@@ -177,6 +187,11 @@ const props = defineProps({
   invitationRewards: {
     type: Array as () => InvitationReward[],
     default: () => []
+  },
+  // 新增属性：注册奖励是否激活
+  isRegisterRewardActive: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -279,11 +294,22 @@ const sortedInvitationRewards = computed(() => {
     return [];
   }
   
-  // 按照邀请目标数量从小到大排序
-  return [...props.invitationRewards].sort((a, b) => {
-    // 先按照邀请要求数量排序
-    return a.inviteCount - b.inviteCount;
-  });
+  // 过滤出激活的奖励并按照邀请目标数量从小到大排序
+  return [...props.invitationRewards]
+    .filter(reward => reward.is_active)
+    .sort((a, b) => a.inviteCount - b.inviteCount);
+});
+
+// 计算是否显示注册奖励
+const showRegisterReward = computed(() => {
+  return props.registerReward > 0 && props.isRegisterRewardActive;
+});
+
+// 计算是否有任何奖励可显示
+const hasAnyRewards = computed(() => {
+  // 过滤出激活的邀请奖励
+  const activeInvitationRewards = props.invitationRewards.filter(reward => reward.is_active);
+  return (showRegisterReward.value || activeInvitationRewards.length > 0);
 });
 
 </script>
@@ -449,5 +475,29 @@ const sortedInvitationRewards = computed(() => {
   background: #f2f2f2 !important;
   color: #999999;
   box-shadow: none;
+}
+
+/* 无奖励提示样式 */
+.no-rewards-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.no-rewards-image {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 20rpx;
+}
+
+.no-rewards-text {
+  font-size: 28rpx;
+  color: #999;
+  text-align: center;
 }
 </style> 

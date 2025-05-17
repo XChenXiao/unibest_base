@@ -27,21 +27,6 @@
       </view>
     </view>
 
-    <!-- 审核中状态 -->
-    <view v-else-if="verificationStatus && verificationStatus.data?.verification_status === 'pending'" class="status-box pending-box mb-6 p-4 rounded-lg">
-      <view class="flex items-center mb-4">
-        <text class="i-carbon-time text-3xl text-blue-500 mr-2"></text>
-        <text class="text-lg font-bold">审核中</text>
-      </view>
-      <view class="info-item mb-2">
-        <text>您的实名认证信息已提交，请耐心等待审核结果。</text>
-      </view>
-      <view class="info-item mb-2">
-        <text class="label text-gray-500">提交时间：</text>
-        <text>{{ formatDate(verificationStatus.data?.verification?.created_at) }}</text>
-      </view>
-    </view>
-
     <!-- 被拒绝状态 -->
     <view v-else-if="verificationStatus && verificationStatus.data?.verification_status === 'rejected'" class="status-box rejected-box mb-6 p-4 rounded-lg">
       <view class="flex items-center mb-4">
@@ -354,7 +339,7 @@ const handleSubmit = async () => {
     if (res.status === 'success') {
       uni.showToast({
         icon: 'success',
-        title: '提交成功，等待审核',
+        title: '提交成功并已通过',
       })
       
       // 重新获取验证状态

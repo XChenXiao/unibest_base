@@ -34,7 +34,7 @@
     </view>
 
     <!-- 余额展示 -->
-    <view class="balance-card">
+    <view class="balance-card" @click="handleBankCardClick">
       <!-- 银行卡顶部 -->
       <view class="card-header">
         <view class="bank-logo">
@@ -54,19 +54,19 @@
             class="eye-icon"
             :src="`/static/images/${showBalance ? 'show-icon' : 'hidden-icon'}.png`"
             mode="widthFix"
-            @click="toggleBalanceVisibility"
+            @click.stop="toggleBalanceVisibility"
           ></image>
         </view>
         <view class="balance-amount">
           <text>{{ showBalance ? formatBalance(userStore.userInfo.balance) : '******' }}</text>
-          <text class="arrow-icon" @click="navigateTo('/pages/my/wallet')">></text>
+          <text class="arrow-icon" @click.stop="navigateTo('/pages/my/wallet')">></text>
         </view>
       </view>
 
       <!-- 操作按钮 -->
       <view class="action-buttons">
-        <button class="action-btn transfer-in" @click="handleTransferIn">转入</button>
-        <button class="action-btn transfer-out" @click="handleTransferOut">转出</button>
+        <button class="action-btn transfer-in" @click.stop="handleTransferIn">转入</button>
+        <button class="action-btn transfer-out" @click.stop="handleTransferOut">转出</button>
       </view>
     </view>
 
@@ -197,9 +197,12 @@
           <!-- 银行卡开户预存金提示 -->
           <view class="open-fee-tip">
             <text class="tip-title">温馨提示</text>
-            <text class="tip-content">
-              激活银行卡需要缴纳 {{ appStore.bankCardOpenFee }} 人民币作为预存金
-            </text>
+            <view class="deposit-tips-list" v-if="depositTips.length > 0">
+              <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
+                <text class="tip-dot">•</text>
+                <text class="tip-desc">{{ tip.description }}</text>
+              </view>
+            </view>
           </view>
 
           <view class="amount-buttons">
@@ -231,43 +234,28 @@ import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import { useTabItemTap } from '@/hooks/useTabItemTap'
 import { API_URL } from '@/config/api'
-import { checkBankCardStatusAPI } from '@/service/index/bankcard'
+import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
+import { usePlatformStore } from '@/store/platform'
+
+// 定义接口类型
+interface DepositTip {
+  id: number
+  description: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
 
 // 获取用户数据存储
 const userStore = useUserStore()
 // 获取App数据存储
 const appStore = useAppStore()
+// 获取平台设置状态
+const platformStore = usePlatformStore()
 
 // 是否有新公告
 const hasNewAnnouncement = ref(false)
-
-// 检查是否有未读公告
-const checkAnnouncementStatus = async () => {
-  try {
-    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
-    const response = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_URL}/api/messages/unread-count`,
-        method: 'GET',
-        success: (res) => {
-          resolve(res)
-        },
-        fail: (err) => {
-          reject(err)
-        },
-      })
-    })
-
-    // 直接使用response的data属性
-    const res = response as any
-
-    if (res?.data?.status === 'success') {
-      hasNewAnnouncement.value = res.data.data.unread_count > 0
-    }
-  } catch (error) {
-    console.error('检查公告状态失败:', error)
-  }
-}
 
 // 余额显示控制
 const showBalance = ref(true)
@@ -276,6 +264,8 @@ const showBalance = ref(true)
 const rechargeAmount = ref('')
 const showRechargePopup = ref(false)
 const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000']
+// 预存服务提示列表
+const depositTips = ref<DepositTip[]>([])
 
 // 使用TabBar切换钩子，自动处理用户数据刷新
 useTabItemTap({
@@ -299,6 +289,9 @@ onMounted(() => {
 
   // 检查是否有未读公告
   checkAnnouncementStatus()
+  
+  // 获取预存金额提示
+  fetchDepositTips()
 })
 
 // 页面卸载时移除事件监听
@@ -407,6 +400,16 @@ const handleProfileClick = () => {
 
 // 处理转入
 const handleTransferIn = async () => {
+  // 检查银行卡功能是否开放
+  if (!platformStore.enableBankAccount) {
+    uni.showToast({
+      title: '银行卡功能暂未开放',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
   try {
     // 显示加载状态
     uni.showLoading({
@@ -428,11 +431,20 @@ const handleTransferIn = async () => {
         has_bank_card: hasBankCard,
       })
 
-      // 如果用户没有开通银行卡，则直接跳转到开户申请页面
+      // 如果用户没有开通银行卡，则提示用户先开通
       if (!hasBankCard) {
-        // 跳转到银行卡开户申请页面
-        uni.navigateTo({
-          url: '/pages/my/bank-account-apply',
+        uni.showModal({
+          title: '提示',
+          content: '转入需要先开通银行卡，是否立即前往开通？',
+          confirmText: '去开通',
+          success: (res) => {
+            if (res.confirm) {
+              // 跳转到银行卡开户申请页面
+              uni.navigateTo({
+                url: '/pages/my/bank-account-apply',
+              })
+            }
+          },
         })
         return
       }
@@ -447,9 +459,18 @@ const handleTransferIn = async () => {
 
     // 发生错误时降级使用本地状态
     if (!userStore.userInfo.has_bank_card) {
-      // 直接跳转到银行卡开户申请页面
-      uni.navigateTo({
-        url: '/pages/my/bank-account-apply',
+      uni.showModal({
+        title: '提示',
+        content: '转入需要先开通银行卡，是否立即前往开通？',
+        confirmText: '去开通',
+        success: (res) => {
+          if (res.confirm) {
+            // 跳转到银行卡开户申请页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply',
+            })
+          }
+        },
       })
       return
     }
@@ -462,6 +483,16 @@ const handleTransferIn = async () => {
 
 // 处理转出
 const handleTransferOut = async () => {
+  // 检查银行卡功能是否开放
+  if (!platformStore.enableBankAccount) {
+    uni.showToast({
+      title: '银行卡功能暂未开放',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
   try {
     // 显示加载状态
     uni.showLoading({
@@ -491,9 +522,9 @@ const handleTransferOut = async () => {
           confirmText: '去开通',
           success: (res) => {
             if (res.confirm) {
-              // 跳转到银行卡管理页面
+              // 直接跳转到银行卡开户申请页面
               uni.navigateTo({
-                url: '/pages/my/bank-cards',
+                url: '/pages/my/bank-account-apply',
               })
             }
           },
@@ -516,9 +547,9 @@ const handleTransferOut = async () => {
         confirmText: '去开通',
         success: (res) => {
           if (res.confirm) {
-            // 跳转到银行卡管理页面
+            // 直接跳转到银行卡开户申请页面
             uni.navigateTo({
-              url: '/pages/my/bank-cards',
+              url: '/pages/my/bank-account-apply',
             })
           }
         },
@@ -601,6 +632,84 @@ const handleLogout = () => {
 // 切换余额可见性
 const toggleBalanceVisibility = () => {
   showBalance.value = !showBalance.value
+}
+
+// 处理充值/转入
+const handleRecharge = () => {
+  rechargeAmount.value = '';
+  showRechargePopup.value = true;
+  
+  // 如果用户没有开通银行卡且没有获取预存金金额，则获取预存金金额
+  if (!userStore.userInfo.has_bank_card && !appStore.hasFetchedBankCardOpenFee) {
+    appStore.fetchBankCardOpenFee();
+  }
+  
+  // 获取最新的预存金提示
+  fetchDepositTips();
+};
+
+// 检查是否有未读公告
+const checkAnnouncementStatus = async () => {
+  try {
+    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
+    const response = await new Promise((resolve, reject) => {
+      uni.request({
+        url: `${API_URL}/api/messages/unread-count`,
+        method: 'GET',
+        success: (res) => {
+          resolve(res)
+        },
+        fail: (err) => {
+          reject(err)
+        },
+      })
+    })
+
+    // 直接使用response的data属性
+    const res = response as any
+
+    if (res?.data?.status === 'success') {
+      hasNewAnnouncement.value = res.data.data.unread_count > 0
+    }
+  } catch (error) {
+    console.error('检查公告状态失败:', error)
+  }
+}
+
+// 获取预存服务提示
+const fetchDepositTips = async () => {
+  try {
+    const res = await getDepositTipsAPI();
+    console.log('预存服务提示响应:', res);
+    
+    // 使用安全的方式访问数据
+    if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
+      // 安全地访问data字段
+      const data = res.data;
+      if (data && typeof data === 'object' && 'deposit_tips' in data) {
+        depositTips.value = data.deposit_tips as DepositTip[] || [];
+        console.log('获取预存服务提示成功:', depositTips.value);
+      }
+    }
+  } catch (error) {
+    console.error('获取预存服务提示失败:', error);
+    depositTips.value = []; // 确保始终有一个有效数组
+  }
+};
+
+// 处理银行卡点击
+const handleBankCardClick = () => {
+  // 检查银行卡功能是否开放
+  if (!platformStore.enableBankAccount) {
+    uni.showToast({
+      title: '银行卡功能暂未开放',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // 功能已开放，跳转到钱包页面
+  navigateTo('/pages/my/wallet')
 }
 </script>
 
@@ -1070,9 +1179,27 @@ page {
   display: block;
 }
 
-.tip-content {
-  font-size: 26rpx;
+.deposit-tips-list {
+  margin-top: 16rpx;
+}
+
+.deposit-tip-item {
+  display: flex;
+  margin-bottom: 8rpx;
+  align-items: flex-start;
+}
+
+.tip-dot {
+  font-size: 28rpx;
+  color: #ff9800;
+  margin-right: 8rpx;
+  line-height: 1.3;
+}
+
+.tip-desc {
+  font-size: 24rpx;
   color: #666;
+  flex: 1;
   line-height: 1.5;
 }
 

@@ -47,7 +47,14 @@
         <!-- 银行卡开户预存金提示 -->
         <view class="open-fee-tip">
           <text class="tip-title">温馨提示</text>
-          <text class="tip-content">激活银行卡需要缴纳 {{ openFee }} 人民币作为预存金</text>
+          
+          <!-- 预存服务提示列表 -->
+          <view class="deposit-tips-list" v-if="depositTips.length > 0">
+            <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
+              <text class="tip-dot">•</text>
+              <text class="tip-desc">{{ tip.description }}</text>
+            </view>
+          </view>
         </view>
 
         <view class="amount-buttons">
@@ -149,7 +156,9 @@ import {
   getBankCardOpenFeeAPI,
   openBankCardAPI,
   getBankCardOpenRecordsAPI,
+  getDepositTipsAPI,
   IBankCardOpenRecord,
+  IDepositTip
 } from '@/service/index/bankcard'
 import { useUserStore } from '@/store/user'
 
@@ -171,6 +180,9 @@ const openFee = ref(0)
 // 开户说明信息
 const openFeeMessage = ref('开通银行卡需要缴纳预存金，将从您的账户余额中扣除')
 
+// 预存服务提示列表
+const depositTips = ref<IDepositTip[]>([])
+
 // 是否有足够余额支付开户费用
 const canApply = ref(false)
 
@@ -190,23 +202,24 @@ const selectAmount = (amount: string) => {
 
 // 在页面加载时获取开户费用和检查是否有申请记录
 onMounted(async () => {
-  // 从页面参数获取开户费用
-  const params = (uni as any).getLaunchOptionsSync().query
-  if (params && params.fee) {
-    openFee.value = Number(params.fee)
-  } else {
-    // 如果没有传递费用参数，则从API获取
+  try {
+    // 获取开户费用
     await fetchOpenFee()
+    
+    // 获取预存服务提示
+    await fetchDepositTips()
+    
+    // 不再检查申请状态，因为所有申请都会自动通过
+    // await checkApplicationStatus()
+    
+    // 其他初始化逻辑...
+  } catch (error) {
+    console.error('初始化失败:', error)
+    uni.showToast({
+      title: '获取数据失败，请重试',
+      icon: 'none'
+    })
   }
-
-  // 设置默认预存金额为开户费用
-  formData.amount = String(openFee.value)
-
-  // 检查用户是否有足够的余额
-  updateCanApply()
-
-  // 获取用户的开户申请记录
-  await checkApplicationStatus()
 })
 
 // 更新是否可申请状态
@@ -266,6 +279,24 @@ const fetchOpenFee = async () => {
     throw new Error('获取开户费用失败')
   }
   loading.value = false
+}
+
+// 获取预存服务提示
+const fetchDepositTips = async () => {
+  try {
+    const res = await getDepositTipsAPI()
+    // 使用安全的方式访问数据
+    if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
+      // 安全地访问data字段
+      const data = res.data;
+      if (data && typeof data === 'object' && 'deposit_tips' in data) {
+        depositTips.value = data.deposit_tips;
+        console.log('获取预存服务提示成功:', depositTips.value);
+      }
+    }
+  } catch (error) {
+    console.error('获取预存服务提示失败:', error)
+  }
 }
 
 // 检查用户是否有正在处理的申请
@@ -376,11 +407,16 @@ const submitBankCardOpen = async () => {
         icon: 'success',
       })
 
-      // 进入审核中步骤
-      currentStep.value = 'review'
+      // 不再进入审核中步骤，而是直接返回到银行卡管理页面
+      // 触发刷新事件
+      uni.$emit('refresh-bank-cards')
+      uni.$emit('refresh-bank-status')
 
-      // 再次检查申请状态，确保状态更新
-      await checkApplicationStatus()
+      // 刷新用户信息
+      userStore.fetchUserInfo()
+
+      // 返回上一页
+      uni.navigateBack()
     } else {
       // 提取错误信息
       let errorMsg = '申请提交失败'
@@ -535,23 +571,48 @@ const backToCards = () => {
 
 /* 开户预存金提示 */
 .open-fee-tip {
-  background-color: rgba(243, 156, 18, 0.1);
+  margin-top: 16rpx;
+  padding: 16rpx;
+  background-color: #fff9f0;
   border-radius: 8rpx;
-  padding: 20rpx;
-  margin-bottom: 30rpx;
 }
 
 .tip-title {
   font-size: 28rpx;
-  font-weight: 500;
-  color: #f39c12;
-  margin-bottom: 10rpx;
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 8rpx;
   display: block;
 }
 
 .tip-content {
   font-size: 26rpx;
+  color: #333;
+  line-height: 1.5;
+  display: block;
+}
+
+.deposit-tips-list {
+  margin-top: 16rpx;
+}
+
+.deposit-tip-item {
+  display: flex;
+  margin-bottom: 8rpx;
+  align-items: flex-start;
+}
+
+.tip-dot {
+  font-size: 28rpx;
+  color: #ff9800;
+  margin-right: 8rpx;
+  line-height: 1.3;
+}
+
+.tip-desc {
+  font-size: 24rpx;
   color: #666;
+  flex: 1;
   line-height: 1.5;
 }
 

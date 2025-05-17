@@ -4,6 +4,7 @@ import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only'
 import { useUserStore } from '@/store'
 import { useAppStore } from '@/store/app'
+import { usePlatformStore } from '@/store/platform'
 import { getNeedLoginPages } from '@/utils'
 import { pages } from '@/pages.json'
 import { tabbarStore } from '@/components/fg-tabbar/tabbar'
@@ -14,6 +15,8 @@ import { API_URL } from '@/config/api'
 const userStore = useUserStore()
 // 初始化应用状态
 const appStore = useAppStore()
+// 初始化平台设置状态
+const platformStore = usePlatformStore()
 
 // 最小更新时间间隔(毫秒)：5分钟
 const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
@@ -34,6 +37,14 @@ onLaunch(async () => {
   
   // 获取银行卡开户预存金
   appStore.fetchBankCardOpenFee()
+  
+  // 获取平台功能开关设置
+  console.log('获取平台功能开关设置...')
+  await platformStore.fetchPlatformSettings()
+  console.log('平台功能开关状态:', {
+    银行卡功能: platformStore.enableBankAccount ? '已开放' : '未开放',
+    交易所功能: platformStore.enableExchange ? '已开放' : '未开放'
+  })
   
   // 检查是否有本地存储的token，如果有则尝试自动登录
   if (userStore.isLogined) {
@@ -152,6 +163,10 @@ const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
 
 onShow(async () => {
   console.log('App Show')
+  
+  // 每次应用显示时刷新平台功能开关设置
+  console.log('应用显示，刷新平台功能开关设置...')
+  platformStore.fetchPlatformSettings()
   
   // 如果用户已登录，检查是否需要刷新用户信息
   if (userStore.isLogined) {

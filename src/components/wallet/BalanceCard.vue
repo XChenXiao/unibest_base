@@ -3,6 +3,10 @@
   <view class="balance-card">
     <view class="balance-header">
       <text class="balance-title">账户余额</text>
+      <view class="bank-card-link" @click="handleNavToBankCard">
+        <text>银行卡</text>
+        <text class="arrow-icon">></text>
+      </view>
     </view>
     <view class="balance-amount">
       <text class="amount-symbol">¥</text>
@@ -14,14 +18,35 @@
 <script lang="ts" setup>
 import { computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/store/user';
+import { usePlatformStore } from '@/store/platform';
 
 // 使用用户store
 const userStore = useUserStore();
+// 使用平台设置store
+const platformStore = usePlatformStore();
 
 // 定义props
 const props = defineProps<{
   balance: number | string
 }>();
+
+// 定义事件
+const emit = defineEmits(['navigateToBankCard']);
+
+// 处理跳转到银行卡管理页面
+const handleNavToBankCard = () => {
+  // 检查银行卡功能是否开放
+  if (!platformStore.enableBankAccount) {
+    uni.showToast({
+      title: '银行卡功能暂未开放',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 触发事件，由父组件处理跳转逻辑
+  emit('navigateToBankCard');
+};
 
 // 创建计算属性，结合Pinia的用户余额和传入的余额
 const displayBalance = computed(() => {
@@ -91,6 +116,9 @@ watch(() => userStore.userInfo.balance, (newVal) => {
 
 .balance-header {
   margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .balance-title {
@@ -117,5 +145,24 @@ watch(() => userStore.userInfo.balance, (newVal) => {
   font-size: 60rpx;
   font-weight: 600;
   color: #333;
+}
+
+.bank-card-link {
+  color: #666;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  padding: 5rpx 10rpx;
+  border-radius: 8rpx;
+}
+
+.bank-card-link:active {
+  background-color: #f5f5f5;
+}
+
+.arrow-icon {
+  margin-left: 8rpx;
+  font-size: 22rpx;
+  color: #999;
 }
 </style> 

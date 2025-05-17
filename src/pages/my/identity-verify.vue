@@ -18,12 +18,12 @@
     </view>
     
     <!-- 页面标题 -->
-    <view class="page-title">
+    <!-- <view class="page-title">
       <text class="title-text">实名认证</text>
-    </view>
+    </view> -->
     
     <!-- 认证状态展示 -->
-    <view class="verify-status-card" v-if="verifyStatus !== 'none'">
+    <view class="verify-status-card" style="margin-top: 20rpx;" v-if="verifyStatus !== 'none'">
       <view class="status-icon" :class="getStatusIconClass()">
         <text class="uni-icons" :class="getStatusIconName()"></text>
       </view>
@@ -124,12 +124,6 @@
         <text class="info-label">认证时间</text>
         <text class="info-value">{{ userInfo.verifyTime }}</text>
       </view>
-    </view>
-    
-    <!-- 认证中状态下的提示 -->
-    <view class="verify-tips" v-if="verifyStatus === 'pending'">
-      <text class="tips-large">认证审核中，请耐心等待</text>
-      <text class="tips-small">一般1-2个工作日内完成审核</text>
     </view>
     
     <!-- 认证被拒状态下的提示 -->
@@ -430,12 +424,17 @@ const handleSubmit = async () => {
       // 更新认证状态
       await userStore.fetchVerificationStatus();
       
-      // 修改状态为审核中
-      verifyStatus.value = 'pending';
+      // 修改状态为已通过
+      verifyStatus.value = 'approved';
+      
+      // 填充用户信息
+      userInfo.name = formData.name;
+      userInfo.idNumber = formData.idNumber;
+      userInfo.verifyTime = new Date().toISOString();
       
       // 提交成功提示
       uni.showToast({
-        title: '提交成功',
+        title: '提交成功并已通过',
         icon: 'success'
       });
     }

@@ -135,6 +135,7 @@ const equityInfo = reactive({
     amount: 0,
     description: '',
     transaction_id: null,
+    is_active: false
   },
   // 用于计算总资产等额外数据
   totalValue: 0,
@@ -395,6 +396,7 @@ const loadRewardConfigs = async () => {
             'hasClaimableRegistration(是否可领取)': equityInfo.hasClaimableRegistration,
             'isRegisterRewardReceived(是否已领取)': equityInfo.isRegisterRewardReceived,
             claimable_transaction_id: registrationReward.claimable_transaction_id,
+            is_active: registrationReward.is_active
           })
 
           // 保存注册奖励的完整信息
@@ -403,6 +405,7 @@ const loadRewardConfigs = async () => {
             amount: parseFloat(registrationReward.amount),
             description: registrationReward.description || '注册实名领取奖励',
             transaction_id: registrationReward.claimable_transaction_id,
+            is_active: registrationReward.is_active || false // 添加is_active字段
           }
         }
 
@@ -435,6 +438,7 @@ const loadRewardConfigs = async () => {
             currentInvites: reward.current_invites || 0,
             claimInfo: reward.claim_info || '',
             transaction_id: reward.claimable_transaction_id,
+            is_active: reward.is_active || false // 添加is_active字段
           }))
 
           // 将所有邀请奖励配置存储到响应式对象中，以便于在组件中使用

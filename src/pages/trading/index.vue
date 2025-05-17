@@ -44,6 +44,7 @@ import { onShow } from '@dcloudio/uni-app';
 import { getUserAssets, getUserCurrencies } from '@/service/app/currency';
 import { UserAssets } from '@/service/app/types';
 import { useUserStore } from '@/store/user';
+import { usePlatformStore } from '@/store/platform';
 import AssetsOverview from '@/components/finance/AssetsOverview.vue';
 import { getEquityInfo, getMyEquity } from '@/service/app';
 
@@ -66,6 +67,8 @@ const equityInfo = reactive({
 
 // 用户存储
 const userStore = useUserStore();
+// 平台设置存储
+const platformStore = usePlatformStore();
 
 // 自动刷新定时器
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -247,8 +250,30 @@ const toggleVisibility = () => {
 
 // 去交易所
 const goToExchange = () => {
+  console.log('点击交易所按钮，检查功能开关状态...');
+  console.log('当前平台设置状态：交易所功能开放=', platformStore.enableExchange);
+  
+  // 检查交易所功能是否开放
+  if (!platformStore.enableExchange) {
+    console.log('交易所功能未开放，显示提示');
+    uni.showToast({
+      title: '交易所功能暂未开放',
+      icon: 'none',
+      duration: 2000
+    });
+    return;
+  }
+  
+  // 功能已开放，跳转到交易所页面
+  console.log('交易所功能已开放，准备跳转到交易所页面');
   uni.navigateTo({
-    url: '/pages/trading/exchange'
+    url: '/pages/trading/exchange',
+    success: () => {
+      console.log('成功跳转到交易所页面');
+    },
+    fail: (err) => {
+      console.error('跳转到交易所页面失败:', err);
+    }
   });
 };
 </script>
