@@ -55,6 +55,12 @@
               <text class="tip-desc">{{ tip.description }}</text>
             </view>
           </view>
+          
+          <!-- 开户费用提示 -->
+          <view class="open-fee-tip-item" v-if="openFee > 0">
+            <text class="tip-dot">•</text>
+            <text class="tip-desc">开通银行卡需要支付预存金 ¥{{ openFee.toFixed(2) }}，将直接从账户余额扣除</text>
+          </view>
         </view>
 
         <view class="amount-buttons">
@@ -122,7 +128,7 @@
       <button class="confirm-recharge-btn" @click="processSubmit" :disabled="!canApply || loading">
         {{ loading ? '提交中...' : '确认开户' }}
       </button>
-      <view class="submit-hint">提交申请将直接从您的网商银行余额中扣除预存金</view>
+      <view class="submit-hint">提交申请将直接从您的账户余额中扣除开户预存金</view>
     </view>
 
     <!-- 审核中状态 -->
@@ -290,7 +296,7 @@ const fetchDepositTips = async () => {
       // 安全地访问data字段
       const data = res.data;
       if (data && typeof data === 'object' && 'deposit_tips' in data) {
-        depositTips.value = data.deposit_tips;
+        depositTips.value = Array.isArray(data.deposit_tips) ? data.deposit_tips : [];
         console.log('获取预存服务提示成功:', depositTips.value);
       }
     }
@@ -367,7 +373,7 @@ const processSubmit = async () => {
   // 二次确认
   uni.showModal({
     title: '确认提交申请',
-    content: `提交申请将从您的网商银行余额中扣除 ${openFee.value.toFixed(2)} 人民币作为预存金，是否继续？`,
+    content: `提交申请将直接从您的账户余额中扣除 ${openFee.value.toFixed(2)} 人民币作为开户预存金，是否继续？`,
     success: async (res) => {
       if (res.confirm) {
         await submitBankCardOpen()
@@ -386,7 +392,6 @@ const submitBankCardOpen = async () => {
       phone: formData.phone,
       id_card: formData.id_card,
       address: formData.address,
-      amount: parseFloat(formData.amount) || openFee.value, // 使用用户输入的金额或默认开户费用
     }
 
     console.log('准备提交开户申请数据:', submitData)
@@ -397,26 +402,23 @@ const submitBankCardOpen = async () => {
     console.log('开户申请响应:', res)
 
     if (res && res.status === 'success') {
-      // 更新用户余额
-      const deductAmount = parseFloat(formData.amount) || openFee.value
-      const newBalance = userStore.userInfo.balance - deductAmount
-      userStore.updateUserBalance(newBalance)
+      // 更新用户余额 - 余额已在后端扣除
+      userStore.fetchUserInfo() // 刷新用户信息以获取更新的余额
 
       uni.showToast({
         title: res.message || '申请提交成功',
         icon: 'success',
       })
 
-      // 不再进入审核中步骤，而是直接返回到银行卡管理页面
       // 触发刷新事件
       uni.$emit('refresh-bank-cards')
       uni.$emit('refresh-bank-status')
 
-      // 刷新用户信息
-      userStore.fetchUserInfo()
-
-      // 返回上一页
-      uni.navigateBack()
+      // 延迟返回，让用户看到成功提示
+      setTimeout(() => {
+        // 返回上一页
+        uni.navigateBack()
+      }, 1500)
     } else {
       // 提取错误信息
       let errorMsg = '申请提交失败'

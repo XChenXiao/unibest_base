@@ -475,9 +475,8 @@ const handleConfirmTrade = async () => {
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            // 跳转到资产页面，使用switchTab而不是navigateTo
-            uni.switchTab({
-              url: '/pages/assets/index'
+            uni.navigateTo({
+              url: '/pages/trading/exchange'
             });
           }
         }
@@ -496,14 +495,6 @@ const handleConfirmTrade = async () => {
           uni.showLoading({ title: '处理中...' });
           
           let response;
-          
-          // 打印请求参数，用于调试
-          console.log(`${isTypeBuy.value ? '买入' : '卖出'}请求参数:`, {
-            操作类型: isTypeBuy.value ? '买入' : '卖出',
-            订单ID: orderId.value,
-            货币ID: currencyId.value,
-            数量: amount
-          });
           
           if (isTypeBuy.value) {
             // 买入操作 - 调用API进行交易订单购买
@@ -586,34 +577,33 @@ const handleConfirmTrade = async () => {
           } else {
             // 处理API返回的错误信息
             let errorMsg = response.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请重试`;
-            
             // 一些常见错误的友好提示
-            if (errorMsg.includes('余额不足')) {
-              errorMsg = isTypeBuy.value ? '您的余额不足，无法完成交易' : '您的货币余额不足';
-            } else if (errorMsg.includes('USDT余额不足')) {
-              errorMsg = '您的USDT余额不足，无法支付手续费';
-            } else if (errorMsg.includes('最小交易量')) {
-              errorMsg = `交易数量不能低于最小交易量 ${minAmount.value}`;
-            } else if (errorMsg.includes('最大交易量')) {
-              errorMsg = `交易数量不能超过最大交易量 ${maxAmount.value}`;
-            }
+            // if (errorMsg.includes('余额不足')) {
+            //   errorMsg = isTypeBuy.value ? '您的余额不足，无法完成交易' : '您的货币余额不足';
+            // } else if (errorMsg.includes('USDT余额不足')) {
+            //   errorMsg = '您的USDT余额不足，无法支付手续费';
+            // } else if (errorMsg.includes('最小交易量')) {
+            //   errorMsg = `交易数量不能低于最小交易量 ${minAmount.value}`;
+            // } else if (errorMsg.includes('最大交易量')) {
+            //   errorMsg = `交易数量不能超过最大交易量 ${maxAmount.value}`;
+            // }
             
             uni.showToast({
-              title: errorMsg,
+              title: errorMsg.message,
               icon: 'none',
               duration: 3000
             });
             
-            // 如果是余额不足的错误，刷新余额数据
-            if (errorMsg.includes('余额不足')) {
-              fetchUserBalance();
-            }
+            // // 如果是余额不足的错误，刷新余额数据
+            // if (errorMsg.includes('余额不足')) {
+            //   fetchUserBalance();
+            // }
           }
         } catch (error: any) {
           console.error(`${isTypeBuy.value ? '买入' : '卖出'}交易出错:`, error);
           
           // 构造错误信息
-          let errorMessage = error?.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请稍后再试`;
+          let errorMessage = error?.data.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请稍后再试`;
           
           // 处理网络错误
           if (error.name === 'NetworkError' || errorMessage.includes('网络')) {
@@ -621,7 +611,7 @@ const handleConfirmTrade = async () => {
           }
           
           uni.showToast({
-            title: errorMessage,
+            title: '112121',
             icon: 'none',
             duration: 3000
           });

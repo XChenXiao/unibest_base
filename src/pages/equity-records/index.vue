@@ -54,9 +54,9 @@
           <view class="record-right">
             <view class="record-amount-container">
               <text class="record-amount" :class="record.type === 'sell' ? 'amount-red' : 'amount-green'">
-                {{ record.type === 'sell' ? '-' : '+' }}{{ formatAmount(record.amount) }} 股
+                {{ record.type === 'sell' ? '-' : '+' }}{{ formatAmount(record.amount) }}股
               </text>
-              <text v-if="record.type !== 'reward'" class="record-price">{{ record.price }}元 /股</text>
+              <text v-if="record.type !== 'reward'" class="record-price">{{ record.price }}元/股</text>
             </view>
           </view>
         </view>

@@ -24,9 +24,9 @@
     
     <!-- 认证状态展示 -->
     <view class="verify-status-card" style="margin-top: 20rpx;" v-if="verifyStatus !== 'none'">
-      <view class="status-icon" :class="getStatusIconClass()">
+      <!-- <view class="status-icon" :class="getStatusIconClass()">
         <text class="uni-icons" :class="getStatusIconName()"></text>
-      </view>
+      </view> -->
       <text class="status-text">{{ getStatusText() }}</text>
       <text class="status-desc">{{ getStatusDesc() }}</text>
     </view>
@@ -71,10 +71,10 @@
           <image class="preview-image" :src="formData.frontImage" mode="aspectFit"></image>
           <view class="image-actions">
             <view class="action-btn preview-btn" @click="previewImage(formData.frontImage)">
-              <text class="uni-icons uniui-eye-filled"></text>
+              <image src="/static/images/view.png" class="action-icon"></image>
             </view>
             <view class="action-btn delete-btn" @click="deleteImage('front')">
-              <text class="uni-icons uniui-trash-filled"></text>
+              <image src="/static/images/del.png" class="action-icon"></image>
             </view>
           </view>
         </view>
@@ -91,10 +91,10 @@
           <image class="preview-image" :src="formData.backImage" mode="aspectFit"></image>
           <view class="image-actions">
             <view class="action-btn preview-btn" @click="previewImage(formData.backImage)">
-              <text class="uni-icons uniui-eye-filled"></text>
+              <image src="/static/images/view.png" class="action-icon"></image>
             </view>
             <view class="action-btn delete-btn" @click="deleteImage('back')">
-              <text class="uni-icons uniui-trash-filled"></text>
+              <image src="/static/images/del.png" class="action-icon"></image>
             </view>
           </view>
         </view>
@@ -574,7 +574,7 @@ page {
 .verify-form {
   background-color: white;
   border-radius: 20rpx;
-  margin: 0 30rpx 30rpx;
+  margin: 40rpx 30rpx 30rpx;
   padding: 30rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 }
@@ -671,7 +671,7 @@ page {
   width: 70rpx;
   height: 70rpx;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.5);
+  // background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -684,12 +684,17 @@ page {
   font-size: 32rpx;
 }
 
+.action-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .preview-btn {
-  background-color: rgba(52, 152, 219, 0.8);
+  // background-color: rgba(52, 152, 219, 0.8);
 }
 
 .delete-btn {
-  background-color: rgba(231, 76, 60, 0.8);
+  // background-color: rgba(231, 76, 60, 0.8);
 }
 
 /* 提示容器 */

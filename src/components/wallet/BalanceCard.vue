@@ -3,10 +3,10 @@
   <view class="balance-card">
     <view class="balance-header">
       <text class="balance-title">账户余额</text>
-      <view class="bank-card-link" @click="handleNavToBankCard">
+      <!-- <view class="bank-card-link" @click="handleNavToBankCard">
         <text>银行卡</text>
         <text class="arrow-icon">></text>
-      </view>
+      </view> -->
     </view>
     <view class="balance-amount">
       <text class="amount-symbol">¥</text>

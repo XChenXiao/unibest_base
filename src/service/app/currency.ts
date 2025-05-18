@@ -128,17 +128,10 @@ export async function sellCurrencyToPlatform(currencyId: number | string, amount
     return response;
   } catch (error: any) {
     console.error('卖出货币出错:', error);
-    
-    // 处理网络错误或其他异常情况
-    if (error.response && error.response.data) {
-      // 返回API服务器的错误响应
-      return error.response.data;
-    }
-    
     // 如果没有响应数据，创建一个标准错误响应
     return {
       status: 'error',
-      message: error.message || '卖出失败，请稍后再试'
+      message: error.data || '卖出失败，请稍后再试'
     };
   }
 }

@@ -49,9 +49,9 @@
           确认购买
         </button>
         
-        <view class="notice-container">
+        <!-- <view class="notice-container">
           <text class="notice-text">购买USDT需要管理员审核，审核通过后会自动到账</text>
-        </view>
+        </view> -->
       </view>
     </view>
   </wd-popup>

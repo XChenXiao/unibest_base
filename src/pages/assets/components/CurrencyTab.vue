@@ -37,9 +37,13 @@
         <!-- <button class="buy-button">购买</button> -->
       </view>
       <!-- 非USDT货币的领取按钮 - 可领取奖励时显示"领取奖励" -->
-      <view v-else-if="canShowClaimButton(currency) && hasClaimableReward(currency)" class="claim-button-container" @click.stop="handleClaimCurrency(currency)">
+      <view v-else-if="canShowClaimButton(currency) && hasClaimableReward(currency) && !hasClaimedReward(currency)" class="claim-button-container" @click.stop="handleClaimCurrency(currency)">
         <button class="claim-button">领取奖励</button>
       </view>
+      <!-- 非USDT货币 - 已领取奖励状态 -->
+      <!-- <view v-else-if="canShowClaimButton(currency) && hasClaimedReward(currency)" class="claimed-button-container">
+        <text class="claimed-text">已领取</text>
+      </view> -->
       <!-- 非USDT货币按钮 - 有奖励但不可领取（已领取）时显示"去交易所" -->
       <!-- 取消去交易所的按钮 -->
       <!-- <view v-else-if="canShowClaimButton(currency) && !hasClaimableReward(currency)" class="exchange-button-container" @click.stop="gotoExchange(currency)">
@@ -359,8 +363,28 @@ const hasClaimableReward = (item: CurrencyData): boolean => {
   return false;
 };
 
+// 判断是否已经领取过奖励
+const hasClaimedReward = (item: CurrencyData): boolean => {
+  if ('has_claimed_reward' in item) {
+    return !!item.has_claimed_reward;
+  }
+  
+  if (isUserCurrency(item) && item.currency && 'has_claimed_reward' in item.currency) {
+    return !!item.currency.has_claimed_reward;
+  }
+  
+  return false;
+};
+
 // 处理领取货币奖励
 const handleClaimCurrency = async (currency: CurrencyData) => {
+  // 检查是否已领取过奖励
+  if (hasClaimedReward(currency)) {
+    showToast('您已领取过该奖励');
+    return;
+  }
+  
+  // 检查是否有可领取的奖励
   if (!hasClaimableReward(currency)) {
     showToast('暂无可领取的奖励');
     return;
@@ -604,5 +628,17 @@ const filteredCurrencyList = computed(() => {
 
 .button-text {
   font-size: 26rpx;
+}
+
+.claimed-button-container {
+  padding: 0 20rpx;
+}
+
+.claimed-text {
+  font-size: 24rpx;
+  color: #999;
+  background-color: #f5f5f5;
+  padding: 8rpx 16rpx;
+  border-radius: 4rpx;
 }
 </style> 

@@ -52,7 +52,7 @@
           :key="record.id"
         >
           <view class="record-left">
-            <text class="record-desc">{{ record.description ? formatDescription(record.description) : getTypeText(record.type) }}</text>
+            <text class="record-desc">{{ record.type === 'system' && record.description ? record.description : (record.description ? formatDescription(record.description) : getTypeText(record.type)) }}</text>
             <view class="asset-info">
               <text class="asset-name">{{ record.asset_name }}</text>
               <text class="asset-symbol">({{ record.asset_symbol }})</text>
@@ -64,10 +64,14 @@
           </view>
           <view class="record-right">
             <text class="record-amount" :class="record.symbol === '+' ? 'amount-green' : 'amount-red'">
-              {{ record.symbol }}{{ formatAmount(record.amount) }} {{ record.asset_symbol }}
+              {{ record.type === 'system' ? 
+                `${record.symbol}${formatAmount(record.amount)} ${record.asset_symbol}` : 
+                `${record.symbol}${formatAmount(record.amount)}${record.asset_symbol === 'GOLD' ? '克' : record.asset_symbol === 'USDT' ? '' : ` ${record.asset_symbol}`}` 
+              }}
             </text>
-            <text v-if="record.price" class="record-price">单价: ¥{{ formatAmount(record.price) }}</text>
-            <text v-if="record.total && record.type !== 'reward'" class="record-total">总额: ¥{{ formatAmount(record.total) }}</text>
+            <text v-if="record.price && record.type !== 'system'" class="record-price">单价: ¥{{ formatAmount(record.price) }}</text>
+            <text v-if="record.total && record.type !== 'reward' && record.type !== 'system'" class="record-total">总额: ¥{{ formatAmount(record.total) }}</text>
+            <text v-if="record.type === 'system'" class="record-fee">手续费</text>
           </view>
         </view>
       </template>
@@ -194,7 +198,8 @@ const getTypeText = (type: string) => {
     'reward': '奖励',
     'transfer': '转账',
     'recharge': '充值',
-    'withdraw': '提现'
+    'withdraw': '提现',
+    'system': '系统'
   };
   return typeMap[type] || '未知';
 };
@@ -371,6 +376,11 @@ onMounted(() => {
   color: #666;
 }
 
+.record-fee {
+  font-size: 24rpx;
+  color: #666;
+}
+
 .loading-box, .empty-box {
   padding: 60rpx 0;
   text-align: center;
@@ -424,5 +434,9 @@ onMounted(() => {
 
 .tag-withdraw {
   background-color: #34495e;
+}
+
+.tag-system {
+  background-color: #95a5a6;
 }
 </style> 

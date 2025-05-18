@@ -17,14 +17,15 @@
     </view>
     
     <!-- 页面标题 -->
-    <view class="page-title">
+    <!-- <view class="page-title">
       <text class="title-text">我的钱包</text>
-    </view>
+    </view> -->
     
     <!-- 余额卡片 -->
     <balance-card 
       :balance="walletInfo.balance"
       @navigateToBankCard="handleNavToBankCard"
+      style="margin-top: 60rpx;"
     />
     
     <!-- 交易记录 -->

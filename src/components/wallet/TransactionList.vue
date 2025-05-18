@@ -34,7 +34,7 @@
       <!-- 交易记录 -->
       <view v-else v-for="item in filteredTransactions" :key="item.id" class="transaction-item">
         <!-- 交易图标 -->
-        <view
+        <!-- <view
           class="transaction-icon"
           :class="{
             'icon-income': item.is_income,
@@ -50,7 +50,7 @@
               'uniui-wallet-filled': item.type === 'withdraw',
             }"
           ></text>
-        </view>
+        </view> -->
 
         <!-- 交易信息 -->
         <view class="transaction-info">

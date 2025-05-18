@@ -1,7 +1,7 @@
 import { http } from '@/utils/http'
 import qs from 'qs'
 import { useUserStore } from '@/store'
-import { checkLoginStatus } from '@/utils/auth'
+import { checkLoginStatus as checkAuthStatus } from '@/utils/auth'
 
 // 登录状态检查函数
 const checkLoginStatus = (): boolean => {
@@ -127,7 +127,6 @@ export const openBankCardAPI = (data: {
   phone: string
   id_card: string
   address: string
-  amount?: number
 }) => {
   // 检查登录状态
   if (!checkLoginStatus()) {

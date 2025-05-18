@@ -50,19 +50,19 @@
         </view>
         
         <view class="record-center">
-          <text class="record-name">{{ item.asset_name }} ({{ item.asset_symbol }})</text>
+          <text class="record-name">{{ getRecordName(item) }}</text>
           <text class="record-time">{{ item.created_at }}</text>
           <view class="record-details">
             <text class="detail-label">{{ getTypeText(item.type) }}价:</text>
             <text class="detail-value">¥{{ formatAmount(item.price) }}</text>
             <text class="detail-label">数量:</text>
-            <text class="detail-value">{{ formatAmount(item.amount) }}{{ item.asset_symbol }}</text>
+            <text class="detail-value">{{ formatAmount(item.amount) }}{{ item.asset_symbol === 'GOLD' ? '克' : item.asset_symbol === 'USDT' ? '' : item.asset_symbol }}</text>
           </view>
         </view>
         
         <view class="record-right">
           <text class="record-total" :class="getAmountColorClass(item.type)">
-            {{ getAmountPrefix(item.type) }}¥{{ formatAmount(item.total) }}
+            {{ formatRecordTotal(item) }}
           </text>
           <text class="record-status" :class="getStatusClass(item.status)">{{ item.status_text }}</text>
         </view>
@@ -235,7 +235,8 @@ const getTypeText = (type) => {
     transfer: '转账',
     reward: '奖励',
     recharge: '充值',
-    withdraw: '提现'
+    withdraw: '提现',
+    system: '系统'
   };
   
   return texts[type] || '交易';
@@ -243,11 +244,19 @@ const getTypeText = (type) => {
 
 // 获取金额前缀
 const getAmountPrefix = (type) => {
+  // system类型总是显示为减少(-)
+  if (type === 'system') {
+    return '-';
+  }
   return ['buy', 'withdraw'].includes(type) ? '-' : '+';
 };
 
 // 获取金额颜色样式
 const getAmountColorClass = (type) => {
+  // system类型使用买入(减少)的样式
+  if (type === 'system') {
+    return 'buy-color';
+  }
   return ['buy', 'withdraw'].includes(type) ? 'buy-color' : 'sell-color';
 };
 
@@ -262,6 +271,24 @@ const getStatusClass = (status) => {
   };
   
   return classes[status] || 'status-completed';
+};
+
+// 格式化交易记录项目显示内容
+const getRecordName = (item) => {
+  // 如果是system类型，优先显示description作为标题
+  if (item.type === 'system' && item.description) {
+    return item.description;
+  }
+  return `${item.asset_name} (${item.asset_symbol})`;
+};
+
+// 格式化交易记录金额显示
+const formatRecordTotal = (item) => {
+  if (item.type === 'system') {
+    // system类型显示为 "- * USDT" 格式，表示手续费
+    return `- ${formatAmount(item.total)} ${item.asset_symbol}`;
+  }
+  return `${getAmountPrefix(item.type)}¥${formatAmount(item.total)}`;
 };
 
 // 初始化
