@@ -58,8 +58,7 @@
           
           <!-- 开户费用提示 -->
           <view class="open-fee-tip-item" v-if="openFee > 0">
-            <text class="tip-dot">•</text>
-            <text class="tip-desc">开通银行卡需要支付预存金 ¥{{ openFee.toFixed(2) }}，将直接从账户余额扣除</text>
+            <text class="tip-desc">开通银行卡需要支付预存金 ¥{{ openFee.toFixed(2) }}</text>
           </view>
         </view>
 

@@ -49,7 +49,11 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
-import { API_URL } from '@/config/api';
+// 移除直接引入API_URL
+// import { API_URL } from '@/config/api';
+
+// 引入封装好的公告API服务
+import { getAnnouncementsAPI } from '@/service/index/message';
 
 // 定义接口类型
 interface AnnouncementItem {
@@ -71,30 +75,11 @@ const announcementList = ref<AnnouncementItem[]>([]);
 const queryAnnouncements = async (pageNo: number, pageSize: number) => {
   loading.value = true;
   try {
-    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
-    const response = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_URL}/api/messages`,
-        method: 'GET',
-        data: {
-          page: pageNo,
-          per_page: pageSize,
-          is_system: true  // 只请求系统公告
-        },
-        success: (res) => {
-          resolve(res);
-        },
-        fail: (err) => {
-          reject(err);
-        }
-      });
-    });
+    // 使用封装好的API服务替代直接调用uni.request
+    const result = await getAnnouncementsAPI(pageNo, pageSize);
     
-    // 直接使用response的data属性
-    const res = response as any;
-    
-    if (res && res.data && res.data.status === 'success') {
-      const responseData = res.data.data;
+    if (result && result.status === 'success') {
+      const responseData = result.data;
       const announcements = responseData.data || [];
       const total = responseData.total || 0;
       
