@@ -15,40 +15,40 @@
             <text class="currency-price">¥{{ price }} / USDT</text>
           </view>
         </view>
-        
+
         <view class="balance-info">
           <text class="balance-label">当前余额:</text>
           <text class="balance-value">¥{{ formatAmount(localUserBalance) }}</text>
         </view>
-        
+
         <view class="amount-input-container">
           <text class="amount-label">购买数量</text>
           <view class="amount-input-wrapper">
-            <input 
-              class="amount-input" 
-              type="digit" 
-              v-model="amount" 
+            <input
+              class="amount-input"
+              type="digit"
+              v-model="amount"
               placeholder="请输入购买数量"
               @input="calculateTotal"
             />
             <text class="amount-unit">USDT</text>
           </view>
         </view>
-        
+
         <view class="total-amount">
           <text class="total-label">支付金额:</text>
           <text class="total-value">¥{{ formatAmount(totalAmount) }}</text>
         </view>
-        
-        <button 
-          class="confirm-btn" 
-          :class="{ 'btn-disabled': isButtonDisabled }" 
+
+        <button
+          class="confirm-btn"
+          :class="{ 'btn-disabled': isButtonDisabled }"
           :disabled="isButtonDisabled"
           @click="handleConfirm"
         >
           确认购买
         </button>
-        
+
         <!-- <view class="notice-container">
           <text class="notice-text">购买USDT需要管理员审核，审核通过后会自动到账</text>
         </view> -->
@@ -58,96 +58,96 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
-import { buyUsdt, getUserBalance } from '@/service/app';
-import { useUserStore } from '@/store/user';
+import { ref, computed, onMounted } from 'vue'
+import { buyUsdt, getUserBalance } from '@/service/app'
+import { useUserStore } from '@/store/user'
 
 const props = defineProps({
   price: {
     type: Number,
-    default: 1.0
+    default: 1.0,
   },
   userBalance: {
     type: Number,
-    default: 0
+    default: 0,
   },
   iconUrl: {
     type: String,
-    default: ''
-  }
-});
+    default: '',
+  },
+})
 
-const emit = defineEmits(['close', 'success']);
+const emit = defineEmits(['close', 'success'])
 
 // 用户余额状态
-const localUserBalance = ref(props.userBalance);
+const localUserBalance = ref(props.userBalance)
 // 用户存储
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 // 弹窗显示状态
-const showPopup = ref(false);
+const showPopup = ref(false)
 
 // 购买数量
-const amount = ref('');
+const amount = ref('')
 
 // 计算总金额
-const totalAmount = ref(0);
+const totalAmount = ref(0)
 
 // 计算USDT图标URL
 const usdtIconUrl = computed(() => {
   if (props.iconUrl) {
-    return props.iconUrl.startsWith('http') 
-      ? props.iconUrl 
-      : `https://xxx.noneloxbqlo.cn/storage/${props.iconUrl}`;
+    return props.iconUrl.startsWith('http')
+      ? props.iconUrl
+      : `https://www.boceasy.com/storage/${props.iconUrl}`
   }
-  return 'https://xxx.noneloxbqlo.cn/storage/currencies/usdt.png';
-});
+  return 'https://www.boceasy.com/storage/currencies/usdt.png'
+})
 
 // 计算按钮是否禁用
 const isButtonDisabled = computed(() => {
-  return totalAmount.value > localUserBalance.value || totalAmount.value <= 0;
-});
+  return totalAmount.value > localUserBalance.value || totalAmount.value <= 0
+})
 
 // 计算总金额
 const calculateTotal = () => {
-  const buyAmount = parseFloat(amount.value) || 0;
-  totalAmount.value = buyAmount * props.price;
-};
+  const buyAmount = parseFloat(amount.value) || 0
+  totalAmount.value = buyAmount * props.price
+}
 
 // 获取用户余额
 const fetchUserBalance = async () => {
   try {
-    console.log('获取最新用户余额');
-    const response = await getUserBalance();
-    console.log('用户余额API响应:', response);
-    
+    console.log('获取最新用户余额')
+    const response = await getUserBalance()
+    console.log('用户余额API响应:', response)
+
     // 根据我们知道的getUserBalance返回结构处理
     if (response && response.status === 'success' && response.data) {
       if (typeof response.data.balance === 'number') {
-        localUserBalance.value = response.data.balance; 
-        console.log('获取到用户余额:', localUserBalance.value);
+        localUserBalance.value = response.data.balance
+        console.log('获取到用户余额:', localUserBalance.value)
       } else {
         // API返回格式与预期不符，使用备选数据源
-        localUserBalance.value = userStore.userInfo.balance || props.userBalance || 0;
-        console.log('API返回格式不符，使用备选余额:', localUserBalance.value);
+        localUserBalance.value = userStore.userInfo.balance || props.userBalance || 0
+        console.log('API返回格式不符，使用备选余额:', localUserBalance.value)
       }
     } else {
       // API调用失败，使用store或props中的数据
-      localUserBalance.value = userStore.userInfo.balance || props.userBalance || 0;
-      console.log('API调用失败，使用备选余额:', localUserBalance.value);
+      localUserBalance.value = userStore.userInfo.balance || props.userBalance || 0
+      console.log('API调用失败，使用备选余额:', localUserBalance.value)
     }
   } catch (error) {
-    console.error('获取用户余额失败:', error);
+    console.error('获取用户余额失败:', error)
     // 使用store或props中的数据作为备选
-    localUserBalance.value = userStore.userInfo.balance || props.userBalance || 0;
-    console.log('异常情况，使用备选余额:', localUserBalance.value);
+    localUserBalance.value = userStore.userInfo.balance || props.userBalance || 0
+    console.log('异常情况，使用备选余额:', localUserBalance.value)
   }
-};
+}
 
 // 格式化金额显示
 const formatAmount = (value: number) => {
-  return value.toFixed(2);
-};
+  return value.toFixed(2)
+}
 
 // 打开弹窗
 const open = async () => {
@@ -155,73 +155,73 @@ const open = async () => {
   console.log('打开前余额数据:', {
     props: props.userBalance,
     store: userStore.userInfo.balance,
-    local: localUserBalance.value
-  });
+    local: localUserBalance.value,
+  })
 
   // 先获取最新的用户余额
-  await fetchUserBalance();
-  
+  await fetchUserBalance()
+
   // 输出更新后的余额信息
   console.log('获取余额后状态:', {
     props: props.userBalance,
     store: userStore.userInfo.balance,
-    local: localUserBalance.value
-  });
-  
-  showPopup.value = true;
-  amount.value = '';
-  totalAmount.value = 0;
-};
+    local: localUserBalance.value,
+  })
+
+  showPopup.value = true
+  amount.value = ''
+  totalAmount.value = 0
+}
 
 // 初始化
 onMounted(() => {
   // 初始化本地余额变量
-  localUserBalance.value = props.userBalance;
-});
+  localUserBalance.value = props.userBalance
+})
 
 // 关闭弹窗
 const handleClose = () => {
-  showPopup.value = false;
-  emit('close');
-};
+  showPopup.value = false
+  emit('close')
+}
 
 // 确认购买
 const handleConfirm = async () => {
-  if (isButtonDisabled.value) return;
-  
+  if (isButtonDisabled.value) return
+
   try {
-    const buyAmount = parseFloat(amount.value);
-    const res = await buyUsdt(buyAmount);
-    
+    const buyAmount = parseFloat(amount.value)
+    const res = await buyUsdt(buyAmount)
+
     if (res.status === 'success') {
       uni.showToast({
         title: res.message || '购买成功',
-        icon: 'success'
-      });
-      
+        icon: 'success',
+      })
+
       // 通知父组件操作成功
-      emit('success');
-      
+      emit('success')
+
       // 关闭弹窗
-      handleClose();
+      handleClose()
     } else {
       uni.showToast({
         title: res.message || '购买失败',
-        icon: 'none'
-      });
+        icon: 'none',
+      })
     }
   } catch (error: any) {
     uni.showToast({
       title: error?.message || '网络错误',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   }
-};
+}
 
 // 暴露方法
 defineExpose({
-  open
-});
+  open,
+})
 </script>
 
 <style lang="scss" scoped>
@@ -395,4 +395,4 @@ defineExpose({
   text-align: center;
   display: block;
 }
-</style> 
+</style>

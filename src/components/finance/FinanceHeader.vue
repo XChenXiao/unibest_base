@@ -3,86 +3,99 @@
     <view class="header-bg"></view>
 
     <!-- 菜单容器 -->
-    <view class="menu-container">
+    <view class="menu-container first-row-menu">
       <!-- 第一行菜单 -->
       <view class="menu-row">
         <view class="menu-item" @click="handleMenuClick('scanPay')">
           <view class="menu-icon scanner-icon">
             <image src="/static/images/menu/m1-1.png" mode="aspectFit" class="menu-image"></image>
           </view>
-          <view class="menu-label">扫码支付</view>
+          <view class="menu-label line1">扫码支付</view>
         </view>
 
         <view class="menu-item" @click="handleMenuClick('payment')">
           <view class="menu-icon payment-icon">
             <image src="/static/images/menu/m1-2.png" mode="aspectFit" class="menu-image"></image>
           </view>
-          <view class="menu-label">收付款</view>
+          <view class="menu-label line1">收付款</view>
         </view>
 
         <view class="menu-item" @click="handleMenuClick('transfer')">
           <view class="menu-icon transfer-icon">
             <image src="/static/images/menu/m1-3.png" mode="aspectFit" class="menu-image"></image>
           </view>
-          <view class="menu-label">转账</view>
+          <view class="menu-label line1">转账</view>
         </view>
 
         <view class="menu-item" @click="handleMenuClick('account')">
           <view class="menu-icon account-icon">
             <image src="/static/images/menu/m1-4.png" mode="aspectFit" class="menu-image"></image>
           </view>
-          <view class="menu-label">账户管理</view>
+          <view class="menu-label line1">账户管理</view>
         </view>
       </view>
     </view>
 
-    <!-- 插入图片 (移到菜单容器外) -->
-    <view class="index-bg-container">
-      <image src="/static/images/bg/indexBg.png" mode="widthFix" class="index-bg-image"></image>
-    </view>
-
     <!-- 菜单容器（第二行） -->
-    <view class="menu-container">
+    <view class="menu-container second-row-menu">
       <!-- 第二行菜单 -->
-      
+
       <view class="menu-row">
-
-
         <view class="menu-item" @click="handleMenuClick('record')">
           <view class="menu-icon-simple">
-            <image src="/static/images/menu/m2-1.png" mode="aspectFit" class="menu-image-simple" style="width: 82rpx; height: 82rpx;"></image>
+            <image
+              src="/static/images/menu/m2-1.png"
+              mode="aspectFit"
+              class="menu-image-simple"
+              style="width: 82rpx; height: 82rpx"
+            ></image>
           </view>
           <view class="menu-label">收支记录</view>
         </view>
 
         <view class="menu-item" @click="handleMenuClick('verify')">
           <view class="menu-icon-simple">
-            <image src="/static/images/menu/m2-2.png" mode="aspectFit" class="menu-image-simple"></image>
+            <image
+              src="/static/images/menu/m2-2.png"
+              mode="aspectFit"
+              class="menu-image-simple"
+            ></image>
           </view>
           <view class="menu-label">实名认证</view>
         </view>
 
         <view class="menu-item" @click="navigateToInviteFriend">
           <view class="menu-icon-simple">
-            <image src="/static/images/menu/m2-3.png" mode="aspectFit" class="menu-image-simple"></image>
+            <image
+              src="/static/images/menu/m2-3.png"
+              mode="aspectFit"
+              class="menu-image-simple"
+            ></image>
           </view>
           <view class="menu-label">推广</view>
         </view>
 
         <view class="menu-item" @click="navigateToTeam">
           <view class="menu-icon-simple">
-            <image src="/static/images/menu/m2-4.png" mode="aspectFit" class="menu-image-simple"></image>
+            <image
+              src="/static/images/menu/m2-4.png"
+              mode="aspectFit"
+              class="menu-image-simple"
+            ></image>
           </view>
           <view class="menu-label">我的团队</view>
         </view>
 
         <view class="menu-item" @click="handleMenuClick('service')">
           <view class="menu-icon-simple">
-            <image src="/static/images/menu/m2-5.png" mode="aspectFit" class="menu-image-simple"></image>
+            <image
+              src="/static/images/menu/m2-5.png"
+              mode="aspectFit"
+              class="menu-image-simple"
+            ></image>
           </view>
           <view class="menu-label">联系客服</view>
         </view>
-
       </view>
     </view>
   </view>
@@ -143,8 +156,8 @@ const checkVerificationStatus = async () => {
         icon: 'success',
       })
       return // 添加return语句，确保已认证用户不会继续执行跳转
-    } 
-    
+    }
+
     // 未认证用户才会执行到这里
     uni.navigateTo({
       url: '/pages/my/identity-verify',
@@ -165,11 +178,11 @@ const navigateToInviteFriend = () => {
     uni.showToast({
       title: '请先完成实名认证',
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     })
     return
   }
-  
+
   // 已认证用户才可以进入邀请好友页面
   uni.navigateTo({
     url: '/pages/team/invite-poster',
@@ -183,11 +196,11 @@ const navigateToTeam = () => {
     uni.showToast({
       title: '请先完成实名认证',
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     })
     return
   }
-  
+
   // 已认证用户才可以进入我的团队页面
   uni.navigateTo({
     url: '/pages/team/index',
@@ -201,7 +214,6 @@ const navigateToTeam = () => {
   position: relative;
   padding-bottom: 30rpx;
   overflow: hidden;
-  background: linear-gradient(135deg, #3498db, #1a5276);
   border-bottom-right-radius: 10rpx;
   border-bottom-left-radius: 10rpx;
 }
@@ -230,11 +242,7 @@ const navigateToTeam = () => {
 }
 /* 背景图片容器 */
 .index-bg-container {
-  position: relative;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
+  display: none;
 }
 /* 背景图片 */
 .index-bg-image {
@@ -308,5 +316,26 @@ const navigateToTeam = () => {
   font-size: 24rpx;
   font-weight: 500;
   color: #ffffff;
+  &.line1 {
+    color: black;
+  }
+}
+
+/* 第二行菜单容器 */
+.second-row-menu {
+  background: linear-gradient(135deg, #3498db, #1a5276);
+  border-radius: 20rpx;
+  margin: 30rpx 30rpx 0;
+  padding: 30rpx 30rpx 0;
+}
+
+/* 第一行菜单容器 */
+.first-row-menu {
+  background-image: url('@/static/images/bg/topHeader.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding-bottom: 170rpx;
+  /* border-radius: 20rpx; */
+  margin-top: 17rpx;
 }
 </style>

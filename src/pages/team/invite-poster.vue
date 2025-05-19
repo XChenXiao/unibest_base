@@ -28,7 +28,7 @@
         class="copy-btn-container"
         @click="
           handleCopy(
-            `https://xxx.noneloxbqlo.cn/mobile/#/register?invite_code=${teamInfo.invite_code}`,
+            `https://www.boceasy.com/mobile/#/register?invite_code=${teamInfo.invite_code}`,
           )
         "
       >
@@ -108,7 +108,7 @@
             "
           >
             <l-painter-qrcode
-              :text="`https://xxx.noneloxbqlo.cn/mobile/#/register?invite_code=${teamInfo.invite_code}`"
+              :text="`https://www.boceasy.com/mobile/#/register?invite_code=${teamInfo.invite_code}`"
               css="width: 180rpx; height: 180rpx;background:white;border:4rpx solid white;"
             />
           </l-painter-view>

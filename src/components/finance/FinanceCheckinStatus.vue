@@ -2,68 +2,68 @@
   <view class="checkin-status">
     <view class="status-header">
       <view class="status-title">打卡进度</view>
-      <view class="today-status" :class="{ 'checked': checkInData.isCheckedToday }">
+      <view class="today-status" :class="{ checked: checkInData.isCheckedToday }">
         {{ checkInData.isCheckedToday ? '今日已打卡' : '今日未打卡' }}
       </view>
     </view>
-    
-    <view class="progress-bar" style="margin-top: 50rpx;">
+
+    <view class="progress-bar" style="margin-top: 50rpx">
       <view class="progress-fill" :style="{ width: checkInData.completionRate + '%' }"></view>
-      <view 
-        v-for="(marker, index) in markers" 
+      <view
+        v-for="(marker, index) in markers"
         :key="index"
-        class="progress-marker" 
-        :class="{ 'reached': checkInData.daysCompleted >= marker.days }"
-        :style="{ left: (marker.days / checkInData.totalDays * 100) + '%' }"
+        class="progress-marker"
+        :class="{ reached: checkInData.daysCompleted >= marker.days }"
+        :style="{ left: (marker.days / checkInData.totalDays) * 100 + '%' }"
       >
         <view class="marker-day">{{ marker.days }}天</view>
       </view>
     </view>
-    
+
     <view class="progress-info">
       <view>已打卡 {{ checkInData.daysCompleted }}/{{ checkInData.totalDays }} 天</view>
       <view>完成率 {{ Math.round(checkInData.completionRate) }}%</view>
     </view>
-    
-    <button 
-      class="check-in-button" 
-      :class="{ 'disabled': checkInData.isCheckedToday }"
+
+    <button
+      class="check-in-button"
+      :class="{ disabled: checkInData.isCheckedToday }"
       :disabled="checkInData.isCheckedToday || isCheckingIn"
       @click="handleCheckIn"
     >
-      {{ isCheckingIn ? '签到中...' : (checkInData.isCheckedToday ? '今日已打卡' : '立即签到') }}
+      {{ isCheckingIn ? '打卡中...' : checkInData.isCheckedToday ? '今日已打卡' : '立即打卡' }}
     </button>
   </view>
 </template>
 
 <script lang="ts" setup>
 interface CheckInData {
-  daysCompleted: number;
-  totalDays: number;
-  isCheckedToday: boolean;
-  completionRate: number;
-  cycleStartDate: string;
-  cycleEndDate: string;
+  daysCompleted: number
+  totalDays: number
+  isCheckedToday: boolean
+  completionRate: number
+  cycleStartDate: string
+  cycleEndDate: string
 }
 
 interface Marker {
-  days: number;
-  label: string;
+  days: number
+  label: string
 }
 
 defineProps({
   checkInData: {
     type: Object as () => CheckInData,
-    required: true
+    required: true,
   },
   markers: {
     type: Array as () => Marker[],
-    default: () => []
+    default: () => [],
   },
   isCheckingIn: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const emit = defineEmits(['check-in'])
@@ -101,7 +101,7 @@ const handleCheckIn = () => {
 
 .today-status {
   font-size: 24rpx;
-  color: #FF5C00;
+  color: #ff5c00;
   background-color: rgba(255, 92, 0, 0.1);
   padding: 6rpx 20rpx;
   border-radius: 20rpx;
@@ -122,7 +122,7 @@ const handleCheckIn = () => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #FF9645 0%, #FF5C00 100%);
+  background: linear-gradient(90deg, #ff9645 0%, #ff5c00 100%);
   border-radius: 10rpx;
   transition: width 0.5s;
 }
@@ -140,8 +140,8 @@ const handleCheckIn = () => {
 }
 
 .progress-marker.reached {
-  border-color: #FF5C00;
-  background-color: #FF9645;
+  border-color: #ff5c00;
+  background-color: #ff9645;
 }
 
 .marker-day {
@@ -154,7 +154,7 @@ const handleCheckIn = () => {
   background-color: #f8f8f8;
   padding: 6rpx 16rpx;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
 .progress-info {
@@ -166,7 +166,7 @@ const handleCheckIn = () => {
 }
 
 .check-in-button {
-  background: linear-gradient(90deg, #FF9645 0%, #FF5C00 100%);
+  background: linear-gradient(90deg, #ff9645 0%, #ff5c00 100%);
   color: white;
   border: none;
   padding: 24rpx 0;
@@ -182,4 +182,4 @@ const handleCheckIn = () => {
   color: #ffffff;
   box-shadow: none;
 }
-</style> 
+</style>

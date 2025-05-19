@@ -35,19 +35,14 @@
           <text class="amount-label">预存金额</text>
           <view class="amount-input-wrapper">
             <text class="amount-prefix">¥</text>
-            <input
-              class="amount-input"
-              type="digit"
-              v-model="formData.amount"
-              placeholder="请输入预存金额"
-            />
+            <view class="amount-display">{{ formData.amount || '请选择预存金额' }}</view>
           </view>
         </view>
 
         <!-- 银行卡开户预存金提示 -->
         <view class="open-fee-tip">
           <text class="tip-title">温馨提示</text>
-          
+
           <!-- 预存服务提示列表 -->
           <view class="deposit-tips-list" v-if="depositTips.length > 0">
             <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
@@ -55,7 +50,7 @@
               <text class="tip-desc">{{ tip.description }}</text>
             </view>
           </view>
-          
+
           <!-- 开户费用提示 -->
           <view class="open-fee-tip-item" v-if="openFee > 0">
             <text class="tip-desc">开通银行卡需要支付预存金 ¥{{ openFee.toFixed(2) }}</text>
@@ -163,7 +158,7 @@ import {
   getBankCardOpenRecordsAPI,
   getDepositTipsAPI,
   IBankCardOpenRecord,
-  IDepositTip
+  IDepositTip,
 } from '@/service/index/bankcard'
 import { useUserStore } from '@/store/user'
 
@@ -177,7 +172,7 @@ const currentStep = ref('form')
 const loading = ref(false)
 
 // 快捷金额选项
-const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000']
+const quickAmounts = ['300', '500', '1000', '5000', '10000', '20000']
 
 // 开户费用
 const openFee = ref(0)
@@ -210,19 +205,19 @@ onMounted(async () => {
   try {
     // 获取开户费用
     await fetchOpenFee()
-    
+
     // 获取预存服务提示
     await fetchDepositTips()
-    
+
     // 不再检查申请状态，因为所有申请都会自动通过
     // await checkApplicationStatus()
-    
+
     // 其他初始化逻辑...
   } catch (error) {
     console.error('初始化失败:', error)
     uni.showToast({
       title: '获取数据失败，请重试',
-      icon: 'none'
+      icon: 'none',
     })
   }
 })
@@ -293,10 +288,10 @@ const fetchDepositTips = async () => {
     // 使用安全的方式访问数据
     if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
       // 安全地访问data字段
-      const data = res.data;
+      const data = res.data
       if (data && typeof data === 'object' && 'deposit_tips' in data) {
-        depositTips.value = Array.isArray(data.deposit_tips) ? data.deposit_tips : [];
-        console.log('获取预存服务提示成功:', depositTips.value);
+        depositTips.value = Array.isArray(data.deposit_tips) ? data.deposit_tips : []
+        console.log('获取预存服务提示成功:', depositTips.value)
       }
     }
   } catch (error) {
@@ -329,6 +324,10 @@ const checkApplicationStatus = async () => {
 // 直接提交申请并扣款
 const processSubmit = async () => {
   // 表单验证
+  if (!formData.amount) {
+    uni.showToast({ title: '请选择预存金额', icon: 'none' })
+    return
+  }
   if (!formData.name) {
     uni.showToast({ title: '请输入真实姓名', icon: 'none' })
     return
@@ -372,7 +371,7 @@ const processSubmit = async () => {
   // 二次确认
   uni.showModal({
     title: '确认提交申请',
-    content: `提交申请将直接从您的账户余额中扣除 ${openFee.value.toFixed(2)} 人民币作为开户预存金，是否继续？`,
+    content: `提交申请将直接从您的账户余额中扣除 ${formData.amount} 人民币作为开户预存金，是否继续？`,
     success: async (res) => {
       if (res.confirm) {
         await submitBankCardOpen()
@@ -563,11 +562,18 @@ const backToCards = () => {
   margin-right: 10rpx;
 }
 
-.amount-input {
+.amount-display {
   flex: 1;
   height: 80rpx;
   font-size: 36rpx;
-  border: none;
+  color: #333;
+  line-height: 80rpx;
+  padding-left: 10rpx;
+}
+
+.amount-display:empty::before {
+  content: '请选择预存金额';
+  color: #9ca3af;
 }
 
 /* 开户预存金提示 */
