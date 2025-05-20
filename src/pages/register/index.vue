@@ -18,28 +18,14 @@
     
     <!-- 注册表单 -->
     <view class="register-form">
-      <!-- 用户名表单已注释
-      <view class="form-group">
-        <text class="form-label">用户名</text>
-        <view class="input-container">
-          <text class="uni-icons" :class="['uniui-person-filled']"></text>
-          <input 
-            class="form-control" 
-            type="text"
-            placeholder="请输入用户名"
-            v-model="formData.name"
-          />
-        </view>
-      </view>
-      -->
-
       <view class="form-group">
         <text class="form-label">手机号</text>
         <view class="input-container">
           <text class="uni-icons" :class="['uniui-phone-filled']"></text>
           <input 
             class="form-control" 
-            type="number"
+            type="text"
+            inputmode="numeric"
             maxlength="11"
             placeholder="请输入手机号码"
             v-model="formData.phone"
@@ -48,46 +34,24 @@
       </view>
       
       <view class="form-group">
-        <text class="form-label">密码</text>
+        <text class="form-label">验证码</text>
         <view class="input-container">
-          <text class="uni-icons" :class="['uniui-locked-filled']"></text>
+          <text class="uni-icons" :class="['uniui-email-filled']"></text>
           <input 
             class="form-control" 
-            :type="showPassword ? 'text' : 'password'"
-            placeholder="请输入密码（6-20位）"
-            v-model="formData.password"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="请输入验证码"
+            v-model="formData.code"
           />
-          <text 
-            class="uni-icons password-toggle" 
-            :class="[showPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
-            @click="togglePasswordVisibility"
-          ></text>
-        </view>
-      </view>
-
-      <view class="form-group">
-        <text class="form-label">确认密码</text>
-        <view class="input-container">
-          <text class="uni-icons" :class="['uniui-locked-filled']"></text>
-          <input 
-            class="form-control" 
-            :type="showPassword ? 'text' : 'password'"
-            placeholder="请再次输入密码"
-            v-model="formData.password_confirmation"
-          />
-        </view>
-      </view>
-      
-      <view class="form-group">
-        <text class="form-label">提现密码</text>
-        <view class="input-container">
-          <text class="uni-icons" :class="['uniui-safe-filled']"></text>
-          <input 
-            class="form-control" 
-            :type="showPassword ? 'text' : 'password'"
-            placeholder="请设置提现密码（6位数字）"
-            v-model="formData.withdraw_password"
-          />
+          <view 
+            class="send-code-btn" 
+            :class="{ 'disabled': cooldown > 0 }"
+            @click="sendCode"
+          >
+            {{ cooldown > 0 ? `${cooldown}秒后重试` : '获取验证码' }}
+          </view>
         </view>
       </view>
       
@@ -98,7 +62,7 @@
           <input 
             class="form-control" 
             type="text"
-            placeholder="请输入邀请码"
+            placeholder="请输入邀请码（选填）"
             v-model="formData.referrer_invite_code"
           />
         </view>
@@ -122,25 +86,23 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue';
-import { registerAPI } from '@/service/index/auth';
+import { ref, reactive, computed, onUnmounted } from 'vue';
+import { sendSmsCodeAPI, smsRegisterAPI } from '@/service/index/auth';
 import { onLoad } from '@dcloudio/uni-app';
 
 // 表单数据
 const formData = reactive({
-  name: 'defaultUser', // 使用默认值替代用户输入
   phone: '',
-  password: '',
-  password_confirmation: '',
-  withdraw_password: '',
+  code: '',
   referrer_invite_code: ''
 });
 
-// 控制密码可见性
-const showPassword = ref(false);
-
 // 控制用户协议同意状态
 const agreedToTerms = ref(false);
+
+// 验证码倒计时
+const cooldown = ref(0);
+let timer: ReturnType<typeof setInterval> | null = null;
 
 // 页面加载时获取参数
 onLoad((options) => {
@@ -151,10 +113,12 @@ onLoad((options) => {
   }
 });
 
-// 切换密码可见性
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value;
-};
+// 组件销毁时清除定时器
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer);
+  }
+});
 
 // 切换协议同意状态
 const toggleAgreement = () => {
@@ -164,23 +128,16 @@ const toggleAgreement = () => {
 // 检查所有必填字段是否已填写
 const isFormValid = computed(() => {
   return formData.phone.trim() !== '' && 
-         formData.password.trim() !== '' && 
-         formData.password_confirmation.trim() !== '' &&
-         formData.withdraw_password.trim() !== '' &&
+         formData.code.trim() !== '' &&
          agreedToTerms.value;
 });
 
-// 注册处理
-const handleRegister = async () => {
-  // 表单验证
-  if (!formData.name.trim()) {
-    uni.showToast({
-      title: '请输入用户名',
-      icon: 'none'
-    });
-    return;
-  }
+// 发送验证码
+const sendCode = async () => {
+  // 如果正在倒计时，不允许再次发送
+  if (cooldown.value > 0) return;
   
+  // 验证手机号
   if (!formData.phone.trim()) {
     uni.showToast({
       title: '请输入手机号',
@@ -197,41 +154,77 @@ const handleRegister = async () => {
     return;
   }
   
-  if (!formData.password.trim()) {
+  try {
+    // 显示发送中提示
+    uni.showLoading({
+      title: '发送中...'
+    });
+    
+    // 调用发送验证码API
+    const res = await sendSmsCodeAPI({
+      mobile: formData.phone,
+      type: 'register'
+    });
+    
+    // 隐藏加载提示
+    uni.hideLoading();
+    
+    if (res && res.status === 'success') {
+      uni.showToast({
+        title: '验证码已发送',
+        icon: 'success'
+      });
+      
+      // 开始倒计时
+      cooldown.value = res.data?.cooldown || 60;
+      timer = setInterval(() => {
+        if (cooldown.value > 0) {
+          cooldown.value--;
+        } else {
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+          }
+        }
+      }, 1000);
+    } else {
+      uni.showToast({
+        title: res?.message || '发送失败，请重试',
+        icon: 'none'
+      });
+    }
+  } catch (error: any) {
+    uni.hideLoading();
+    
     uni.showToast({
-      title: '请输入密码',
+      title: error?.message || '发送失败，请重试',
+      icon: 'none'
+    });
+  }
+};
+
+// 注册处理
+const handleRegister = async () => {
+  // 表单验证
+  if (!formData.phone.trim()) {
+    uni.showToast({
+      title: '请输入手机号',
       icon: 'none'
     });
     return;
   }
   
-  if (formData.password.length < 6 || formData.password.length > 20) {
+  if (!/^1\d{10}$/.test(formData.phone)) {
     uni.showToast({
-      title: '密码长度应为6-20位',
+      title: '请输入正确的手机号',
       icon: 'none'
     });
     return;
   }
   
-  if (formData.password !== formData.password_confirmation) {
+  if (!formData.code.trim()) {
     uni.showToast({
-      title: '两次输入的密码不一致',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  if (!formData.withdraw_password.trim()) {
-    uni.showToast({
-      title: '请输入提现密码',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  if (formData.withdraw_password.length < 6) {
-    uni.showToast({
-      title: '提现密码长度至少为6位',
+      title: '请输入验证码',
       icon: 'none'
     });
     return;
@@ -252,13 +245,10 @@ const handleRegister = async () => {
       title: '注册中...'
     });
     
-    // 调用实际注册API
-    const res = await registerAPI({
-      name: formData.name,
+    // 调用短信注册API
+    const res = await smsRegisterAPI({
       phone: formData.phone,
-      password: formData.password,
-      password_confirmation: formData.password_confirmation,
-      withdraw_password: formData.withdraw_password,
+      code: formData.code,
       referrer_invite_code: formData.referrer_invite_code || undefined
     });
     
@@ -394,9 +384,17 @@ page {
         font-size: 28rpx;
       }
       
-      .password-toggle {
-        color: #666;
-        padding: 10rpx;
+      .send-code-btn {
+        font-size: 24rpx;
+        color: #3498db;
+        padding: 6rpx 20rpx;
+        border-radius: 6rpx;
+        background-color: rgba(52, 152, 219, 0.1);
+        
+        &.disabled {
+          color: #999;
+          background-color: #f0f0f0;
+        }
       }
     }
   }

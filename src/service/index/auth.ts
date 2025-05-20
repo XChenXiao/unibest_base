@@ -13,6 +13,23 @@ export interface IRegisterParams {
 }
 
 /**
+ * 短信验证码注册请求参数接口
+ */
+export interface ISmsRegisterParams {
+  phone: string
+  code: string
+  referrer_invite_code?: string
+}
+
+/**
+ * 发送短信验证码请求参数接口
+ */
+export interface ISendSmsParams {
+  mobile: string
+  type: 'login' | 'register' | 'reset_password' | 'withdraw'
+}
+
+/**
  * 用户登录请求参数接口
  */
 export interface ILoginParams {
@@ -42,12 +59,53 @@ export interface IResetPasswordParams {
 }
 
 /**
+ * 短信验证码登录请求参数接口
+ */
+export interface ISmsLoginParams {
+  phone: string
+  code: string
+}
+
+/**
  * 用户注册API
  * @param params 注册参数
  * @returns Promise
  */
 export const registerAPI = (params: IRegisterParams) => {
   return http.post<IUserInfo>('/api/register', params)
+}
+
+/**
+ * 发送短信验证码API
+ * @param params 发送短信参数
+ * @returns Promise
+ */
+export const sendSmsCodeAPI = (params: ISendSmsParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      cooldown: number
+      expires_in: number
+    }
+  }>('/api/send-verification-code', params)
+}
+
+/**
+ * 短信验证码注册API
+ * @param params 短信注册参数
+ * @returns Promise
+ */
+export const smsRegisterAPI = (params: ISmsRegisterParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      user: IUserInfo
+      access_token: string
+      token_type: string
+    }
+  }>('/api/register-with-sms', params)
 }
 
 /**
@@ -79,6 +137,23 @@ export const forgotPasswordAPI = (params: IForgotPasswordParams) => {
  */
 export const resetPasswordAPI = (params: IResetPasswordParams) => {
   return http.post<any>('/api/reset-password', params)
+}
+
+/**
+ * 使用短信验证码登录API
+ * @param params 短信登录参数
+ * @returns Promise
+ */
+export const smsLoginAPI = (params: ISmsLoginParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      user: IUserInfo
+      access_token: string
+      token_type: string
+    }
+  }>('/api/login-with-sms', params)
 }
 
 /**

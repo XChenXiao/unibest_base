@@ -10,6 +10,7 @@ interface NavigateToOptions {
        "/pages/equity-records/index" |
        "/pages/login/change-password" |
        "/pages/login/index" |
+       "/pages/login/password" |
        "/pages/login/reset-password" |
        "/pages/my/alipay-accounts" |
        "/pages/my/alipay-payment-setting" |

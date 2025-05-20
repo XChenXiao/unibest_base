@@ -99,6 +99,13 @@
       }
     },
     {
+      "path": "pages/login/password",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "密码登录"
+      }
+    },
+    {
       "path": "pages/login/reset-password",
       "type": "page",
       "style": {
