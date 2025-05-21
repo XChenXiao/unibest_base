@@ -18,6 +18,9 @@ export interface IRegisterParams {
 export interface ISmsRegisterParams {
   phone: string
   code: string
+  password: string
+  password_confirmation: string
+  withdraw_password: string
   referrer_invite_code?: string
 }
 

@@ -6,6 +6,7 @@
  */
 import { useUserStore } from '@/store'
 import { needLoginPages as _needLoginPages, getNeedLoginPages } from '@/utils'
+import { ref } from 'vue'
 
 // 登录页面路径
 const loginRoute = '/pages/login/index'
@@ -15,6 +16,9 @@ const manualNeedLoginPages = [
   '/pages/my/index',
   '/pages/verification/index'
 ]
+
+// 添加一个标志位，避免多次重定向
+const isRedirecting = ref(false)
 
 // 检查是否已登录
 const isLogined = () => {
@@ -29,6 +33,19 @@ const navigateToInterceptor = {
   // 注意，这里的url是 '/' 开头的，如 '/pages/index/index'，跟 'pages.json' 里面的 path 不同
   invoke({ url }: { url: string }) {
     console.log('路由拦截器检查URL:', url) // 添加调试输出
+    
+    // 如果目标是登录页，直接允许导航
+    if (url.startsWith(loginRoute)) {
+      console.log('目标是登录页，允许导航')
+      return true
+    }
+    
+    // 如果已经在重定向过程中，跳过重复检查
+    if (isRedirecting.value) {
+      console.log('已经在重定向中，跳过拦截器检查')
+      return true
+    }
+    
     const path = url.split('?')[0]
     let needLoginPages: string[] = []
     // 为了防止开发时出现BUG，这里每次都获取一下。生产环境可以移到函数外，性能更好
@@ -38,8 +55,7 @@ const navigateToInterceptor = {
       needLoginPages = _needLoginPages
     }
     
-    console.log('路由拦截器 - 系统获取的需要登录页面:', needLoginPages) // 添加调试输出
-    console.log('路由拦截器 - 手动配置的需要登录页面:', manualNeedLoginPages) // 添加调试输出
+    console.log('路由拦截器 - 需要登录页面列表:', needLoginPages.length > 0 ? needLoginPages : manualNeedLoginPages) // 添加调试输出
     
     // 优先使用系统配置的页面列表，如果为空则使用手动配置的列表
     const finalNeedLoginPages = needLoginPages.length > 0 ? needLoginPages : manualNeedLoginPages
@@ -59,6 +75,15 @@ const navigateToInterceptor = {
     }
     
     console.log('用户未登录，重定向到登录页') // 添加调试输出
+    
+    // 设置重定向标志位，防止循环重定向
+    isRedirecting.value = true
+    
+    // 添加超时重置标志位，防止标志位一直为true
+    setTimeout(() => {
+      isRedirecting.value = false
+    }, 2000)
+    
     const redirectRoute = `${loginRoute}?redirect=${encodeURIComponent(url)}`
     uni.navigateTo({ url: redirectRoute })
     return false

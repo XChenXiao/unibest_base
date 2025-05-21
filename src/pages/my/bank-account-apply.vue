@@ -119,10 +119,10 @@
         />
       </view>
 
-      <button class="confirm-recharge-btn" @click="processSubmit" :disabled="!canApply || loading">
+      <button class="confirm-recharge-btn" @click="processSubmit" :disabled="loading">
         {{ loading ? '提交中...' : '确认开户' }}
       </button>
-      <view class="submit-hint">提交申请将直接从您的账户余额中扣除开户预存金</view>
+      <view class="submit-hint">提交申请后将进入开户审核流程</view>
     </view>
 
     <!-- 审核中状态 -->
@@ -224,8 +224,8 @@ onMounted(async () => {
 
 // 更新是否可申请状态
 const updateCanApply = () => {
-  const amount = parseFloat(formData.amount) || 0
-  canApply.value = userStore.userInfo.balance >= amount
+  // 不再检查余额是否足够，直接设置为true
+  canApply.value = true
 }
 
 // 监听金额变化
@@ -359,19 +359,12 @@ const processSubmit = async () => {
     return
   }
 
-  // 检查余额是否足够
-  if (userStore.userInfo.balance < openFee.value) {
-    uni.showToast({
-      title: '余额不足，请先充值',
-      icon: 'none',
-    })
-    return
-  }
+  // 不再检查余额是否足够
 
   // 二次确认
   uni.showModal({
     title: '确认提交申请',
-    content: `提交申请将直接从您的账户余额中扣除 ${formData.amount} 人民币作为开户预存金，是否继续？`,
+    content: `您选择的开户预存金金额为 ${formData.amount} 人民币，是否确认提交申请？`,
     success: async (res) => {
       if (res.confirm) {
         await submitBankCardOpen()

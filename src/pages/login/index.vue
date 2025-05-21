@@ -9,7 +9,7 @@
   <view class="login-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-    
+
     <!-- Logo区域 -->
     <view class="logo-area">
       <view class="logo">
@@ -18,15 +18,15 @@
       <text class="app-name">理财管理平台</text>
       <text class="app-slogan">专业的财富管理伙伴</text>
     </view>
-    
+
     <!-- 登录表单 -->
     <view class="login-form">
       <view class="form-group">
         <text class="form-label">手机号</text>
         <view class="input-container">
           <text class="uni-icons" :class="['uniui-phone-filled']"></text>
-          <input 
-            class="form-control" 
+          <input
+            class="form-control"
             type="text"
             inputmode="numeric"
             maxlength="11"
@@ -35,42 +35,38 @@
           />
         </view>
       </view>
-      
+
       <view class="form-group">
         <text class="form-label">验证码</text>
         <view class="input-container">
           <text class="uni-icons" :class="['uniui-email-filled']"></text>
-          <input 
-            class="form-control" 
+          <input
+            class="form-control"
             type="text"
             inputmode="numeric"
             maxlength="6"
             placeholder="请输入验证码"
             v-model="formData.code"
           />
-          <view 
-            class="send-code-btn" 
-            :class="{ 'disabled': cooldown > 0 }"
-            @click="sendCode"
-          >
+          <view class="send-code-btn" :class="{ disabled: cooldown > 0 }" @click="sendCode">
             {{ cooldown > 0 ? `${cooldown}秒后重试` : '获取验证码' }}
           </view>
         </view>
       </view>
-      
+
       <button class="login-btn" @click="handleLogin">登 录</button>
-      
+
       <view class="login-options">
-        <text class="option-link" @click="goToPasswordLogin">密码登录</text>
+        <!-- <text class="option-link" @click="goToPasswordLogin">密码登录</text> -->
         <text class="option-link" @click="goToResetPassword">忘记密码</text>
       </view>
-      
+
       <view class="register-link">
         <text>还没有账号？</text>
         <text class="register-text" @click="goToRegister">立即注册</text>
       </view>
     </view>
-    
+
     <!-- 底部版权信息 -->
     <view class="login-footer">
       <text>© 2025 理财管理平台 版权所有</text>
@@ -79,100 +75,100 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onUnmounted } from 'vue';
-import { useUserStore } from '@/store';
-import { sendSmsCodeAPI, smsLoginAPI } from '@/service/index/auth';
+import { ref, reactive, onUnmounted } from 'vue'
+import { useUserStore } from '@/store'
+import { sendSmsCodeAPI, smsLoginAPI } from '@/service/index/auth'
 
 // 表单数据
 const formData = reactive({
   phone: '',
-  code: ''
-});
+  code: '',
+})
 
 // 用户Store
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 // 验证码倒计时
-const cooldown = ref(0);
-let timer: ReturnType<typeof setInterval> | null = null;
+const cooldown = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
 
 // 组件销毁时清除定时器
 onUnmounted(() => {
   if (timer) {
-    clearInterval(timer);
+    clearInterval(timer)
   }
-});
+})
 
 // 发送验证码
 const sendCode = async () => {
   // 如果正在倒计时，不允许再次发送
-  if (cooldown.value > 0) return;
-  
+  if (cooldown.value > 0) return
+
   // 验证手机号
   if (!formData.phone.trim()) {
     uni.showToast({
       title: '请输入手机号',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   if (!/^1\d{10}$/.test(formData.phone)) {
     uni.showToast({
       title: '请输入正确的手机号',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   try {
     // 显示发送中提示
     uni.showLoading({
-      title: '发送中...'
-    });
-    
+      title: '发送中...',
+    })
+
     // 调用发送验证码API
     const res = await sendSmsCodeAPI({
       mobile: formData.phone,
-      type: 'login'
-    });
-    
+      type: 'login',
+    })
+
     // 隐藏加载提示
-    uni.hideLoading();
-    
+    uni.hideLoading()
+
     if (res && res.status === 'success') {
       uni.showToast({
         title: '验证码已发送',
-        icon: 'success'
-      });
-      
+        icon: 'success',
+      })
+
       // 开始倒计时
-      cooldown.value = res.data?.cooldown || 60;
+      cooldown.value = res.data?.cooldown || 60
       timer = setInterval(() => {
         if (cooldown.value > 0) {
-          cooldown.value--;
+          cooldown.value--
         } else {
           if (timer) {
-            clearInterval(timer);
-            timer = null;
+            clearInterval(timer)
+            timer = null
           }
         }
-      }, 1000);
+      }, 1000)
     } else {
       uni.showToast({
         title: res?.message || '发送失败，请重试',
-        icon: 'none'
-      });
+        icon: 'none',
+      })
     }
   } catch (error: any) {
-    uni.hideLoading();
-    
+    uni.hideLoading()
+
     uni.showToast({
       title: error?.message || '发送失败，请重试',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   }
-};
+}
 
 // 登录处理
 const handleLogin = async () => {
@@ -180,106 +176,129 @@ const handleLogin = async () => {
   if (!formData.phone.trim()) {
     uni.showToast({
       title: '请输入手机号',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   if (!/^1\d{10}$/.test(formData.phone)) {
     uni.showToast({
       title: '请输入正确的手机号',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   if (!formData.code.trim()) {
     uni.showToast({
       title: '请输入验证码',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   // 执行登录
   try {
     // 显示登录中提示
     uni.showLoading({
-      title: '登录中...'
-    });
-    
+      title: '登录中...',
+    })
+
     // 调用短信登录API
     const res = await smsLoginAPI({
       phone: formData.phone,
-      code: formData.code
-    });
-    
+      code: formData.code,
+    })
+
     // 隐藏加载
-    uni.hideLoading();
-    
+    uni.hideLoading()
+
     if (res && res.status === 'success' && res.data) {
-      const userData = res.data;
-      
+      const userData = res.data
+
       // 保存用户信息和Token
       userStore.setUserInfo({
         ...userData.user,
-        token: userData.access_token
-      });
-      
+        token: userData.access_token,
+      })
+
       // 登录成功后立即获取完整的用户信息和实名认证状态
       try {
-        console.log('登录成功，正在获取最新用户信息...');
+        console.log('登录成功，正在获取最新用户信息...')
         // 一次性获取完整用户信息，包含认证状态
-        const infoUpdated = await userStore.fetchUserInfo();
+        const infoUpdated = await userStore.fetchUserInfo()
         if (infoUpdated) {
-          console.log('用户信息和认证状态已更新:', userStore.verificationStatus);
+          console.log('用户信息和认证状态已更新:', userStore.verificationStatus)
         }
       } catch (error) {
-        console.error('获取用户信息失败:', error);
+        console.error('获取用户信息失败:', error)
         // 错误不影响登录流程
       }
-      
+
       uni.showToast({
         title: '登录成功',
-        icon: 'success'
-      });
-      
-      // 跳转到首页
+        icon: 'success',
+      })
+
+      // 获取路由中的redirect参数
+      const pages = getCurrentPages()
+      const currentPage = pages[pages.length - 1]
+      // @ts-ignore
+      const query = currentPage.$page?.options || {}
+      const redirect = query.redirect || '/pages/index/index'
+
+      console.log('登录成功，将跳转到:', redirect)
+
+      // 延迟跳转，给用户看到成功提示的时间
       setTimeout(() => {
-        uni.switchTab({
-          url: '/pages/index/index'
-        });
-      }, 1500);
+        // 判断redirect的页面类型来选择跳转方式
+        if (
+          redirect.startsWith('/pages/index/') ||
+          redirect.startsWith('/pages/home/') ||
+          redirect.startsWith('/pages/market/') ||
+          redirect.startsWith('/pages/my/')
+        ) {
+          // TabBar页面使用switchTab
+          uni.switchTab({
+            url: redirect,
+          })
+        } else {
+          // 非TabBar页面使用redirectTo
+          uni.redirectTo({
+            url: redirect,
+          })
+        }
+      }, 1500)
     }
   } catch (error: any) {
-    uni.hideLoading();
+    uni.hideLoading()
     uni.showToast({
       title: error?.message || '登录失败，请重试',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   }
-};
+}
 
 // 前往注册页面
 const goToRegister = () => {
   uni.navigateTo({
-    url: '/pages/register/index'
-  });
-};
+    url: '/pages/register/index',
+  })
+}
 
 // 前往密码重置页面
 const goToResetPassword = () => {
   uni.navigateTo({
-    url: '/pages/login/reset-password'
-  });
-};
+    url: '/pages/login/reset-password',
+  })
+}
 
 // 前往密码登录页面
 const goToPasswordLogin = () => {
   uni.navigateTo({
-    url: '/pages/login/password'
-  });
-};
+    url: '/pages/login/password',
+  })
+}
 </script>
 
 <style lang="scss">
@@ -407,7 +426,7 @@ page {
   padding: 10rpx 20rpx;
   border-radius: 30rpx;
   background-color: rgba(52, 152, 219, 0.1);
-  
+
   &.disabled {
     color: #999;
     background-color: #f0f0f0;
@@ -461,4 +480,4 @@ page {
   font-size: 24rpx;
   margin-top: auto;
 }
-</style> 
+</style>

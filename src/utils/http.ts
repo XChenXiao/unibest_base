@@ -1,26 +1,50 @@
 import { CustomRequestOptions } from '@/interceptors/request'
 import { useUserStore } from '@/store'
 
+// 判断当前是否在登录页面
+const isOnLoginPage = () => {
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  return currentPage?.route?.includes('login') || false
+}
+
+// 跳转到登录页面
+const navigateToLogin = () => {
+  // 如果当前已经在登录页，则不需要跳转
+  if (isOnLoginPage()) {
+    return
+  }
+
+  uni.showToast({
+    icon: 'none',
+    title: '登录已过期，请重新登录',
+  })
+
+  setTimeout(() => {
+    uni.navigateTo({ url: '/pages/login/index' })
+  }, 1500)
+}
+
 export const http = <T>(options: CustomRequestOptions) => {
   // 1. 返回 Promise 对象
   return new Promise<IResData<T>>((resolve, reject) => {
     // 确保带上token
     if (!options.header?.Authorization || !options.header?.authorization) {
       if (!options.header) {
-        options.header = {};
+        options.header = {}
       }
-      
+
       // 从pinia store获取token
-      const userStore = useUserStore();
-      const token = userStore?.userInfo?.token;
-      
+      const userStore = useUserStore()
+      const token = userStore?.userInfo?.token
+
       // 如果找到token，添加到请求头
       if (token) {
-        options.header.Authorization = `Bearer ${token}`;
+        options.header.Authorization = `Bearer ${token}`
       } else {
       }
     }
-    
+
     uni.request({
       ...options,
       dataType: 'json',
@@ -33,7 +57,7 @@ export const http = <T>(options: CustomRequestOptions) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1 提取核心数据 res.data
           const responseData = res.data as IResData<T>
-          
+
           // 即使HTTP状态码是2xx，也需要检查业务状态
           if (responseData.status === 'success') {
             resolve(responseData)
@@ -50,20 +74,16 @@ export const http = <T>(options: CustomRequestOptions) => {
           // 401错误 - 未授权，清理用户信息，跳转到登录页
           console.error('请求未授权 (401):', {
             url: options.url,
-            statusCode: res.statusCode
-          });
-          
-          // 直接从pinia获取userStore进行清理
-          const userStore = useUserStore();
-          userStore.clearUserInfo();
-          
-          uni.showToast({
-            icon: 'none',
-            title: '登录已过期，请重新登录',
+            statusCode: res.statusCode,
           })
-          setTimeout(() => {
-            uni.navigateTo({ url: '/pages/login/index' })
-          }, 1500)
+
+          // 直接从pinia获取userStore进行清理
+          const userStore = useUserStore()
+          userStore.clearUserInfo()
+
+          // 使用封装的登录跳转方法
+          navigateToLogin()
+
           reject(res)
         } else if (res.statusCode === 403) {
           // 403错误 - 权限不足
@@ -103,9 +123,9 @@ export const http = <T>(options: CustomRequestOptions) => {
       fail(err) {
         console.error('网络请求失败:', {
           url: options.url,
-          error: err
-        });
-        
+          error: err,
+        })
+
         uni.showToast({
           icon: 'none',
           title: '网络错误，请检查网络连接',
@@ -124,9 +144,9 @@ export const http = <T>(options: CustomRequestOptions) => {
  * @returns Promise对象
  */
 export const httpGet = <T>(
-  url: string, 
-  query?: Record<string, any>, 
-  options?: Partial<CustomRequestOptions>
+  url: string,
+  query?: Record<string, any>,
+  options?: Partial<CustomRequestOptions>,
 ) => {
   return http<T>({
     url,
@@ -148,7 +168,7 @@ export const httpPost = <T>(
   url: string,
   data?: Record<string, any>,
   query?: Record<string, any>,
-  options?: Partial<CustomRequestOptions>
+  options?: Partial<CustomRequestOptions>,
 ) => {
   return http<T>({
     url,
@@ -171,7 +191,7 @@ export const httpPut = <T>(
   url: string,
   data?: Record<string, any>,
   query?: Record<string, any>,
-  options?: Partial<CustomRequestOptions>
+  options?: Partial<CustomRequestOptions>,
 ) => {
   return http<T>({
     url,
@@ -194,7 +214,7 @@ export const httpDelete = <T>(
   url: string,
   data?: Record<string, any>,
   query?: Record<string, any>,
-  options?: Partial<CustomRequestOptions>
+  options?: Partial<CustomRequestOptions>,
 ) => {
   return http<T>({
     url,

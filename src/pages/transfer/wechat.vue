@@ -130,7 +130,7 @@ const setMaxAmount = () => {
 // 跳转到微信收款设置页面
 const showPaymentSetting = () => {
   uni.navigateTo({
-    url: '/pages/my/wechat-payment-setting'
+    url: '/pages/my/wechat-payment-setting',
   })
 }
 
@@ -165,7 +165,7 @@ const handleSubmit = () => {
 
     uni.showToast({
       title: message || '表单信息有误',
-      icon: 'none'
+      icon: 'none',
     })
     return
   }
@@ -177,14 +177,14 @@ const handleSubmit = () => {
   const processWithdraw = async () => {
     try {
       uni.showLoading({
-        title: '处理中...'
+        title: '处理中...',
       })
 
       // 构建提现参数
       const params: IWithdrawParams = {
         amount: Number(transferAmount.value),
         withdraw_type: 'wechat',
-        withdraw_password: withdrawPassword.value
+        withdraw_password: withdrawPassword.value,
       }
 
       // 调用提现API
@@ -195,7 +195,7 @@ const handleSubmit = () => {
       if (response.status === 'success') {
         uni.showToast({
           title: '提现申请已提交',
-          icon: 'success'
+          icon: 'success',
         })
 
         // 刷新用户信息（余额）
@@ -208,15 +208,15 @@ const handleSubmit = () => {
       } else {
         uni.showToast({
           title: response.message || '提现失败',
-          icon: 'none'
+          icon: 'none',
         })
       }
     } catch (error) {
       uni.hideLoading()
       console.error('提现请求失败:', error)
       uni.showToast({
-        title: '提现失败，请重试',
-        icon: 'none'
+        title: error.data.message,
+        icon: 'none',
       })
     } finally {
       isSubmitting.value = false
@@ -309,7 +309,8 @@ page {
   margin-right: 10rpx;
 }
 
-.amount-input, .form-input {
+.amount-input,
+.form-input {
   flex: 1;
   height: 80rpx;
   font-size: 34rpx;
@@ -363,4 +364,4 @@ page {
   color: #999;
   flex: 1;
 }
-</style> 
+</style>

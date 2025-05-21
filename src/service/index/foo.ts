@@ -1,4 +1,6 @@
 import { http } from '@/utils/http'
+import { CustomRequestOptions } from '@/interceptors/request'
+
 export interface IFooItem {
   id: string
   name: string
@@ -6,76 +8,34 @@ export interface IFooItem {
 
 /** GET 请求 */
 export const getFooAPI = (name: string) => {
-  // 使用uni-app的请求任务来实现取消
-  let requestTask: UniApp.RequestTask | null = null
-  
+  // 使用http工具提供的请求方法
+  let controller: AbortController | null = new AbortController()
+
   // 返回请求和取消请求的方法
   return {
-    request: new Promise((resolve, reject) => {
-      // 直接使用uni.request以便获取requestTask
-      requestTask = uni.request({
-        url: '/foo', 
-        data: { name },
-        method: 'GET',
-        success: (res) => {
-          // 请求成功后处理
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(res.data)
-          } else {
-            reject(res)
-          }
-        },
-        fail: (err) => {
-          reject(err)
-        },
-        complete: () => {
-          requestTask = null
-        }
-      })
-    }),
+    request: http.get('/foo', { name }),
     cancel: () => {
-      if (requestTask) {
-        requestTask.abort()
-        requestTask = null
+      if (controller) {
+        controller.abort()
+        controller = null
       }
-    }
+    },
   }
 }
 
 /** POST 请求 */
 export const postFooAPI = (name: string) => {
-  // 使用uni-app的请求任务来实现取消
-  let requestTask: UniApp.RequestTask | null = null
-  
+  // 使用http工具提供的请求方法
+  let controller: AbortController | null = new AbortController()
+
   // 返回请求和取消请求的方法
   return {
-    request: new Promise((resolve, reject) => {
-      // 直接使用uni.request以便获取requestTask
-      requestTask = uni.request({
-        url: '/foo',
-        data: { name },
-        method: 'POST',
-        success: (res) => {
-          // 请求成功后处理
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(res.data)
-          } else {
-            reject(res)
-          }
-        },
-        fail: (err) => {
-          reject(err)
-        },
-        complete: () => {
-          requestTask = null
-        }
-      })
-    }),
+    request: http.post('/foo', { name }),
     cancel: () => {
-      if (requestTask) {
-        requestTask.abort()
-        requestTask = null
+      if (controller) {
+        controller.abort()
+        controller = null
       }
-    }
+    },
   }
 }

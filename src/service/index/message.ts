@@ -1,25 +1,4 @@
 import { http } from '@/utils/http'
-import { useUserStore } from '@/store'
-
-// 登录状态检查函数
-const checkLoginStatus = (): boolean => {
-  const userStore = useUserStore()
-  const isLoggedIn = userStore.isLogined // 使用计算属性来判断是否已登录
-  
-  if (!isLoggedIn) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none'
-    })
-    
-    // 可选：自动跳转到登录页
-    setTimeout(() => {
-      uni.navigateTo({ url: '/pages/login/index' })
-    }, 1500)
-  }
-  
-  return isLoggedIn
-}
 
 interface Announcement {
   id: number
@@ -51,16 +30,11 @@ interface AnnouncementsResponse {
  * @returns 公告列表数据
  */
 export const getAnnouncementsAPI = async (page = 1, perPage = 10) => {
-  // 检查登录状态
-  if (!checkLoginStatus()) {
-    return Promise.reject(new Error('用户未登录'))
-  }
-  
   try {
     const result = await http.get<AnnouncementsResponse>(`/api/messages`, {
       is_system: true,
       page,
-      per_page: perPage
+      per_page: perPage,
     })
     return result
   } catch (error) {
@@ -74,36 +48,29 @@ export const getAnnouncementsAPI = async (page = 1, perPage = 10) => {
  * @returns 最新公告数据
  */
 export const getLatestAnnouncementAPI = async () => {
-  // 检查登录状态
-  if (!checkLoginStatus()) {
-    return {
-      status: 'error',
-      data: null,
-      message: '用户未登录'
-    }
-  }
-  
   try {
     const result = await http.get<ResponseData<{ data: Announcement[] }>>(`/api/messages`, {
       is_system: true,
       page: 1,
-      per_page: 1
+      per_page: 1,
     })
-    
+
     // 确保返回的数据结构正确
-    if (result.status === 'success' && 
-        result.data && 
-        result.data.data && 
-        Array.isArray(result.data.data) && 
-        result.data.data.length > 0) {
+    if (
+      result.status === 'success' &&
+      result.data &&
+      result.data.data &&
+      Array.isArray(result.data.data) &&
+      result.data.data.length > 0
+    ) {
       return {
         status: 'success',
-        data: result.data.data[0]
+        data: result.data.data[0],
       }
     } else {
       return {
         status: 'success',
-        data: null
+        data: null,
       }
     }
   } catch (error) {
@@ -111,7 +78,7 @@ export const getLatestAnnouncementAPI = async () => {
     return {
       status: 'error',
       data: null,
-      message: '获取最新公告失败'
+      message: '获取最新公告失败',
     }
   }
 }
@@ -122,11 +89,6 @@ export const getLatestAnnouncementAPI = async () => {
  * @returns 公告详情数据
  */
 export const getAnnouncementDetailAPI = async (id: number) => {
-  // 检查登录状态
-  if (!checkLoginStatus()) {
-    return Promise.reject(new Error('用户未登录'))
-  }
-  
   try {
     const result = await http.get<Announcement>(`/api/messages/${id}`)
     return result
@@ -142,11 +104,6 @@ export const getAnnouncementDetailAPI = async (id: number) => {
  * @returns 操作结果
  */
 export const markAnnouncementAsReadAPI = async (id: number) => {
-  // 检查登录状态
-  if (!checkLoginStatus()) {
-    return Promise.reject(new Error('用户未登录'))
-  }
-  
   try {
     const result = await http.post<ResponseData<any>>(`/api/messages/${id}/read`)
     return result
@@ -161,16 +118,15 @@ export const markAnnouncementAsReadAPI = async (id: number) => {
  * @returns 未读公告数量数据
  */
 export const getUnreadAnnouncementCountAPI = async () => {
-  // 检查登录状态
-  if (!checkLoginStatus()) {
-    return Promise.reject(new Error('用户未登录'))
-  }
-  
   try {
-    const result = await http.get<{unread_count: number, personal_unread: number, global_unread: number}>(`/api/messages/unread-count`)
+    const result = await http.get<{
+      unread_count: number
+      personal_unread: number
+      global_unread: number
+    }>(`/api/messages/unread-count`)
     return result
   } catch (error) {
     console.error('获取未读公告数量失败:', error)
     throw error
   }
-} 
+}

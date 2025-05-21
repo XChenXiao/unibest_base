@@ -13,12 +13,34 @@ export type CustomRequestOptions = UniApp.RequestOptions & {
 // 请求基准地址
 const baseUrl = getEnvBaseUrl()
 
+// 判断当前是否在登录页面
+const isOnLoginPage = () => {
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  return currentPage?.route?.includes('login') || false
+}
+
+// 跳转到登录页面
+const navigateToLogin = () => {
+  // 如果当前已经在登录页，则不需要跳转
+  if (isOnLoginPage()) {
+    return
+  }
+
+  uni.showToast({
+    icon: 'none',
+    title: '登录已过期，请重新登录',
+  })
+
+  setTimeout(() => {
+    uni.navigateTo({ url: '/pages/login/index' })
+  }, 1500)
+}
+
 // 拦截器配置
 const httpInterceptor = {
   // 拦截前触发
   invoke(options: CustomRequestOptions) {
-    console.log('请求拦截器开始处理:', options.url)
-    
     // 接口请求支持通过 query 参数配置 queryString
     if (options.query) {
       const queryStr = qs.stringify(options.query)
@@ -35,42 +57,39 @@ const httpInterceptor = {
       if (JSON.parse(__VITE_APP_PROXY__)) {
         // 如果是 H5 环境且启用了代理，使用接口代理
         // 不需要做额外处理
-        console.log('使用接口代理:', options.url)
       } else {
         options.url = baseUrl + options.url
-        console.log('拼接基础URL:', options.url)
       }
       // #endif
       // 非H5正常拼接
       // #ifndef H5
       options.url = baseUrl + options.url
-      console.log('拼接基础URL:', options.url)
       // #endif
     }
-    
+
     // 1. 请求超时
     options.timeout = 10000 // 10s
-    
+
     // 2. 添加请求头
     options.header = {
       platform, // 平台标识
       ...options.header,
     }
-    
+
     // 判断是否为文件上传请求 - 看是否有filePath属性
     const isUploadRequest = 'filePath' in options && !!options.filePath
-    
+
     // 如果不是文件上传请求，添加JSON Content-Type
     if (!isUploadRequest && !options.header['Content-Type']) {
       options.header['Content-Type'] = 'application/json'
     }
-    
+
     // 3. 添加 token 请求头标识 - 默认为所有请求添加token
     try {
       // 直接从pinia store获取token
       const userStore = useUserStore()
       const token = userStore?.userInfo?.token
-      
+
       // 添加token到请求头
       if (token) {
         options.header.Authorization = `Bearer ${token}`
@@ -97,32 +116,25 @@ const responseInterceptor = {
           // 清除用户信息并跳转到登录页
           const userStore = useUserStore()
           userStore.clearUserInfo()
-          
-          uni.showToast({
-            icon: 'none',
-            title: '登录已过期，请重新登录',
-          })
-          
-          // 延迟跳转，让用户能看到提示
-          setTimeout(() => {
-            uni.navigateTo({ url: '/pages/login/index' })
-          }, 1500)
-          break;
-          
+
+          // 使用封装的登录跳转方法
+          navigateToLogin()
+          break
+
         case 403: // 禁止访问
           uni.showToast({
             icon: 'none',
             title: '您没有权限执行此操作',
           })
-          break;
-          
+          break
+
         case 404: // 资源不存在
           uni.showToast({
             icon: 'none',
             title: '请求的资源不存在',
           })
-          break;
-          
+          break
+
         case 500: // 服务器错误
         case 502: // 网关错误
         case 503: // 服务不可用
@@ -130,11 +142,11 @@ const responseInterceptor = {
             icon: 'none',
             title: '服务器错误，请稍后再试',
           })
-          break;
+          break
       }
     }
     return res
-  }
+  },
 }
 
 export const requestInterceptor = {
