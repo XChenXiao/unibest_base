@@ -20,12 +20,31 @@ const isOnLoginPage = () => {
   return currentPage?.route?.includes('login') || false
 }
 
+// 检查是否正在重定向到登录页面
+const isRedirectingToLogin = () => {
+  return uni.getStorageSync('redirecting_to_login') === 'true'
+}
+
+// 设置重定向状态
+const setRedirectingToLogin = (value: boolean) => {
+  uni.setStorageSync('redirecting_to_login', value ? 'true' : 'false')
+}
+
 // 跳转到登录页面
 const navigateToLogin = () => {
   // 如果当前已经在登录页，则不需要跳转
   if (isOnLoginPage()) {
     return
   }
+  
+  // 如果已经有一个重定向到登录页面的过程在进行，则不再重复跳转
+  if (isRedirectingToLogin()) {
+    console.log('已有重定向到登录页面的过程，跳过重复跳转')
+    return
+  }
+  
+  // 设置重定向状态为true
+  setRedirectingToLogin(true)
 
   uni.showToast({
     icon: 'none',
@@ -33,7 +52,15 @@ const navigateToLogin = () => {
   })
 
   setTimeout(() => {
-    uni.navigateTo({ url: '/pages/login/index' })
+    uni.reLaunch({ 
+      url: '/pages/login/index',
+      success: () => {
+        console.log('成功跳转到登录页面')
+      },
+      fail: () => {
+        setRedirectingToLogin(false)
+      }
+    })
   }, 1500)
 }
 

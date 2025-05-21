@@ -27,48 +27,61 @@ const appOpenCount = ref(0)
 const isRedirecting = ref(false)
 
 onLaunch(async () => {
+  // 应用启动时，无论如何都重置登录重定向标志位
+  // 这样即使上次应用异常退出，也能确保本次启动正常跳转到登录页
+  uni.setStorageSync('redirecting_to_login', 'false')
+  console.log('应用启动，重置登录重定向标志位')
+  
   // 初始化tabbar，设置首页索引为0
   tabbarStore.initTabbar()
 
-  // 获取银行卡开户预存金
-  appStore.fetchBankCardOpenFee()
-
-  // 获取平台功能开关设置
-  await platformStore.fetchPlatformSettings()
-
-  // 手动关闭App启动封面
-  closeSplashscreen()
-
-  // 检查是否有本地存储的token，如果有则尝试自动登录
+  console.log('应用启动，检查登录状态...')
+  
+  // 检查是否有本地存储的token
   if (userStore.isLogined) {
+    console.log('检测到用户token，获取用户信息和平台设置')
     try {
+      // 获取用户信息
       const success = await userStore.fetchUserInfo()
       if (success) {
+        // 登录有效，获取平台功能开关设置
+        await platformStore.fetchPlatformSettings()
+        // 获取银行卡开户预存金
+        appStore.fetchBankCardOpenFee()
+        
         // 登录成功后导航到首页
         uni.switchTab({
           url: '/pages/index/index',
+          fail: (err) => {
+            console.error('跳转到首页失败，尝试使用reLaunch', err)
+            uni.reLaunch({
+              url: '/pages/index/index'
+            })
+          }
         })
+        
+        // 关闭启动封面
+        closeSplashscreen()
       } else {
         // 清除过期的token
         userStore.clearUserInfo()
-        // 不再强制导航到登录页，依靠路由拦截器处理
-        // navigateToLogin()
+        // 跳转到登录页
+        navigateToLogin()
       }
     } catch (error) {
+      console.error('获取用户信息失败', error)
       // 出错时清除token
       userStore.clearUserInfo()
-      // 不再强制导航到登录页，依靠路由拦截器处理
-      // navigateToLogin()
+      // 跳转到登录页
+      navigateToLogin()
     }
+  } else {
+    console.log('用户未登录，直接跳转到登录页')
+    // 用户未登录，直接跳转到登录页
+    setTimeout(() => {
+      navigateToLogin()
+    }, 500)
   }
-  // 移除else分支中的自动跳转逻辑
-  // else {
-  //   // 直接导航到登录页
-  //   navigateToLogin()
-  // }
-
-  // 移除公告检查代码
-  // checkAndShowAnnouncement()
 })
 
 // 关闭启动封面
@@ -83,6 +96,16 @@ const closeSplashscreen = () => {
 
 // 导航到登录页面
 const navigateToLogin = () => {
+  // 先确保重定向标志位为false
+  // 这样可以防止前一次异常导致标志位为true而跳过跳转
+  uni.setStorageSync('redirecting_to_login', 'false')
+  
+  // 检查是否正在重定向到登录页面
+  if (uni.getStorageSync('redirecting_to_login') === 'true') {
+    console.log('已有重定向到登录页面的过程，跳过重复跳转')
+    return
+  }
+  
   // 如果已经在重定向中，则不再执行
   if (isRedirecting.value) {
     console.log('已经在重定向过程中，跳过重复跳转')
@@ -91,34 +114,36 @@ const navigateToLogin = () => {
 
   // 获取当前页面路径作为重定向目标
   const pages = getCurrentPages()
-  let redirectPath = '/pages/index/index'
-
+  // 如果当前已经在登录页，不需要再次跳转
   if (pages.length > 0) {
     const currentPage = pages[pages.length - 1]
     const currentPath = '/' + currentPage.route
 
-    // 如果当前已经在登录页，不需要再次跳转
     if (currentPath.includes('/pages/login/')) {
       console.log('当前已在登录页面，无需重定向')
       return
     }
-
-    redirectPath = currentPath
   }
 
-  console.log('导航到登录页，重定向路径:', redirectPath)
+  console.log('导航到登录页')
 
   // 设置重定向标志
   isRedirecting.value = true
+  // 设置本地存储标志
+  uni.setStorageSync('redirecting_to_login', 'true')
 
   // 重定向到登录页
-  uni.navigateTo({
-    url: `/pages/login/index?redirect=${encodeURIComponent(redirectPath)}`,
+  uni.reLaunch({
+    url: '/pages/login/index',
     complete: () => {
       // 完成后重置标志
       setTimeout(() => {
         isRedirecting.value = false
+        // 不重置本地存储标志，让登录页面来重置
       }, 2000)
+      
+      // 在跳转完成后关闭启动封面
+      closeSplashscreen()
     },
   })
 }
@@ -186,11 +211,6 @@ onShow(() => {
   console.log('应用显示，刷新平台功能开关设置...')
   platformStore.fetchPlatformSettings()
 
-  // 移除公告显示检查
-  // if (!showAnnouncementPopup.value) {
-  //   checkAndShowAnnouncement()
-  // }
-
   // 检查是否在白名单页面，避免重复登录检查
   const pages = getCurrentPages()
 
@@ -211,11 +231,23 @@ onShow(() => {
       console.log('当前页面在白名单中，无需处理登录状态:', currentPath)
       return
     }
+    
+    // 检查登录状态
+    if (!userStore.isLogined) {
+      console.log('用户未登录，自动跳转到登录页')
+      setTimeout(() => {
+        navigateToLogin()
+      }, 500)
+    }
   }
 })
 
 onHide(() => {
-  console.log('App Hide')
+  console.log('App Hide - 应用进入后台')
+  // 应用退出到后台时，重置登录重定向标志位
+  // 这样当用户再次进入时可以正常触发登录跳转
+  uni.setStorageSync('redirecting_to_login', 'false')
+  console.log('应用退出到后台，重置登录重定向标志位')
 })
 </script>
 

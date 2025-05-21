@@ -118,32 +118,84 @@ const handleLogin = async () => {
     uni.showLoading({
       title: '登录中...'
     });
+    
+    console.log('开始密码登录请求，参数:', {
+      login_id: formData.login_id,
+      password: '******' // 密码不输出
+    });
 
     const res = await loginAPI({
       login_id: formData.login_id,
       password: formData.password
     });
+    
+    console.log('密码登录响应:', res);
 
     uni.hideLoading();
 
-    if (res && res.user) {
+    if (res && res.status === 'success' && res.data) {
       // 保存用户信息和token
       userStore.setUserInfo({
-        ...res.user,
-        token: res.access_token
+        ...res.data.user,
+        token: res.data.access_token
       });
+      
+      // 重置登录重定向标志
+      uni.setStorageSync('redirecting_to_login', 'false')
       
       uni.showToast({
         title: '登录成功',
         icon: 'success'
       });
 
+      // 获取平台设置和用户信息
+      uni.showLoading({
+        title: '加载数据...',
+      });
+      
+      try {
+        // 导入需要的store
+        const { usePlatformStore } = await import('@/store/platform');
+        const { useAppStore } = await import('@/store/app');
+        
+        const platformStore = usePlatformStore();
+        const appStore = useAppStore();
+        
+        // 获取平台功能开关设置
+        await platformStore.fetchPlatformSettings();
+        // 获取银行卡开户预存金
+        appStore.fetchBankCardOpenFee();
+        // 刷新用户信息
+        await userStore.fetchUserInfo();
+        
+        uni.hideLoading();
+      } catch (error) {
+        console.error('加载平台数据失败', error);
+        uni.hideLoading();
+      }
+
       // 延迟跳转到首页
       setTimeout(() => {
         uni.switchTab({
-          url: '/pages/index/index'
+          url: '/pages/index/index',
+          success: () => {
+            console.log('成功跳转到首页')
+          },
+          fail: (err) => {
+            console.error('跳转到首页失败:', err)
+            // 如果switchTab失败，尝试使用reLaunch
+            uni.reLaunch({
+              url: '/pages/index/index'
+            })
+          }
         });
-      }, 1500);
+      }, 1000);
+    } else {
+      // 登录失败但服务器有返回消息
+      uni.showToast({
+        title: res?.message || '登录失败，请重试',
+        icon: 'none'
+      });
     }
   } catch (error: any) {
     uni.hideLoading();

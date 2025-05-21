@@ -131,7 +131,10 @@ export const sendSmsCodeAPI = (params: ISendSmsParams) => {
       cooldown: number
       expires_in: number
     }
-  }>('/api/send-verification-code', params)
+  }>('/api/send-verification-code', {
+    mobile: params.mobile,
+    type: params.type || 'login'
+  })
 }
 
 /**
@@ -207,10 +210,18 @@ export const captchaRegisterAPI = (params: ICaptchaRegisterParams) => {
  */
 export const loginAPI = (params: ILoginParams) => {
   return http.post<{
-    user: IUserInfo
-    access_token: string
-    token_type: string
-  }>('/api/login', params)
+    status: string
+    message: string
+    data?: {
+      user: IUserInfo
+      access_token: string
+      token_type: string
+    }
+  }>('/api/login', {
+    login_type: 'password',
+    mobile: params.login_id,
+    password: params.password
+  })
 }
 
 /**
@@ -262,7 +273,11 @@ export const smsLoginAPI = (params: ISmsLoginParams) => {
       access_token: string
       token_type: string
     }
-  }>('/api/login-with-sms', params)
+  }>('/api/login', {
+    login_type: 'sms',
+    mobile: params.phone,
+    code: params.code
+  })
 }
 
 /**

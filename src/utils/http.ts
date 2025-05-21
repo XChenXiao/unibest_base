@@ -8,12 +8,31 @@ const isOnLoginPage = () => {
   return currentPage?.route?.includes('login') || false
 }
 
+// 检查是否正在重定向到登录页面
+const isRedirectingToLogin = () => {
+  return uni.getStorageSync('redirecting_to_login') === 'true'
+}
+
+// 设置重定向状态
+const setRedirectingToLogin = (value: boolean) => {
+  uni.setStorageSync('redirecting_to_login', value ? 'true' : 'false')
+}
+
 // 跳转到登录页面
 const navigateToLogin = () => {
   // 如果当前已经在登录页，则不需要跳转
   if (isOnLoginPage()) {
     return
   }
+  
+  // 如果已经有一个重定向到登录页面的过程在进行，则不再重复跳转
+  if (isRedirectingToLogin()) {
+    console.log('已有重定向到登录页面的过程，跳过重复跳转')
+    return
+  }
+  
+  // 设置重定向状态为true
+  setRedirectingToLogin(true)
 
   uni.showToast({
     icon: 'none',
@@ -21,7 +40,15 @@ const navigateToLogin = () => {
   })
 
   setTimeout(() => {
-    uni.navigateTo({ url: '/pages/login/index' })
+    uni.reLaunch({ 
+      url: '/pages/login/index',
+      success: () => {
+        console.log('成功跳转到登录页面')
+      },
+      fail: () => {
+        setRedirectingToLogin(false)
+      }
+    })
   }, 1500)
 }
 
@@ -53,10 +80,23 @@ export const http = <T>(options: CustomRequestOptions) => {
       // #endif
       // 响应成功
       success(res) {
+        // 添加详细日志，帮助排查问题
+        console.log('HTTP响应:', {
+          url: options.url,
+          statusCode: res.statusCode,
+          data: res.data
+        });
+        
         // 状态码 2xx，参考 axios 的设计
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1 提取核心数据 res.data
           const responseData = res.data as IResData<T>
+
+          // 有些API响应没有status字段，直接返回数据
+          if (!responseData.hasOwnProperty('status')) {
+            resolve(responseData as any);
+            return;
+          }
 
           // 即使HTTP状态码是2xx，也需要检查业务状态
           if (responseData.status === 'success') {
@@ -68,6 +108,7 @@ export const http = <T>(options: CustomRequestOptions) => {
                 icon: 'none',
                 title: responseData.message || '请求失败',
               })
+            console.error('业务逻辑错误:', responseData);
             reject(responseData)
           }
         } else if (res.statusCode === 401) {

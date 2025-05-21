@@ -36,9 +36,9 @@ export default defineManifestConfig({
       ignoreVersion: true,
     },
     splashscreen: {
-      alwaysShowBeforeRender: true,
+      alwaysShowBeforeRender: false,
       waiting: true,
-      autoclose: true,
+      autoclose: false,
       delay: 0,
     },
     /* 模块配置 */
