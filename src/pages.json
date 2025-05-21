@@ -248,6 +248,13 @@
       }
     },
     {
+      "path": "pages/register/captcha",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "图形验证码注册"
+      }
+    },
+    {
       "path": "pages/register/index",
       "type": "page",
       "style": {

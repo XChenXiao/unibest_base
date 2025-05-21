@@ -1,7 +1,7 @@
 <route lang="json5">
 {
   style: {
-    navigationBarTitleText: '注册账号',
+    navigationBarTitleText: '图形验证码注册',
   },
 }
 </route>
@@ -13,7 +13,7 @@
     <!-- 标题区域 -->
     <view class="title-area">
       <text class="main-title">注册账号</text>
-      <text class="sub-title">加入我们的理财平台</text>
+      <text class="sub-title">使用图形验证码注册</text>
     </view>
 
     <!-- 注册表单 -->
@@ -26,7 +26,7 @@
             class="form-control"
             type="text"
             inputmode="numeric"
-            maxlength="11"
+            :maxlength="11"
             placeholder="请输入手机号码"
             v-model="formData.phone"
           />
@@ -34,19 +34,19 @@
       </view>
 
       <view class="form-group">
-        <text class="form-label">验证码</text>
+        <text class="form-label">图形验证码</text>
         <view class="input-container">
-          <text class="uni-icons" :class="['uniui-email-filled']"></text>
+          <text class="uni-icons" :class="['uniui-shield-filled']"></text>
           <input
             class="form-control"
             type="text"
-            inputmode="numeric"
-            maxlength="6"
+            :maxlength="4"
             placeholder="请输入验证码"
-            v-model="formData.code"
+            v-model="formData.captcha_code"
           />
-          <view class="send-code-btn" :class="{ disabled: cooldown > 0 }" @click="sendCode">
-            {{ cooldown > 0 ? `${cooldown}秒后重试` : '获取验证码' }}
+          <view class="captcha-container" @click="refreshCaptcha">
+            <image v-if="captchaImage" :src="captchaImage" class="captcha-image" mode="aspectFit"></image>
+            <view v-else class="captcha-loading">加载中...</view>
           </view>
         </view>
       </view>
@@ -121,7 +121,7 @@
       <button class="register-btn" :disabled="!isFormValid" @click="handleRegister">注 册</button>
 
       <view class="register-options">
-        <text class="option-link" @click="goToCaptchaRegister">图形验证码注册</text>
+        <text class="option-link" @click="goToSmsRegister">短信验证码注册</text>
       </view>
 
       <view class="login-link">
@@ -133,53 +133,44 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, onUnmounted } from 'vue'
-import { sendSmsCodeAPI, smsRegisterAPI } from '@/service/index/auth'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { captchaRegisterAPI, generateCaptchaAPI } from '@/service/index/auth'
 import { onLoad } from '@dcloudio/uni-app'
 
 // 表单数据
 const formData = reactive({
   phone: '',
-  code: '',
+  captcha_id: '',
+  captcha_code: '',
   password: '',
   password_confirmation: '',
   withdraw_password: '',
   referrer_invite_code: '',
 })
 
+// 图形验证码图片
+const captchaImage = ref<string>('')
+
 // 控制用户协议同意状态
 const agreedToTerms = ref(false)
 
-// 验证码倒计时
-const cooldown = ref<number>(0)
-let timer: ReturnType<typeof setInterval> | null = null
-
 // 页面加载时获取参数
 onLoad((options) => {
-  console.log(Object.values(options), 'options')
   if (Object.values(options).length > 0) {
     formData.referrer_invite_code = Object.values(options)[0]
-    console.log(formData, 'formData.referrer_invite_code')
   }
 })
 
-// 组件销毁时清除定时器
-onUnmounted(() => {
-  if (timer) {
-    clearInterval(timer)
-  }
+// 页面加载时获取验证码
+onMounted(() => {
+  refreshCaptcha()
 })
-
-// 切换协议同意状态
-const toggleAgreement = () => {
-  agreedToTerms.value = !agreedToTerms.value
-}
 
 // 检查所有必填字段是否已填写
 const isFormValid = computed(() => {
   return (
     formData.phone.trim() !== '' &&
-    formData.code.trim() !== '' &&
+    formData.captcha_code.trim() !== '' &&
     formData.password.trim() !== '' &&
     formData.password_confirmation.trim() !== '' &&
     formData.withdraw_password.trim() !== '' &&
@@ -187,72 +178,28 @@ const isFormValid = computed(() => {
   )
 })
 
-// 发送验证码
-const sendCode = async () => {
-  // 如果正在倒计时，不允许再次发送
-  if (cooldown.value > 0) return
+// 切换协议同意状态
+const toggleAgreement = () => {
+  agreedToTerms.value = !agreedToTerms.value
+}
 
-  // 验证手机号
-  if (!formData.phone.trim()) {
-    uni.showToast({
-      title: '请输入手机号',
-      icon: 'none',
-    })
-    return
-  }
-
-  if (!/^1\d{10}$/.test(formData.phone)) {
-    uni.showToast({
-      title: '请输入正确的手机号',
-      icon: 'none',
-    })
-    return
-  }
-
+// 刷新验证码
+const refreshCaptcha = async () => {
   try {
-    // 显示发送中提示
-    uni.showLoading({
-      title: '发送中...',
-    })
-
-    // 调用发送验证码API
-    const res = await sendSmsCodeAPI({
-      mobile: formData.phone,
-      type: 'register',
-    })
-
-    // 隐藏加载提示
-    uni.hideLoading()
-
-    if (res && res.status === 'success') {
-      uni.showToast({
-        title: '验证码已发送',
-        icon: 'success',
-      })
-
-      // 开始倒计时
-      cooldown.value = res.data?.cooldown || 60
-      timer = setInterval(() => {
-        if (cooldown.value > 0) {
-          cooldown.value--
-        } else {
-          if (timer) {
-            clearInterval(timer)
-            timer = null
-          }
-        }
-      }, 1000)
+    const res = await generateCaptchaAPI({ type: 'register' })
+    
+    if (res && res.status === 'success' && res.data) {
+      captchaImage.value = res.data.captcha_image
+      formData.captcha_id = res.data.captcha_id
     } else {
       uni.showToast({
-        title: res?.data.message || '发送失败，请重试',
+        title: '获取验证码失败',
         icon: 'none',
       })
     }
   } catch (error: any) {
-    uni.hideLoading()
-
     uni.showToast({
-      title: '发送失败，请检查手机号是否可用',
+      title: error?.message || '获取验证码失败',
       icon: 'none',
     })
   }
@@ -277,7 +224,7 @@ const handleRegister = async () => {
     return
   }
 
-  if (!formData.code.trim()) {
+  if (!formData.captcha_code.trim()) {
     uni.showToast({
       title: '请输入验证码',
       icon: 'none',
@@ -340,10 +287,11 @@ const handleRegister = async () => {
       title: '注册中...',
     })
 
-    // 调用短信注册API
-    const res = await smsRegisterAPI({
+    // 调用图片验证码注册API
+    const res = await captchaRegisterAPI({
       phone: formData.phone,
-      code: formData.code,
+      captcha_id: formData.captcha_id,
+      captcha_code: formData.captcha_code,
       password: formData.password,
       password_confirmation: formData.password_confirmation,
       withdraw_password: formData.withdraw_password,
@@ -367,6 +315,9 @@ const handleRegister = async () => {
   } catch (error: any) {
     uni.hideLoading()
 
+    // 刷新验证码
+    refreshCaptcha()
+
     // 显示详细错误信息
     if (error?.errors) {
       // 获取第一个具体错误信息
@@ -388,10 +339,10 @@ const handleRegister = async () => {
   }
 }
 
-// 前往图形验证码注册页面
-const goToCaptchaRegister = () => {
+// 前往短信验证码注册页面
+const goToSmsRegister = () => {
   uni.navigateTo({
-    url: '/pages/register/captcha',
+    url: '/pages/register/index',
   })
 }
 
@@ -489,15 +440,25 @@ page {
         height: 80rpx;
         font-size: 28rpx;
       }
-
-      .send-code-btn {
-        font-size: 24rpx;
-        color: #3498db;
-        padding: 6rpx 20rpx;
-        border-radius: 6rpx;
-        background-color: rgba(52, 152, 219, 0.1);
-
-        &.disabled {
+      
+      .captcha-container {
+        width: 120rpx;
+        height: 60rpx;
+        border-radius: 4rpx;
+        overflow: hidden;
+        
+        .captcha-image {
+          width: 100%;
+          height: 100%;
+        }
+        
+        .captcha-loading {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20rpx;
           color: #999;
           background-color: #f0f0f0;
         }
@@ -580,4 +541,4 @@ page {
     }
   }
 }
-</style>
+</style> 

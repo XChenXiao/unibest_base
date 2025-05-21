@@ -27,6 +27,7 @@ interface NavigateToOptions {
        "/pages/my/wallet" |
        "/pages/my/wechat-payment-setting" |
        "/pages/my/withdraw" |
+       "/pages/register/captcha" |
        "/pages/register/index" |
        "/pages/team/index" |
        "/pages/team/invite-poster" |

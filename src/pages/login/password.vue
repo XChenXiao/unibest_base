@@ -31,7 +31,7 @@
             inputmode="numeric"
             maxlength="11"
             placeholder="请输入手机号码"
-            v-model="formData.mobile"
+            v-model="formData.login_id"
           />
         </view>
       </view>
@@ -43,13 +43,13 @@
           <input 
             class="form-control" 
             type="text"
-            :password="!showPassword"
+            :password="!formData.showPassword"
             placeholder="请输入密码"
             v-model="formData.password"
           />
           <text 
             class="uni-icons password-toggle" 
-            :class="[showPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
+            :class="[formData.showPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
             @click="togglePasswordVisibility"
           ></text>
         </view>
@@ -61,110 +61,84 @@
       
       <view class="login-options">
         <text class="option-link" @click="goToSmsLogin">验证码登录</text>
-        <text class="option-link" @click="goToRegister">立即注册</text>
+        <text class="option-link" @click="goToResetPassword">忘记密码</text>
+      </view>
+
+      <view class="register-link">
+        <text>没有账号？</text>
+        <text class="register-text" @click="goToSmsRegister">短信验证码注册</text>
+        <text> | </text>
+        <text class="register-text" @click="goToCaptchaRegister">图形验证码注册</text>
       </view>
     </view>
     
     <!-- 底部版权信息 -->
     <view class="login-footer">
-      <text>© 2025 理财管理平台 版权所有</text>
+      <text>版权所有 © 2023-2024 金融交易平台</text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useUserStore } from '@/store';
 import { loginAPI } from '@/service/index/auth';
 
 // 表单数据
 const formData = reactive({
-  mobile: '',
-  password: ''
+  login_id: '',
+  password: '',
+  showPassword: false
 });
 
-// 控制密码可见性
-const showPassword = ref(false);
-
-// 用户Store
+// 用户状态
 const userStore = useUserStore();
 
-// 切换密码可见性
+// 切换密码显示
 const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value;
+  formData.showPassword = !formData.showPassword;
 };
 
-// 登录处理
+// 检查表单是否填写完整
+const isFormValid = computed(() => {
+  return formData.login_id.trim() !== '' && formData.password.trim() !== '';
+});
+
+// 处理登录
 const handleLogin = async () => {
-  // 表单验证
-  if (!formData.mobile.trim()) {
+  if (!isFormValid.value) {
     uni.showToast({
-      title: '请输入手机号',
+      title: '请填写完整信息',
       icon: 'none'
     });
     return;
   }
-  
-  if (!/^1\d{10}$/.test(formData.mobile)) {
-    uni.showToast({
-      title: '请输入正确的手机号',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  if (!formData.password.trim()) {
-    uni.showToast({
-      title: '请输入密码',
-      icon: 'none'
-    });
-    return;
-  }
-  
-  // 执行登录
+
   try {
-    // 显示登录中提示
     uni.showLoading({
       title: '登录中...'
     });
-    
-    // 调用实际登录API
+
     const res = await loginAPI({
-      mobile: formData.mobile,
+      login_id: formData.login_id,
       password: formData.password
     });
-    
-    // 隐藏加载
+
     uni.hideLoading();
-    
+
     if (res && res.user) {
-      const { user, access_token, token_type } = res;
-      
-      // 保存用户信息和Token
+      // 保存用户信息和token
       userStore.setUserInfo({
-        ...user,
-        token: access_token
+        ...res.user,
+        token: res.access_token
       });
-      
-      // 登录成功后立即获取完整的用户信息和实名认证状态
-      try {
-        console.log('登录成功，正在获取最新用户信息...');
-        // 一次性获取完整用户信息，包含认证状态
-        const infoUpdated = await userStore.fetchUserInfo();
-        if (infoUpdated) {
-          console.log('用户信息和认证状态已更新:', userStore.verificationStatus);
-        }
-      } catch (error) {
-        console.error('获取用户信息失败:', error);
-        // 错误不影响登录流程
-      }
       
       uni.showToast({
         title: '登录成功',
         icon: 'success'
       });
-      
-      // 跳转到首页
+
+      // 延迟跳转到首页
       setTimeout(() => {
         uni.switchTab({
           url: '/pages/index/index'
@@ -194,10 +168,17 @@ const goToResetPassword = () => {
   });
 };
 
-// 前往注册页面
-const goToRegister = () => {
+// 前往短信验证码注册页面
+const goToSmsRegister = () => {
   uni.navigateTo({
     url: '/pages/register/index'
+  });
+};
+
+// 前往图形验证码注册页面
+const goToCaptchaRegister = () => {
+  uni.navigateTo({
+    url: '/pages/register/captcha'
   });
 };
 </script>
@@ -369,5 +350,17 @@ page {
   color: rgba(255, 255, 255, 0.6);
   font-size: 24rpx;
   margin-top: auto;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 20rpx;
+  color: #333;
+  font-size: 28rpx;
+}
+
+.register-text {
+  color: #3498db;
+  padding: 0 10rpx;
 }
 </style> 

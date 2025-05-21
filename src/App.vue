@@ -8,7 +8,6 @@ import { usePlatformStore } from '@/store/platform'
 import { getNeedLoginPages } from '@/utils'
 import { pages } from '@/pages.json'
 import { tabbarStore } from '@/components/fg-tabbar/tabbar'
-import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import { API_URL } from '@/config/api'
 
 // 初始化用户状态
@@ -21,8 +20,8 @@ const platformStore = usePlatformStore()
 // 最小更新时间间隔(毫秒)：5分钟
 const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
 
-// 公告弹窗状态
-const showAnnouncementPopup = ref(false)
+// 移除公告弹窗状态
+// const showAnnouncementPopup = ref(false)
 const appOpenCount = ref(0)
 // 添加一个标志位，防止多次重定向
 const isRedirecting = ref(false)
@@ -68,8 +67,8 @@ onLaunch(async () => {
   //   navigateToLogin()
   // }
 
-  // 应用启动时检查是否需要显示公告
-  checkAndShowAnnouncement()
+  // 移除公告检查代码
+  // checkAndShowAnnouncement()
 })
 
 // 关闭启动封面
@@ -124,58 +123,94 @@ const navigateToLogin = () => {
   })
 }
 
-// 检查并显示公告
-const checkAndShowAnnouncement = async () => {
-  try {
-    console.log('应用检查最新公告')
+// 移除公告检查方法
+// const checkAndShowAnnouncement = async () => {
+//   try {
+//     console.log('应用检查最新公告')
+//
+//     // 检查当前页面是否在白名单中，如果在白名单中且不是首页，则不显示公告
+//     const pages = getCurrentPages()
+//     if (pages.length > 0) {
+//       const currentPage = pages[pages.length - 1]
+//       const currentPath = '/' + currentPage.route
+//
+//       // 特别排除注册和登录相关页面显示公告
+//       if (currentPath.includes('/pages/register/') ||
+//           (currentPath.includes('/pages/login/') && !currentPath.includes('/pages/login/index'))) {
+//         console.log('当前在注册/登录流程中，暂不显示公告:', currentPath)
+//         return
+//       }
+//     }
+//
+//     // 导入公告服务API
+//     const { getLatestAnnouncementAPI } = await import('@/service/index/message')
+//
+//     try {
+//       // 获取最新公告
+//       const result = await getLatestAnnouncementAPI()
+//
+//       // 如果有公告，则显示弹窗
+//       if (result.status === 'success' && result.data) {
+//         // 检查此公告是否已经展示过
+//         const shownAnnouncements = uni.getStorageSync('shown_announcements') || []
+//         const hasShown = shownAnnouncements.includes(result.data.id)
+//
+//         // 如果没有展示过，则显示弹窗
+//         if (!hasShown) {
+//           console.log('显示最新公告弹窗')
+//           // 延迟显示，确保应用已完全加载
+//           setTimeout(() => {
+//             showAnnouncementPopup.value = true
+//           }, 800)
+//         } else {
+//           console.log('此公告已经展示过，不再显示')
+//         }
+//       } else {
+//         console.log('没有公告可显示')
+//       }
+//     } catch (error) {
+//       console.error('获取公告失败:', error)
+//     }
+//   } catch (error) {
+//     console.error('检查公告失败:', error)
+//   }
+// }
 
-    // 导入公告服务API
-    const { getLatestAnnouncementAPI } = await import('@/service/index/message')
-
-    try {
-      // 获取最新公告
-      const result = await getLatestAnnouncementAPI()
-
-      // 如果有公告，则显示弹窗
-      if (result.status === 'success' && result.data) {
-        // 检查此公告是否已经展示过
-        const shownAnnouncements = uni.getStorageSync('shown_announcements') || []
-        const hasShown = shownAnnouncements.includes(result.data.id)
-
-        // 如果没有展示过，则显示弹窗
-        if (!hasShown) {
-          console.log('显示最新公告弹窗')
-          // 延迟显示，确保应用已完全加载
-          setTimeout(() => {
-            showAnnouncementPopup.value = true
-          }, 800)
-        } else {
-          console.log('此公告已经展示过，不再显示')
-        }
-      } else {
-        console.log('没有公告可显示')
-      }
-    } catch (error) {
-      console.error('获取公告失败:', error)
-    }
-  } catch (error) {
-    console.error('检查公告失败:', error)
-  }
-}
-
-// 处理公告弹窗关闭事件
-const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
-  console.log('公告弹窗关闭:', data)
-}
+// 移除处理公告弹窗关闭事件的方法
+// const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
+//   console.log('公告弹窗关闭:', data)
+// }
 
 onShow(() => {
   // 每次应用显示时刷新平台功能开关设置
   console.log('应用显示，刷新平台功能开关设置...')
   platformStore.fetchPlatformSettings()
 
-  // 应用恢复前台时也检查是否需要显示公告
-  if (!showAnnouncementPopup.value) {
-    checkAndShowAnnouncement()
+  // 移除公告显示检查
+  // if (!showAnnouncementPopup.value) {
+  //   checkAndShowAnnouncement()
+  // }
+
+  // 检查是否在白名单页面，避免重复登录检查
+  const pages = getCurrentPages()
+
+  if (pages.length > 0) {
+    const currentPage = pages[pages.length - 1]
+    const currentPath = '/' + currentPage.route
+
+    const whitelistPaths = [
+      '/pages/login/index',
+      '/pages/register/index',
+      '/pages/login/password',
+      '/pages/login/reset-password',
+      '/pages/index/index',
+    ]
+
+    // 如果当前页面在白名单中，不做额外处理
+    if (whitelistPaths.some((path) => currentPath.startsWith(path))) {
+      console.log('当前页面在白名单中，无需处理登录状态:', currentPath)
+      return
+    }
   }
 })
 
@@ -185,8 +220,8 @@ onHide(() => {
 </script>
 
 <template>
-  <!-- 全局公告弹窗 -->
-  <AnnouncementPopup v-model="showAnnouncementPopup" @close="handleAnnouncementClose" />
+  <!-- 移除全局公告弹窗 -->
+  <!-- <AnnouncementPopup v-model="showAnnouncementPopup" @close="handleAnnouncementClose" /> -->
 </template>
 
 <style lang="scss">

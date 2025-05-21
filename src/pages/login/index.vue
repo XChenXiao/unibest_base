@@ -57,25 +57,27 @@
       <button class="login-btn" @click="handleLogin">登 录</button>
 
       <view class="login-options">
-        <!-- <text class="option-link" @click="goToPasswordLogin">密码登录</text> -->
+        <text class="option-link" @click="goToPasswordLogin">密码登录</text>
         <text class="option-link" @click="goToResetPassword">忘记密码</text>
       </view>
 
       <view class="register-link">
-        <text>还没有账号？</text>
-        <text class="register-text" @click="goToRegister">立即注册</text>
+        <text>没有账号？</text>
+        <text class="register-text" @click="goToSmsRegister">短信验证码注册</text>
+        <text> | </text>
+        <text class="register-text" @click="goToCaptchaRegister">图形验证码注册</text>
       </view>
     </view>
 
     <!-- 底部版权信息 -->
     <view class="login-footer">
-      <text>© 2025 理财管理平台 版权所有</text>
+      <text>版权所有 © 2023-2024 金融交易平台</text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onUnmounted } from 'vue'
+import { ref, reactive, onUnmounted, computed } from 'vue'
 import { useUserStore } from '@/store'
 import { sendSmsCodeAPI, smsLoginAPI } from '@/service/index/auth'
 
@@ -89,7 +91,7 @@ const formData = reactive({
 const userStore = useUserStore()
 
 // 验证码倒计时
-const cooldown = ref(0)
+const cooldown = ref<number>(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
 // 组件销毁时清除定时器
@@ -97,6 +99,11 @@ onUnmounted(() => {
   if (timer) {
     clearInterval(timer)
   }
+})
+
+// 检查是否可以登录
+const canLogin = computed(() => {
+  return formData.phone.trim() !== '' && formData.code.trim() !== ''
 })
 
 // 发送验证码
@@ -156,7 +163,7 @@ const sendCode = async () => {
       }, 1000)
     } else {
       uni.showToast({
-        title: res?.message || '发送失败，请重试',
+        title: res?.data.message || '发送失败，请重试',
         icon: 'none',
       })
     }
@@ -164,26 +171,18 @@ const sendCode = async () => {
     uni.hideLoading()
 
     uni.showToast({
-      title: error?.message || '发送失败，请重试',
+      title: '发送失败，请检查手机号是否可用',
       icon: 'none',
     })
   }
 }
 
-// 登录处理
+// 处理登录
 const handleLogin = async () => {
-  // 表单验证
+  // 验证输入
   if (!formData.phone.trim()) {
     uni.showToast({
       title: '请输入手机号',
-      icon: 'none',
-    })
-    return
-  }
-
-  if (!/^1\d{10}$/.test(formData.phone)) {
-    uni.showToast({
-      title: '请输入正确的手机号',
       icon: 'none',
     })
     return
@@ -197,7 +196,6 @@ const handleLogin = async () => {
     return
   }
 
-  // 执行登录
   try {
     // 显示登录中提示
     uni.showLoading({
@@ -210,79 +208,49 @@ const handleLogin = async () => {
       code: formData.code,
     })
 
-    // 隐藏加载
+    // 隐藏加载提示
     uni.hideLoading()
 
     if (res && res.status === 'success' && res.data) {
-      const userData = res.data
-
-      // 保存用户信息和Token
+      // 保存用户信息和token
       userStore.setUserInfo({
-        ...userData.user,
-        token: userData.access_token,
-      })
-
-      // 登录成功后立即获取完整的用户信息和实名认证状态
-      try {
-        console.log('登录成功，正在获取最新用户信息...')
-        // 一次性获取完整用户信息，包含认证状态
-        const infoUpdated = await userStore.fetchUserInfo()
-        if (infoUpdated) {
-          console.log('用户信息和认证状态已更新:', userStore.verificationStatus)
-        }
-      } catch (error) {
-        console.error('获取用户信息失败:', error)
-        // 错误不影响登录流程
-      }
-
+        ...res.data.user,
+        token: res.data.access_token
+      });
+      
       uni.showToast({
         title: '登录成功',
         icon: 'success',
       })
 
-      // 获取路由中的redirect参数
-      const pages = getCurrentPages()
-      const currentPage = pages[pages.length - 1]
-      // @ts-ignore
-      const query = currentPage.$page?.options || {}
-      const redirect = query.redirect || '/pages/index/index'
-
-      console.log('登录成功，将跳转到:', redirect)
-
-      // 延迟跳转，给用户看到成功提示的时间
+      // 登录成功后的操作
+      // 例如：保存token、跳转到首页等
       setTimeout(() => {
-        // 判断redirect的页面类型来选择跳转方式
-        if (
-          redirect.startsWith('/pages/index/') ||
-          redirect.startsWith('/pages/home/') ||
-          redirect.startsWith('/pages/market/') ||
-          redirect.startsWith('/pages/my/')
-        ) {
-          // TabBar页面使用switchTab
-          uni.switchTab({
-            url: redirect,
-          })
-        } else {
-          // 非TabBar页面使用redirectTo
-          uni.redirectTo({
-            url: redirect,
-          })
-        }
+        uni.switchTab({
+          url: '/pages/index/index',
+        })
       }, 1500)
     }
   } catch (error: any) {
     uni.hideLoading()
     uni.showToast({
-      title: error?.message || '登录失败，请重试',
+      title: error?.data?.message || error?.message || '登录失败，请重试',
       icon: 'none',
     })
   }
 }
 
-// 前往注册页面
-const goToRegister = () => {
+// 前往短信验证码注册页面
+const goToSmsRegister = () => {
   uni.navigateTo({
     url: '/pages/register/index',
+  })
+}
+
+// 前往图形验证码注册页面
+const goToCaptchaRegister = () => {
+  uni.navigateTo({
+    url: '/pages/register/captcha',
   })
 }
 

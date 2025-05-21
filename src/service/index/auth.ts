@@ -25,11 +25,40 @@ export interface ISmsRegisterParams {
 }
 
 /**
+ * 图片验证码注册请求参数接口
+ */
+export interface ICaptchaRegisterParams {
+  phone: string
+  captcha_id: string
+  captcha_code: string
+  password: string
+  password_confirmation: string
+  withdraw_password: string
+  referrer_invite_code?: string
+  name?: string
+}
+
+/**
  * 发送短信验证码请求参数接口
  */
 export interface ISendSmsParams {
   mobile: string
   type: 'login' | 'register' | 'reset_password' | 'withdraw'
+}
+
+/**
+ * 生成图片验证码请求参数接口
+ */
+export interface IGenerateCaptchaParams {
+  type?: 'login' | 'register' | 'reset_password' | 'withdraw'
+}
+
+/**
+ * 验证图片验证码请求参数接口
+ */
+export interface IVerifyCaptchaParams {
+  captcha_id: string
+  code: string
 }
 
 /**
@@ -39,6 +68,17 @@ export interface ILoginParams {
   login_id?: string
   mobile?: string
   password: string
+}
+
+/**
+ * 图片验证码登录请求参数接口 
+ */
+export interface ICaptchaLoginParams {
+  login_id?: string
+  mobile?: string
+  password: string
+  captcha_id: string
+  captcha_code: string
 }
 
 /**
@@ -95,6 +135,38 @@ export const sendSmsCodeAPI = (params: ISendSmsParams) => {
 }
 
 /**
+ * 生成图片验证码API
+ * @param params 生成验证码参数
+ * @returns Promise
+ */
+export const generateCaptchaAPI = (params: IGenerateCaptchaParams = {}) => {
+  return http.post<{
+    status: string
+    message: string
+    data: {
+      captcha_id: string
+      captcha_image: string
+      expires_in: number
+    }
+  }>('/api/captcha/generate-image', params)
+}
+
+/**
+ * 验证图片验证码API
+ * @param params 验证码参数
+ * @returns Promise
+ */
+export const verifyCaptchaAPI = (params: IVerifyCaptchaParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      type: string
+    }
+  }>('/api/captcha/verify', params)
+}
+
+/**
  * 短信验证码注册API
  * @param params 短信注册参数
  * @returns Promise
@@ -112,6 +184,23 @@ export const smsRegisterAPI = (params: ISmsRegisterParams) => {
 }
 
 /**
+ * 图片验证码注册API
+ * @param params 图片验证码注册参数
+ * @returns Promise
+ */
+export const captchaRegisterAPI = (params: ICaptchaRegisterParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      user: IUserInfo
+      access_token: string
+      token_type: string
+    }
+  }>('/api/register-with-captcha', params)
+}
+
+/**
  * 用户登录API
  * @param params 登录参数
  * @returns Promise
@@ -122,6 +211,23 @@ export const loginAPI = (params: ILoginParams) => {
     access_token: string
     token_type: string
   }>('/api/login', params)
+}
+
+/**
+ * 图片验证码登录API
+ * @param params 图片验证码登录参数
+ * @returns Promise
+ */
+export const captchaLoginAPI = (params: ICaptchaLoginParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      user: IUserInfo
+      access_token: string
+      token_type: string
+    }
+  }>('/api/login-with-captcha', params)
 }
 
 /**
