@@ -52,19 +52,21 @@ onLaunch(async () => {
       } else {
         // 清除过期的token
         userStore.clearUserInfo()
-        // 直接导航到登录页
-        navigateToLogin()
+        // 不再强制导航到登录页，依靠路由拦截器处理
+        // navigateToLogin()
       }
     } catch (error) {
       // 出错时清除token
       userStore.clearUserInfo()
-      // 直接导航到登录页
-      navigateToLogin()
+      // 不再强制导航到登录页，依靠路由拦截器处理
+      // navigateToLogin()
     }
-  } else {
-    // 直接导航到登录页
-    navigateToLogin()
   }
+  // 移除else分支中的自动跳转逻辑
+  // else {
+  //   // 直接导航到登录页
+  //   navigateToLogin()
+  // }
 
   // 应用启动时检查是否需要显示公告
   checkAndShowAnnouncement()
