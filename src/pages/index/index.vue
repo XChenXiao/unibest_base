@@ -125,8 +125,8 @@ onMounted(() => {
 // 监听页面显示（每次进入页面都会调用）
 onShow(() => {
   console.log('首页被显示')
-  // 每次页面激活时刷新用户所有信息
-  refreshUserAllData()
+  // 每次页面激活时只刷新基本用户信息，不包括银行卡和团队信息
+  refreshBasicUserData()
   // 每次页面激活时都检查用户实名认证状态
   checkVerificationStatusAndShowPopups()
 })
@@ -353,11 +353,11 @@ const handleVerificationGuideClose = (data: { later: boolean }) => {
   }
 }
 
-// 刷新用户所有信息
-const refreshUserAllData = async () => {
+// 刷新用户基本信息
+const refreshBasicUserData = async () => {
   if (userStore.isLogined) {
-    console.log('刷新用户所有信息')
-    await userManagerStore.refreshAllUserData()
+    console.log('刷新用户基本信息')
+    await userManagerStore.refreshBasicUserData()
   } else {
     console.log('用户未登录，不刷新用户数据')
   }

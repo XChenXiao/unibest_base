@@ -64,9 +64,61 @@ export const useUserManagerStore = defineStore('userManager', () => {
     }
   }
 
+  // 获取基本用户信息（只包括用户信息和认证状态，不包括银行卡和团队信息）
+  const getBasicUserInfo = async (forceUpdate = false) => {
+    const userStore = useUserStore()
+    const verificationStore = useVerificationStore()
+    const messageStore = useMessageStore()
+
+    // 检查上次更新时间
+    const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0
+    const now = Date.now()
+    const MIN_UPDATE_INTERVAL = 5 * 60 * 1000 // 5分钟
+
+    // 是否需要更新
+    const shouldUpdate =
+      forceUpdate || !lastUpdateTime || now - lastUpdateTime > MIN_UPDATE_INTERVAL
+
+    // 判断是否有token
+    if (!userStore.userInfo.token) {
+      return null
+    }
+
+    if (shouldUpdate) {
+      console.log('获取基本用户信息数据')
+
+      // 并行获取基本数据
+      const results = await Promise.allSettled([
+        userStore.fetchUserInfo(),
+        verificationStore.fetchVerificationStatus(),
+        messageStore.fetchUnreadMessageCount(),
+      ])
+
+      // 检查用户基本信息是否成功获取
+      const userInfoSuccess = results[0].status === 'fulfilled' && results[0].value
+      if (!userInfoSuccess) {
+        console.error('获取用户基本信息失败，可能需要重新登录')
+      }
+    } else {
+      console.log('使用缓存的用户基本信息数据')
+    }
+
+    // 返回基本数据
+    return {
+      userInfo: userStore.userInfo,
+      verificationInfo: verificationStore.verificationInfo,
+      messageInfo: messageStore.messageInfo,
+    }
+  }
+
   // 刷新所有用户相关数据
   const refreshAllUserData = async () => {
     return await getUserCompleteInfo(true)
+  }
+
+  // 刷新基本用户数据（不包括银行卡和团队信息）
+  const refreshBasicUserData = async () => {
+    return await getBasicUserInfo(true)
   }
 
   // 清除所有用户信息（退出登录时使用）
@@ -86,7 +138,9 @@ export const useUserManagerStore = defineStore('userManager', () => {
 
   return {
     getUserCompleteInfo,
+    getBasicUserInfo,
     refreshAllUserData,
+    refreshBasicUserData,
     clearAllUserData,
   }
 })

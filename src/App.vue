@@ -86,7 +86,8 @@ onLaunch(async () => {
   if (userStore.isLogined) {
     console.log('检测到用户token，获取用户信息和平台设置')
     try {
-      // 获取用户信息 - 使用用户管理器
+      // 获取用户信息 - 使用用户管理器获取完整用户信息（包括银行卡和团队信息）
+      // 这是首次启动时的完整请求，其他页面应该使用特定的API来避免重复请求
       const userCompleteInfo = await userManagerStore.getUserCompleteInfo(true)
 
       if (userCompleteInfo) {
