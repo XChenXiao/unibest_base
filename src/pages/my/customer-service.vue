@@ -15,7 +15,7 @@
       <wd-loading color="#3498db" />
       <text class="loading-text">加载中...</text>
     </view>
-    
+
     <!-- 加载失败提示 -->
     <view class="error-container" v-else-if="error">
       <view class="error-icon">
@@ -24,14 +24,14 @@
       <text class="error-text">{{ errorMsg }}</text>
       <wd-button type="primary" size="small" @click="loadData">重新加载</wd-button>
     </view>
-    
+
     <!-- 客服信息内容 -->
     <block v-else-if="serviceInfo">
       <view class="service-header">
         <view class="service-title">客服中心</view>
         <view class="service-subtitle">全天候为您提供优质服务</view>
       </view>
-      
+
       <!-- 调试信息面板 -->
       <view class="debug-panel" v-if="isDebug">
         <view class="debug-title">调试信息:</view>
@@ -39,12 +39,12 @@
         <view class="debug-item">群号: {{ serviceInfo.promotion_group_number || '无' }}</view>
         <view class="debug-item">二维码URL: {{ qrcodeUrl || '无' }}</view>
       </view>
-      
+
       <!-- 二维码区域 -->
       <view class="qrcode-section">
         <view class="qrcode-container">
-          <image 
-            class="qrcode-image" 
+          <image
+            class="qrcode-image"
             src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=客服信息"
             mode="aspectFit"
           ></image>
@@ -53,7 +53,7 @@
           <view class="qrcode-url" v-if="isDebug">{{ qrcodeUrl || '使用固定二维码图片' }}</view>
         </view>
       </view>
-      
+
       <view class="info-section">
         <view class="info-card">
           <view class="info-title">客服信息</view>
@@ -61,7 +61,7 @@
             <text class="info-text">{{ serviceInfo.promotion_info }}</text>
           </view>
         </view>
-        
+
         <view class="info-card">
           <view class="info-title">交流群号</view>
           <view class="info-content group-content">
@@ -73,7 +73,7 @@
           </view>
         </view>
       </view>
-      
+
       <view class="contact-tips">
         <view class="tip-item">
           <wd-icon name="time" size="18" color="#3498db" />
@@ -84,13 +84,13 @@
           <text class="tip-text">请勿轻信任何索要账号、密码的要求</text>
         </view>
       </view>
-      
+
       <!-- 调试按钮 -->
       <view class="debug-button" @click="toggleDebug">
         <wd-icon name="setting" size="16" color="#999" />
       </view>
     </block>
-    
+
     <!-- 无数据提示 -->
     <view class="empty-container" v-else>
       <wd-icon name="warn-outline" size="60" color="#bdc3c7" />
@@ -104,7 +104,7 @@ import { ref, computed, onMounted } from 'vue'
 import { getCustomerServiceInfoAPI, CustomerServiceInfo } from '@/service/app/customer-service'
 
 defineOptions({
-  name: 'CustomerService'
+  name: 'CustomerService',
 })
 
 // 数据
@@ -117,44 +117,45 @@ const imageError = ref(false) // 图片加载错误标志
 
 // 计算属性：处理二维码URL
 const qrcodeUrl = computed(() => {
-  if (!serviceInfo.value) return '';
-  
-  let url = '';
-  
+  if (!serviceInfo.value) return ''
+
+  let url = ''
+
   // 优先从qrcode_details获取URL
   if (serviceInfo.value.qrcode_details && serviceInfo.value.qrcode_details.url) {
-    url = serviceInfo.value.qrcode_details.url;
+    url = serviceInfo.value.qrcode_details.url
   }
   // 如果qrcode_details不存在，尝试从promotion_qrcode_url获取
   else if (serviceInfo.value.promotion_qrcode_url) {
-    url = serviceInfo.value.promotion_qrcode_url;
+    url = serviceInfo.value.promotion_qrcode_url
   }
-  
+
   // 如果图片加载出错，则返回空字符串
   if (imageError.value) {
-    return '';
+    return ''
   }
-  
+
   // 直接返回后端提供的URL，不做任何处理
-  return url;
+  return url
 })
 
 // 本地默认数据（API失败时使用）
 const defaultServiceInfo: CustomerServiceInfo = {
-  promotion_info: "测试推广信息",
-  promotion_group_number: "测试推广群号",
+  promotion_info: '测试推广信息',
+  promotion_group_number: '测试推广群号',
   promotion_qrcode_url: null,
-  is_active: true
+  is_active: true,
 }
 
 // 处理API返回的不完整数据，填充默认值
 const processApiData = (data: any): CustomerServiceInfo => {
   return {
     promotion_info: data.promotion_info || defaultServiceInfo.promotion_info,
-    promotion_group_number: data.promotion_group_number || defaultServiceInfo.promotion_group_number,
+    promotion_group_number:
+      data.promotion_group_number || defaultServiceInfo.promotion_group_number,
     promotion_qrcode_url: data.promotion_qrcode_url || null,
     qrcode_details: data.qrcode_details || null,
-    is_active: data.is_active !== undefined ? data.is_active : true
+    is_active: data.is_active !== undefined ? data.is_active : true,
   }
 }
 
@@ -168,11 +169,11 @@ const loadData = async () => {
   loading.value = true
   error.value = false
   imageError.value = false
-  
+
   try {
     const res = await getCustomerServiceInfoAPI()
     console.log('API返回数据:', res)
-    
+
     if (res && res.data && res.data.data) {
       // 处理API返回的数据
       serviceInfo.value = processApiData(res.data.data)
@@ -197,18 +198,18 @@ const handleImageError = (e: any) => {
   console.error('二维码图片加载失败:', e)
   console.error('尝试加载的URL:', qrcodeUrl.value)
   imageError.value = true
-  
+
   uni.showToast({
     title: '二维码图片加载失败',
-    icon: 'none'
+    icon: 'none',
   })
-  
+
   // 添加调试信息
   if (!isDebug.value) {
     isDebug.value = true // 自动打开调试面板
     uni.showToast({
       title: '已开启调试模式，查看URL',
-      icon: 'none'
+      icon: 'none',
     })
   }
 }
@@ -218,19 +219,19 @@ const copyGroupNumber = () => {
   if (!serviceInfo.value?.promotion_group_number) {
     uni.showToast({
       title: '群号不可用',
-      icon: 'none'
+      icon: 'none',
     })
     return
   }
-  
+
   uni.setClipboardData({
     data: serviceInfo.value.promotion_group_number,
     success: () => {
       uni.showToast({
         title: '复制成功',
-        icon: 'success'
+        icon: 'success',
       })
-    }
+    },
   })
 }
 
@@ -242,23 +243,24 @@ const toggleDebug = () => {
 
 <style>
 page {
-  background-color: #f5f5f5;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f5f5;
 }
 
 .container {
-  min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 30rpx;
   position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  padding: 30rpx;
+  background-color: #f5f5f5;
 }
-
 /* 加载状态 */
 .loading-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 400rpx;
 }
 
@@ -267,13 +269,12 @@ page {
   font-size: 28rpx;
   color: #666;
 }
-
 /* 错误状态 */
 .error-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   padding: 60rpx 0;
 }
 
@@ -282,17 +283,16 @@ page {
 }
 
 .error-text {
+  margin-bottom: 30rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 30rpx;
 }
-
 /* 空状态 */
 .empty-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 400rpx;
 }
 
@@ -301,39 +301,37 @@ page {
   font-size: 28rpx;
   color: #999;
 }
-
 /* 头部样式 */
 .service-header {
-  text-align: center;
   margin-bottom: 40rpx;
+  text-align: center;
 }
 
 .service-title {
+  margin-bottom: 10rpx;
   font-size: 40rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10rpx;
 }
 
 .service-subtitle {
   font-size: 26rpx;
   color: #666;
 }
-
 /* 调试面板 */
 .debug-panel {
-  background-color: #000;
-  color: #fff;
   padding: 20rpx;
-  border-radius: 10rpx;
   margin-bottom: 20rpx;
-  font-size: 24rpx;
   font-family: monospace;
+  font-size: 24rpx;
+  color: #fff;
+  background-color: #000;
+  border-radius: 10rpx;
 }
 
 .debug-title {
-  font-weight: bold;
   margin-bottom: 10rpx;
+  font-weight: bold;
   color: #ff9800;
 }
 
@@ -344,27 +342,28 @@ page {
 
 .debug-button {
   position: absolute;
-  bottom: 50rpx;
   right: 50rpx;
-  background-color: rgba(255, 255, 255, 0.8);
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 30rpx;
+  bottom: 50rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 60rpx;
+  height: 60rpx;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 30rpx;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
 }
-
 /* 二维码区域 */
 .qrcode-section {
-  background-color: #fff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
+  width: 100%;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
 .qrcode-container {
@@ -387,34 +386,36 @@ page {
 }
 
 .qrcode-url {
+  max-width: 400rpx;
   margin-top: 10rpx;
   font-size: 20rpx;
   color: #999;
-  word-break: break-all;
-  max-width: 400rpx;
   text-align: center;
+  word-break: break-all;
 }
-
 /* 信息区域 */
 .info-section {
+  width: 100%;
   margin-bottom: 30rpx;
 }
 
 .info-card {
-  background-color: #fff;
-  border-radius: 16rpx;
+  box-sizing: border-box;
+  width: 100%;
   padding: 30rpx;
   margin-bottom: 20rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
   box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
 .info-title {
+  padding-left: 20rpx;
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 20rpx;
   border-left: 8rpx solid #3498db;
-  padding-left: 20rpx;
 }
 
 .info-content {
@@ -423,41 +424,42 @@ page {
 
 .info-text {
   font-size: 28rpx;
-  color: #666;
   line-height: 1.5;
+  color: #666;
 }
 
 .group-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .group-number {
   font-size: 32rpx;
-  color: #333;
   font-weight: 500;
+  color: #333;
 }
 
 .copy-button {
   display: flex;
   align-items: center;
-  background-color: #ecf0f1;
   padding: 10rpx 20rpx;
+  background-color: #ecf0f1;
   border-radius: 30rpx;
 }
 
 .copy-text {
+  margin-left: 6rpx;
   font-size: 24rpx;
   color: #3498db;
-  margin-left: 6rpx;
 }
-
 /* 提示区域 */
 .contact-tips {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 30rpx;
   background-color: #fff;
   border-radius: 16rpx;
-  padding: 30rpx;
   box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -472,8 +474,8 @@ page {
 }
 
 .tip-text {
+  margin-left: 10rpx;
   font-size: 26rpx;
   color: #666;
-  margin-left: 10rpx;
 }
-</style> 
+</style>

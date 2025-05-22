@@ -208,7 +208,7 @@ const navigateToTeam = () => {
 }
 </script>
 
-<style>
+<style lang="scss">
 /* 顶部区域 */
 .header {
   position: relative;
@@ -310,32 +310,29 @@ const navigateToTeam = () => {
 .account-icon {
   background-color: rgba(231, 76, 60, 1);
 }
-
 /* 菜单文字 */
 .menu-label {
   font-size: 24rpx;
   font-weight: 500;
   color: #ffffff;
   &.line1 {
-    color: black;
+    color: rgb(0, 0, 0);
   }
 }
-
 /* 第二行菜单容器 */
 .second-row-menu {
+  padding: 30rpx 30rpx 0;
+  margin: 30rpx 30rpx 0;
   background: linear-gradient(135deg, #3498db, #1a5276);
   border-radius: 20rpx;
-  margin: 30rpx 30rpx 0;
-  padding: 30rpx 30rpx 0;
 }
-
 /* 第一行菜单容器 */
 .first-row-menu {
-  background-image: url('@/static/images/bg/topHeader.png');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
   padding-bottom: 170rpx;
   /* border-radius: 20rpx; */
   margin-top: 17rpx;
+  background-image: url('@/static/images/bg/topHeader.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 </style>

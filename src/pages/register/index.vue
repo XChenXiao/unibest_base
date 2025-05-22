@@ -9,7 +9,6 @@
   <view class="register-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-
     <!-- 标题区域 -->
     <view class="title-area">
       <text class="main-title">注册账号</text>
@@ -403,7 +402,7 @@ const handleRegister = async () => {
     }
 
     uni.showToast({
-      title: error.data.?.message || '注册失败，请重试',
+      title: error.data?.message || '注册失败，请重试',
       icon: 'none',
     })
   }
@@ -419,7 +418,7 @@ const goToCaptchaRegister = () => {
 // 前往登录页面
 const goToLogin = () => {
   uni.navigateTo({
-    url: '/pages/login/index',
+    url: '/pages/login/password',
   })
 }
 </script>

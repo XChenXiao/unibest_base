@@ -5,7 +5,7 @@ import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only'
 import { useUserStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { usePlatformStore } from '@/store/platform'
-import { getNeedLoginPages } from '@/utils'
+import { getNeedLoginPages, clearPageCache } from '@/utils'
 import { pages } from '@/pages.json'
 import { tabbarStore } from '@/components/fg-tabbar/tabbar'
 import { API_URL } from '@/config/api'
@@ -73,15 +73,12 @@ onLaunch(async () => {
   // 应用启动时，无论如何都重置登录重定向标志位
   // 这样即使上次应用异常退出，也能确保本次启动正常跳转到登录页
   uni.setStorageSync('redirecting_to_login', 'false')
-  console.log('应用启动，重置登录重定向标志位')
 
   // 保存白名单到本地缓存
   saveNoLoginPathsToStorage()
 
   // 初始化tabbar，设置首页索引为0
   tabbarStore.initTabbar()
-
-  console.log('应用启动，检查登录状态...')
 
   // 检查是否有本地存储的token
   if (userStore.isLogined) {
@@ -96,46 +93,6 @@ onLaunch(async () => {
         appStore.fetchBankCardOpenFee()
 
         // 获取缓存的上一次页面路径
-        const lastPagePath = getLastPageFromStorage()
-        if (
-          lastPagePath &&
-          lastPagePath !== '/pages/login/index' &&
-          lastPagePath !== '/pages/login/password'
-        ) {
-          // 如果有缓存的页面路径且不是登录页，跳转到该页面
-          console.log('从缓存恢复页面:', lastPagePath)
-
-          // 判断是否是tabbar页面
-          if (['/pages/index/index', '/pages/my/index'].includes(lastPagePath)) {
-            uni.switchTab({
-              url: lastPagePath,
-              fail: (err) => {
-                console.error('跳转到缓存页面失败，回到首页', err)
-                uni.switchTab({ url: '/pages/index/index' })
-              },
-            })
-          } else {
-            // 非tabbar页面使用reLaunch
-            uni.reLaunch({
-              url: lastPagePath,
-              fail: (err) => {
-                console.error('跳转到缓存页面失败，回到首页', err)
-                uni.switchTab({ url: '/pages/index/index' })
-              },
-            })
-          }
-        } else {
-          // 没有缓存的页面或是登录页，直接跳转到首页
-          uni.switchTab({
-            url: '/pages/index/index',
-            fail: (err) => {
-              console.error('跳转到首页失败，尝试使用reLaunch', err)
-              uni.reLaunch({
-                url: '/pages/index/index',
-              })
-            },
-          })
-        }
 
         // 关闭启动封面
         closeSplashscreen()
@@ -144,6 +101,8 @@ onLaunch(async () => {
         userStore.clearUserInfo()
         // 跳转到登录页
         navigateToLogin()
+        // 关闭启动封面
+        closeSplashscreen()
       }
     } catch (error) {
       console.error('获取用户信息失败', error)
@@ -151,28 +110,11 @@ onLaunch(async () => {
       userStore.clearUserInfo()
       // 跳转到登录页
       navigateToLogin()
+      // 关闭启动封面
+      closeSplashscreen()
     }
   } else {
     console.log('用户未登录，检查缓存的页面路径')
-
-    // 获取缓存的上一次页面路径
-    const lastPagePath = getLastPageFromStorage()
-
-    // 如果有缓存的页面且在白名单中，直接跳转到该页面
-    if (lastPagePath && isInNoLoginPaths(lastPagePath)) {
-      console.log('恢复到缓存的白名单页面:', lastPagePath)
-      uni.reLaunch({
-        url: lastPagePath,
-        success: () => {
-          console.log('成功恢复到缓存页面')
-        },
-        fail: (err) => {
-          console.error('恢复缓存页面失败，跳转到登录页', err)
-          navigateToLogin()
-        },
-      })
-      return
-    }
 
     // 获取当前页面路径
     const pages = getCurrentPages()
@@ -198,10 +140,24 @@ onLaunch(async () => {
 // 关闭启动封面
 const closeSplashscreen = () => {
   // #ifdef APP-PLUS
-  setTimeout(() => {
-    // 手动关闭App启动封面
+  // 立即尝试关闭一次
+  try {
+    console.log('立即尝试关闭启动封面')
     plus.navigator.closeSplashscreen()
-  }, 1500)
+  } catch (e) {
+    console.error('直接关闭启动封面失败', e)
+  }
+
+  // 延迟后再次尝试关闭，确保一定能关闭
+  setTimeout(() => {
+    try {
+      // 手动关闭App启动封面
+      plus.navigator.closeSplashscreen()
+      console.log('延迟关闭启动封面成功')
+    } catch (e) {
+      console.error('延迟关闭启动封面失败', e)
+    }
+  }, 1000)
   // #endif
 }
 
@@ -246,15 +202,17 @@ const navigateToLogin = () => {
   // 重定向到密码登录页
   uni.reLaunch({
     url: '/pages/login/password',
+    success: () => {
+      // 成功跳转后立即关闭启动封面
+      console.log('成功跳转到登录页，立即关闭启动封面')
+      closeSplashscreen()
+    },
     complete: () => {
       // 完成后重置标志
       setTimeout(() => {
         isRedirecting.value = false
         // 不重置本地存储标志，让登录页面来重置
       }, 2000)
-
-      // 在跳转完成后关闭启动封面
-      closeSplashscreen()
     },
   })
 }
@@ -336,6 +294,9 @@ onHide(() => {
   // 这样当用户再次进入时可以正常触发登录跳转
   uni.setStorageSync('redirecting_to_login', 'false')
   console.log('应用退出到后台，重置登录重定向标志位')
+
+  // 清空页面缓存
+  clearPageCache()
 })
 
 // UniApp不支持直接使用window.addEventListener
@@ -365,6 +326,7 @@ onUnmounted(() => {
 <template>
   <!-- 移除全局公告弹窗 -->
   <!-- <AnnouncementPopup v-model="showAnnouncementPopup" @close="handleAnnouncementClose" /> -->
+  <view></view>
 </template>
 
 <style lang="scss">
@@ -410,7 +372,6 @@ image {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
-
 /* 全局弹窗样式覆盖 */
 .wd-popup {
   z-index: 9999 !important;

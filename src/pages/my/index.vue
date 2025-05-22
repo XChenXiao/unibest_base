@@ -694,41 +694,37 @@ const handleBankCardClick = () => {
 <style lang="scss">
 /* 全局重置 */
 page {
-  background-color: #f5f5f5;
   height: 100%;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f5f5;
 }
-
 /* 容器样式 */
 .my-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
 }
-
 /* 顶部波浪装饰 */
 .wave-decoration {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 2;
   width: 100%;
   height: 16rpx;
   background: linear-gradient(to right, #ff9c00, #fa2c19);
-  z-index: 2;
 }
-
 /* 顶部背景渐变 */
 .bg-gradient {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 0;
   width: 100%;
   height: 500rpx; /* 增加背景高度 */
   background: linear-gradient(to bottom, #3498db, rgba(250, 44, 25, 0.2), rgba(255, 255, 255, 0));
-  z-index: 0;
 }
-
 /* 用户卡片 */
 .user-card {
   position: relative;
@@ -744,21 +740,21 @@ page {
 }
 
 .avatar {
-  width: 120rpx;
-  height: 120rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 20rpx rgba(243, 156, 18, 0.3);
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
   border: 4rpx solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 8rpx 20rpx rgba(243, 156, 18, 0.3);
 }
 
 .avatar-text {
-  color: white;
   font-size: 60rpx;
   font-weight: bold;
+  color: white;
 }
 
 .user-info {
@@ -766,11 +762,11 @@ page {
 }
 
 .user-name {
+  display: block;
+  margin-bottom: 15rpx;
   font-size: 40rpx;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 15rpx;
-  display: block;
   text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
 }
 
@@ -787,27 +783,26 @@ page {
 }
 
 .divider {
-  color: rgba(255, 255, 255, 0.6);
   margin: 0 10rpx;
   font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
 }
-
 /* 余额卡片 */
 .balance-card {
   position: relative;
   z-index: 1;
+  padding: 30rpx;
+  margin: 30rpx;
+  color: #ffffff;
   background: linear-gradient(to bottom right, #35c8e6, #17b8e0);
   border-radius: 20rpx;
-  margin: 30rpx;
-  padding: 30rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-  color: #ffffff;
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 30rpx;
 }
 
@@ -828,13 +823,13 @@ page {
 }
 
 .check-btn {
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #ffffff;
   background-color: rgba(255, 255, 255, 0.3);
   border: none;
-  font-size: 24rpx;
-  color: #ffffff;
-  padding: 8rpx 24rpx;
   border-radius: 30rpx;
-  line-height: 1.5;
 }
 
 .balance-section {
@@ -852,9 +847,9 @@ page {
 }
 
 .eye-icon {
-  margin-left: 10rpx;
   width: 40rpx;
   height: 40rpx;
+  margin-left: 10rpx;
 }
 
 .balance-amount {
@@ -876,80 +871,79 @@ page {
 
 .action-buttons {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .action-btn {
   flex: 1;
   padding: 20rpx 0;
-  font-size: 32rpx;
-  border-radius: 10rpx;
   margin-right: 20rpx;
-  text-align: center;
+  font-size: 32rpx;
   line-height: 1.5;
+  text-align: center;
+  border-radius: 10rpx;
 }
 
 .transfer-in {
-  background-color: #ffffff;
   color: #17b8e0;
+  background-color: #ffffff;
   border: none;
 }
 
 .transfer-out {
-  background-color: rgba(255, 255, 255, 0.3);
   color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.3);
   border: none;
 }
 
 .statement-btn {
-  width: 100rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100rpx;
 }
 
 .statement-btn text {
   font-size: 28rpx;
 }
-
 /* 菜单列表 */
 .menu-list {
   position: relative;
   z-index: 1;
+  padding: 10rpx 0;
+  margin: 0 30rpx 30rpx;
   background-color: white;
   border-radius: 20rpx;
-  margin: 0 30rpx 30rpx;
-  padding: 10rpx 0;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 }
 
 .menu-item {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 30rpx;
-  position: relative;
 }
 
 .menu-item:not(:last-child)::after {
-  content: '';
   position: absolute;
-  left: 100rpx;
   right: 0;
   bottom: 0;
+  left: 100rpx;
   height: 1px;
+  content: '';
   background-color: #f0f0f0;
 }
 
 .menu-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
   margin-right: 20rpx;
+  border-radius: 50%;
 }
 
 .bank-icon {
@@ -981,38 +975,38 @@ page {
 }
 
 .bank-icon .wd-icon {
-  color: #3498db;
   font-size: 36rpx;
+  color: #3498db;
 }
 
 .announcement-icon .wd-icon {
-  color: #f39c12;
   font-size: 36rpx;
+  color: #f39c12;
 }
 
 .profile-icon .wd-icon {
-  color: #2ecc71;
   font-size: 36rpx;
+  color: #2ecc71;
 }
 
 .wallet-icon .wd-icon {
-  color: #9b59b6;
   font-size: 36rpx;
+  color: #9b59b6;
 }
 
 .transaction-icon .wd-icon {
-  color: #e74c3c;
   font-size: 36rpx;
+  color: #e74c3c;
 }
 
 .settings-icon .wd-icon {
-  color: #34495e;
   font-size: 36rpx;
+  color: #34495e;
 }
 
 .service-icon .wd-icon {
-  color: #1abc9c;
   font-size: 36rpx;
+  color: #1abc9c;
 }
 
 .menu-content {
@@ -1020,10 +1014,10 @@ page {
 }
 
 .menu-title {
+  display: block;
+  margin-bottom: 6rpx;
   font-size: 30rpx;
   color: #333;
-  margin-bottom: 6rpx;
-  display: block;
 }
 
 .menu-desc {
@@ -1032,39 +1026,37 @@ page {
 }
 
 .menu-arrow {
-  color: #ccc;
   font-size: 28rpx;
+  color: #ccc;
 }
-
 /* 退出登录按钮 */
 .logout-btn {
-  width: calc(100% - 60rpx);
-  height: 90rpx;
-  margin: 0 auto 40rpx;
-  border: none;
-  border-radius: 45rpx;
-  background: #ffffff;
-  color: #e74c3c;
-  font-size: 32rpx;
-  font-weight: 500;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: calc(100% - 60rpx);
+  height: 90rpx;
+  margin: 0 auto 40rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #e74c3c;
+  background: #ffffff;
+  border: none;
+  border-radius: 45rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
-
 /* 充值弹窗 */
 .popup-content {
   width: 600rpx;
+  overflow: hidden;
   background-color: #ffffff;
   border-radius: 20rpx;
-  overflow: hidden;
 }
 
 .popup-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 30rpx;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -1077,8 +1069,8 @@ page {
 
 .popup-close {
   font-size: 40rpx;
-  color: #999;
   line-height: 1;
+  color: #999;
 }
 
 .popup-body {
@@ -1090,23 +1082,23 @@ page {
 }
 
 .amount-label {
+  display: block;
+  margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 20rpx;
-  display: block;
 }
 
 .amount-input-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
   padding-bottom: 10rpx;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .amount-prefix {
+  margin-right: 10rpx;
   font-size: 40rpx;
   color: #333;
-  margin-right: 10rpx;
 }
 
 .amount-input {
@@ -1123,38 +1115,37 @@ page {
 }
 
 .amount-btn {
-  width: 170rpx;
-  height: 80rpx;
-  background-color: #f5f5f5;
-  border-radius: 8rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 170rpx;
+  height: 80rpx;
   margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
 }
 
 .amount-btn-active {
-  background-color: rgba(243, 156, 18, 0.2);
-  color: #f39c12;
   font-weight: 500;
+  color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.2);
 }
-
 /* 开户预存金提示 */
 .open-fee-tip {
-  background-color: rgba(243, 156, 18, 0.1);
-  border-radius: 8rpx;
   padding: 20rpx;
   margin-bottom: 30rpx;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 8rpx;
 }
 
 .tip-title {
+  display: block;
+  margin-bottom: 10rpx;
   font-size: 28rpx;
   font-weight: 500;
   color: #f39c12;
-  margin-bottom: 10rpx;
-  display: block;
 }
 
 .deposit-tips-list {
@@ -1163,41 +1154,40 @@ page {
 
 .deposit-tip-item {
   display: flex;
-  margin-bottom: 8rpx;
   align-items: flex-start;
+  margin-bottom: 8rpx;
 }
 
 .tip-dot {
-  font-size: 28rpx;
-  color: #ff9800;
   margin-right: 8rpx;
+  font-size: 28rpx;
   line-height: 1.3;
+  color: #ff9800;
 }
 
 .tip-desc {
-  font-size: 24rpx;
-  color: #666;
   flex: 1;
+  font-size: 24rpx;
   line-height: 1.5;
+  color: #666;
 }
 
 .confirm-recharge-btn {
   width: 100%;
   height: 90rpx;
-  border: none;
-  border-radius: 45rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
   font-size: 32rpx;
   font-weight: 500;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border: none;
+  border-radius: 45rpx;
 }
-
 /* 底部版权信息 */
 .my-footer {
-  text-align: center;
   padding: 30rpx 0;
-  color: #999;
-  font-size: 24rpx;
   margin-top: auto;
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
 }
 </style>

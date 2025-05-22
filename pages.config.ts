@@ -32,8 +32,9 @@ export default defineUniPages({
       {
         pagePath: 'pages/index/index',
         text: '首页',
-        icon: 'home',
-        iconType: 'wot',
+        icon: '/static/tabbar/home.png',
+        iconHL: '/static/tabbar/homeHL.png',
+        iconType: 'local',
       },
       {
         pagePath: 'pages/trading/index',
@@ -52,8 +53,9 @@ export default defineUniPages({
       {
         pagePath: 'pages/my/index',
         text: '我的',
-        icon: 'iconfont icon-my',
-        iconType: 'iconfont',
+        icon: '/static/tabbar/my.png',
+        iconHL: '/static/tabbar/myHL.png',
+        iconType: 'local',
       },
     ],
   },
@@ -77,6 +79,22 @@ export default defineUniPages({
       style: {
         navigationBarTitleText: '图形验证码注册',
         navigationStyle: 'custom',
+      },
+    },
+    {
+      path: 'uni_modules/uni-upgrade-center-app/pages/upgrade-popup',
+      type: 'page',
+      style: {
+        disableScroll: true,
+        'app-plus': {
+          backgroundColorTop: 'transparent',
+          background: 'transparent',
+          titleNView: false,
+          scrollIndicator: false,
+          popGesture: 'none',
+          animationType: 'fade-in',
+          animationDuration: 200,
+        },
       },
     },
   ],

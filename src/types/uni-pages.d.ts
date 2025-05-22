@@ -40,7 +40,8 @@ interface NavigateToOptions {
        "/pages/transfer/index" |
        "/pages/transfer/phone-pay" |
        "/pages/transfer/wechat" |
-       "/pages/verification/index";
+       "/pages/verification/index" |
+       "/uni_modules/uni-upgrade-center-app/pages/upgrade-popup";
 }
 interface RedirectToOptions extends NavigateToOptions {}
 

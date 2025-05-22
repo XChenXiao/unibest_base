@@ -223,20 +223,18 @@ const goToCaptchaRegister = () => {
 <style lang="scss">
 /* 全局重置 */
 page {
-  background: linear-gradient(135deg, #3498db, #1a5276);
   height: 100%;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #3498db, #1a5276);
 }
-
 /* 容器样式 */
 .login-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   padding: 0 30rpx;
-  position: relative;
 }
-
 /* 顶部波浪装饰 */
 .wave-decoration {
   position: absolute;
@@ -246,7 +244,6 @@ page {
   height: 16rpx;
   background: linear-gradient(to right, #f39c12, #e74c3c);
 }
-
 /* LOGO区域 */
 .logo-area {
   display: flex;
@@ -257,116 +254,106 @@ page {
 }
 
 .logo {
-  width: 140rpx;
-  height: 140rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 140rpx;
+  height: 140rpx;
   margin-bottom: 30rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border-radius: 50%;
   box-shadow: 0 10rpx 30rpx rgba(243, 156, 18, 0.3);
 }
 
 .logo-text {
-  color: white;
   font-size: 80rpx;
   font-weight: bold;
+  color: white;
 }
 
 .app-name {
+  margin-bottom: 10rpx;
   font-size: 44rpx;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 10rpx;
 }
 
 .app-slogan {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.8);
 }
-
 /* 登录表单 */
 .login-form {
-  background-color: white;
-  border-radius: 20rpx;
   padding: 40rpx;
   margin-bottom: 40rpx;
+  background-color: white;
+  border-radius: 20rpx;
   box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.15);
 }
-
 /* 表单组 */
 .form-group {
   margin-bottom: 30rpx;
 }
-
 /* 表单标签 */
 .form-label {
   display: block;
-  color: #555;
   margin-bottom: 16rpx;
   font-size: 28rpx;
   font-weight: 500;
+  color: #555;
 }
-
 /* 输入框容器 */
 .input-container {
   position: relative;
   display: flex;
   align-items: center;
 }
-
 /* 输入框图标 */
 .uni-icons {
   position: absolute;
   left: 20rpx;
-  color: #aaa;
   font-size: 36rpx;
+  color: #aaa;
 }
-
 /* 输入框 */
 .form-control {
   width: 100%;
   height: 90rpx;
-  border: 1px solid #e0e0e0;
-  border-radius: 45rpx;
   padding: 0 30rpx 0 80rpx;
   font-size: 30rpx;
   color: #333;
   background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 45rpx;
 }
-
 /* 密码显示切换按钮 */
 .password-toggle {
   position: absolute;
   right: 20rpx;
-  color: #aaa;
   font-size: 36rpx;
+  color: #aaa;
 }
-
 /* 忘记密码链接 */
 .forgot-password {
   display: block;
-  text-align: right;
-  color: #3498db;
-  font-size: 28rpx;
   margin: -10rpx 0 40rpx;
+  font-size: 28rpx;
+  color: #3498db;
+  text-align: right;
 }
-
 /* 登录按钮 */
 .login-btn {
   width: 100%;
   height: 90rpx;
-  border: none;
-  border-radius: 45rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
+  margin-bottom: 30rpx;
   font-size: 32rpx;
   font-weight: 500;
-  margin-bottom: 30rpx;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border: none;
+  border-radius: 45rpx;
   box-shadow: 0 10rpx 20rpx rgba(243, 156, 18, 0.3);
 }
-
 /* 登录选项 */
 .login-options {
   display: flex;
@@ -375,29 +362,28 @@ page {
 }
 
 .option-link {
+  padding: 10rpx;
   font-size: 26rpx;
   color: #3498db;
-  padding: 10rpx;
 }
-
 /* 底部版权信息 */
 .login-footer {
-  text-align: center;
   padding: 30rpx 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 24rpx;
   margin-top: auto;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
 }
 
 .register-link {
-  text-align: center;
   margin-top: 20rpx;
-  color: #333;
   font-size: 28rpx;
+  color: #333;
+  text-align: center;
 }
 
 .register-text {
-  color: #3498db;
   padding: 0 10rpx;
+  color: #3498db;
 }
 </style>

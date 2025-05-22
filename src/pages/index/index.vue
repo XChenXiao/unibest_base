@@ -12,39 +12,31 @@
   <view class="page-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-    
+
     <!-- 顶部区域 -->
-    <finance-header 
-      :safeAreaInsets="safeAreaInsets"
-      @menu-click="handleMenuItem"
-    />
-    
+    <finance-header :safeAreaInsets="safeAreaInsets" @menu-click="handleMenuItem" />
+
     <!-- 签到状态 -->
-    <finance-checkin-status 
+    <finance-checkin-status
       :checkInData="checkInData"
       :markers="markers"
       :isCheckingIn="isCheckingIn"
       @check-in="handleCheckIn"
     />
-    
+
     <!-- 打卡记录圆圈 -->
     <finance-checkin-circles
       :checkInData="checkInData"
       :checkedDays="checkedDays"
       :missedDays="missedDays"
     />
-    
+
     <!-- 里程碑时间线 -->
-    <finance-milestones
-      :milestones="milestones"
-    />
-    
+    <finance-milestones :milestones="milestones" />
+
     <!-- 公告弹窗组件 - 降低层级 -->
-    <AnnouncementPopup 
-      v-model="showAnnouncementPopup"
-      @close="handleAnnouncementClose"
-    />
-    
+    <AnnouncementPopup v-model="showAnnouncementPopup" @close="handleAnnouncementClose" />
+
     <!-- 实名认证指引弹窗 - 层级高于公告弹窗 -->
     <VerificationGuidePopup
       v-model="showVerificationGuidePopup"
@@ -66,6 +58,7 @@ import { getCheckInStatsAPI, getCheckInDailyStatusAPI, checkInAPI } from '@/serv
 import { useUserStore } from '@/store'
 import { API_URL } from '@/config/api'
 import { getVerificationStatus } from '@/service/app/user'
+import checkUpdate from '@/uni_modules/uni-upgrade-center-app/utils/check-update'
 
 defineOptions({
   name: 'FinanceHome',
@@ -86,13 +79,13 @@ const checkInData = ref({
   isCheckedToday: false,
   completionRate: 0,
   cycleStartDate: '',
-  cycleEndDate: ''
+  cycleEndDate: '',
 })
 // 里程碑点
 const markers = ref([
   { days: 7, label: '7天' },
   { days: 15, label: '15天' },
-  { days: 30, label: '30天' }
+  { days: 30, label: '30天' },
 ])
 // 已打卡的天
 const checkedDays = ref<number[]>([])
@@ -113,9 +106,12 @@ onMounted(() => {
   console.log('首页组件已挂载，准备获取签到数据')
   // 获取签到数据
   fetchCheckInData()
-  
+
   // 检查用户实名认证状态并显示相应弹窗
   checkVerificationStatusAndShowPopups()
+
+  // 检查应用更新
+  checkAppUpdate()
 })
 
 // 监听页面显示（每次进入页面都会调用）
@@ -130,6 +126,15 @@ onUnmounted(() => {
   console.log('首页组件卸载')
 })
 
+// 检查应用更新
+const checkAppUpdate = async () => {
+  try {
+    await checkUpdate()
+  } catch (error) {
+    console.error('检查更新失败:', error)
+  }
+}
+
 // 方法
 // 获取签到数据
 const fetchCheckInData = async () => {
@@ -139,10 +144,10 @@ const fetchCheckInData = async () => {
     console.log('调用 getCheckInStatsAPI')
     const statsRes = await getCheckInStatsAPI()
     console.log('getCheckInStatsAPI 返回:', statsRes)
-    
+
     if (statsRes && statsRes.data) {
       const statsData = statsRes.data
-      
+
       // 更新签到数据
       checkInData.value = {
         daysCompleted: statsData.current_cycle_days,
@@ -150,42 +155,43 @@ const fetchCheckInData = async () => {
         isCheckedToday: statsData.today_checked,
         completionRate: (statsData.current_cycle_days / 30) * 100,
         cycleStartDate: statsData.cycle_start_date,
-        cycleEndDate: statsData.cycle_end_date
+        cycleEndDate: statsData.cycle_end_date,
       }
       console.log('更新签到数据:', checkInData.value)
-      
+
       // 更新里程碑数据
       if (statsData.milestones) {
         milestones.value = statsData.milestones
         console.log('更新里程碑数据:', milestones.value)
       }
-      
+
       try {
         // 获取打卡日历状态
         console.log('调用 getCheckInDailyStatusAPI')
         const dailyStatusRes = await getCheckInDailyStatusAPI()
         console.log('getCheckInDailyStatusAPI 返回:', dailyStatusRes)
-        
+
         if (dailyStatusRes && dailyStatusRes.data) {
           const dailyStatus = dailyStatusRes.data.daily_status
-          
+
           // 处理已打卡和漏打卡的天
           checkedDays.value = []
           missedDays.value = []
-          
+
           dailyStatus.forEach((day, index) => {
             const dayNumber = index + 1 // 从1开始计数
             if (day.is_past_or_today) {
               if (day.checked_in) {
                 checkedDays.value.push(dayNumber)
-              } else if (!day.is_today) { // 今天未打卡不算漏打卡
+              } else if (!day.is_today) {
+                // 今天未打卡不算漏打卡
                 missedDays.value.push(dayNumber)
               }
             }
           })
-          console.log('更新签到日历数据:', { 
-            checkedDays: checkedDays.value, 
-            missedDays: missedDays.value 
+          console.log('更新签到日历数据:', {
+            checkedDays: checkedDays.value,
+            missedDays: missedDays.value,
           })
         }
       } catch (dailyError) {
@@ -208,10 +214,10 @@ const fetchCheckInData = async () => {
     if (error.data) {
       console.error('错误数据:', error.data)
     }
-    
+
     uni.showToast({
       title: error.data?.message || '获取数据失败，请稍后重试',
-      icon: 'none'
+      icon: 'none',
     })
   }
 }
@@ -228,19 +234,19 @@ const handleCheckIn = async () => {
   if (checkInData.value.isCheckedToday || isCheckingIn.value) {
     return
   }
-  
+
   isCheckingIn.value = true
-  
+
   try {
     // 调用签到API
     const res = await checkInAPI()
-    
+
     if (res) {
       uni.showToast({
         title: '签到成功',
-        icon: 'success'
+        icon: 'success',
       })
-      
+
       // 重新获取签到数据
       await fetchCheckInData()
     }
@@ -248,7 +254,7 @@ const handleCheckIn = async () => {
     console.error('签到失败', error)
     uni.showToast({
       title: error.data.message,
-      icon: 'none'
+      icon: 'none',
     })
   } finally {
     isCheckingIn.value = false
@@ -263,15 +269,15 @@ const fetchVerificationStatus = async () => {
       console.log('首页从store中获取到用户已实名认证')
       return true
     }
-    
+
     // 如果store中没有明确的认证状态，再发起请求
     console.log('首页获取实名认证状态')
     const res: any = await getVerificationStatus({})
     console.log('实名认证状态返回:', res)
-    
+
     if (res.status === 'success') {
       verificationStatus.value = res
-      
+
       // 更新用户的认证状态到store中
       if (res.data?.is_verified) {
         // 用户已认证，更新状态到store
@@ -293,8 +299,8 @@ const fetchVerificationStatus = async () => {
 // 检查用户实名认证状态并显示相应弹窗
 const checkVerificationStatusAndShowPopups = async () => {
   // 获取最新的实名认证状态，优先使用store中的状态
-  const isVerified = userStore.isVerified || await fetchVerificationStatus()
-  
+  const isVerified = userStore.isVerified || (await fetchVerificationStatus())
+
   // 如果用户未实名认证，显示实名认证指引弹窗
   if (!isVerified) {
     console.log('用户未实名认证，显示实名认证指引弹窗')
@@ -311,11 +317,11 @@ const checkVerificationStatusAndShowPopups = async () => {
 const checkAndShowAnnouncement = async () => {
   try {
     console.log('首页检查最新公告')
-    
+
     // 检查是否有最新公告
     const { getLatestAnnouncementAPI } = await import('@/service/index/message')
     const result = await getLatestAnnouncementAPI()
-    
+
     // 如果有公告，则显示弹窗
     if (result.status === 'success' && result.data) {
       console.log('首页显示最新公告弹窗')
@@ -337,7 +343,7 @@ const handleAnnouncementClose = (data: { dontShowAgain: boolean }) => {
 // 处理实名认证指引弹窗关闭事件
 const handleVerificationGuideClose = (data: { later: boolean }) => {
   console.log('实名认证指引弹窗关闭:', data)
-  
+
   if (data.later) {
     // 用户选择了"稍后认证"，可以在这里添加额外逻辑
     checkAndShowAnnouncement() // 可以考虑显示公告弹窗
@@ -355,8 +361,8 @@ page {
 .page-container {
   min-height: 100vh;
 }
-.wave-decoration {
-  position: absolute;
+ave-decoration {
+  background-color: #f5f5f5;
   top: 0;
   left: 0;
   width: 100%;
@@ -365,3 +371,4 @@ page {
   z-index: 2;
 }
 </style>
+z-index: 2;

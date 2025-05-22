@@ -375,7 +375,7 @@ const goToSmsRegister = () => {
 // 前往登录页面
 const goToLogin = () => {
   uni.navigateTo({
-    url: '/pages/login/index',
+    url: '/pages/login/password',
   })
 }
 </script>
