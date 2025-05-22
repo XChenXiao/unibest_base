@@ -24,13 +24,13 @@ const navigateToLogin = () => {
   if (isOnLoginPage()) {
     return
   }
-  
+
   // 如果已经有一个重定向到登录页面的过程在进行，则不再重复跳转
   if (isRedirectingToLogin()) {
     console.log('已有重定向到登录页面的过程，跳过重复跳转')
     return
   }
-  
+
   // 设置重定向状态为true
   setRedirectingToLogin(true)
 
@@ -40,14 +40,14 @@ const navigateToLogin = () => {
   })
 
   setTimeout(() => {
-    uni.reLaunch({ 
-      url: '/pages/login/index',
+    uni.reLaunch({
+      url: '/pages/login/password',
       success: () => {
         console.log('成功跳转到登录页面')
       },
       fail: () => {
         setRedirectingToLogin(false)
-      }
+      },
     })
   }, 1500)
 }
@@ -84,9 +84,9 @@ export const http = <T>(options: CustomRequestOptions) => {
         console.log('HTTP响应:', {
           url: options.url,
           statusCode: res.statusCode,
-          data: res.data
-        });
-        
+          data: res.data,
+        })
+
         // 状态码 2xx，参考 axios 的设计
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1 提取核心数据 res.data
@@ -94,8 +94,8 @@ export const http = <T>(options: CustomRequestOptions) => {
 
           // 有些API响应没有status字段，直接返回数据
           if (!responseData.hasOwnProperty('status')) {
-            resolve(responseData as any);
-            return;
+            resolve(responseData as any)
+            return
           }
 
           // 即使HTTP状态码是2xx，也需要检查业务状态
@@ -108,7 +108,7 @@ export const http = <T>(options: CustomRequestOptions) => {
                 icon: 'none',
                 title: responseData.message || '请求失败',
               })
-            console.error('业务逻辑错误:', responseData);
+            console.error('业务逻辑错误:', responseData)
             reject(responseData)
           }
         } else if (res.statusCode === 401) {

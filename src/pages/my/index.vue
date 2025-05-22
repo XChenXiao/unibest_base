@@ -289,7 +289,7 @@ onMounted(() => {
 
   // 检查是否有未读公告
   checkAnnouncementStatus()
-  
+
   // 获取预存金额提示
   fetchDepositTips()
 })
@@ -405,11 +405,11 @@ const handleTransferIn = async () => {
     uni.showToast({
       title: '银行卡功能暂未开放',
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     })
     return
   }
-  
+
   try {
     // 显示加载状态
     uni.showLoading({
@@ -488,11 +488,11 @@ const handleTransferOut = async () => {
     uni.showToast({
       title: '银行卡功能暂未开放',
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     })
     return
   }
-  
+
   try {
     // 显示加载状态
     uni.showLoading({
@@ -636,66 +636,44 @@ const toggleBalanceVisibility = () => {
 
 // 处理充值/转入
 const handleRecharge = () => {
-  rechargeAmount.value = '';
-  showRechargePopup.value = true;
-  
+  rechargeAmount.value = ''
+  showRechargePopup.value = true
+
   // 如果用户没有开通银行卡且没有获取预存金金额，则获取预存金金额
   if (!userStore.userInfo.has_bank_card && !appStore.hasFetchedBankCardOpenFee) {
-    appStore.fetchBankCardOpenFee();
+    appStore.fetchBankCardOpenFee()
   }
-  
+
   // 获取最新的预存金提示
-  fetchDepositTips();
-};
+  fetchDepositTips()
+}
 
 // 检查是否有未读公告
 const checkAnnouncementStatus = async () => {
-  try {
-    // 使用Promise方式处理请求，避免使用解构赋值导致的问题
-    const response = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${API_URL}/api/messages/unread-count`,
-        method: 'GET',
-        success: (res) => {
-          resolve(res)
-        },
-        fail: (err) => {
-          reject(err)
-        },
-      })
-    })
-
-    // 直接使用response的data属性
-    const res = response as any
-
-    if (res?.data?.status === 'success') {
-      hasNewAnnouncement.value = res.data.data.unread_count > 0
-    }
-  } catch (error) {
-    console.error('检查公告状态失败:', error)
-  }
+  // 不再调用API，默认为没有未读公告
+  hasNewAnnouncement.value = false
 }
 
 // 获取预存服务提示
 const fetchDepositTips = async () => {
   try {
-    const res = await getDepositTipsAPI();
-    console.log('预存服务提示响应:', res);
-    
+    const res = await getDepositTipsAPI()
+    console.log('预存服务提示响应:', res)
+
     // 使用安全的方式访问数据
     if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
       // 安全地访问data字段
-      const data = res.data;
+      const data = res.data
       if (data && typeof data === 'object' && 'deposit_tips' in data) {
-        depositTips.value = data.deposit_tips as DepositTip[] || [];
-        console.log('获取预存服务提示成功:', depositTips.value);
+        depositTips.value = (data.deposit_tips as DepositTip[]) || []
+        console.log('获取预存服务提示成功:', depositTips.value)
       }
     }
   } catch (error) {
-    console.error('获取预存服务提示失败:', error);
-    depositTips.value = []; // 确保始终有一个有效数组
+    console.error('获取预存服务提示失败:', error)
+    depositTips.value = [] // 确保始终有一个有效数组
   }
-};
+}
 
 // 处理银行卡点击
 const handleBankCardClick = () => {
@@ -703,11 +681,11 @@ const handleBankCardClick = () => {
   if (!platformStore.enableBankAccount) {
     uni.showToast({
       title: '银行卡功能暂未开放',
-      icon: 'none'
+      icon: 'none',
     })
     return
   }
-  
+
   // 功能已开放，跳转到钱包页面
   navigateTo('/pages/my/wallet')
 }

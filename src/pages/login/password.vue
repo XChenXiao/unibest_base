@@ -1,7 +1,8 @@
 <route lang="json5">
 {
   style: {
-    navigationBarTitleText: '密码登录',
+    navigationBarTitleText: '登录',
+    navigationStyle: 'custom',
   },
 }
 </route>
@@ -9,7 +10,7 @@
   <view class="login-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-    
+
     <!-- Logo区域 -->
     <view class="logo-area">
       <view class="logo">
@@ -18,15 +19,15 @@
       <text class="app-name">理财管理平台</text>
       <text class="app-slogan">专业的财富管理伙伴</text>
     </view>
-    
+
     <!-- 登录表单 -->
     <view class="login-form">
       <view class="form-group">
         <text class="form-label">手机号</text>
         <view class="input-container">
           <text class="uni-icons" :class="['uniui-phone-filled']"></text>
-          <input 
-            class="form-control" 
+          <input
+            class="form-control"
             type="text"
             inputmode="numeric"
             maxlength="11"
@@ -35,143 +36,141 @@
           />
         </view>
       </view>
-      
+
       <view class="form-group">
         <text class="form-label">密码</text>
         <view class="input-container">
           <text class="uni-icons" :class="['uniui-locked-filled']"></text>
-          <input 
-            class="form-control" 
+          <input
+            class="form-control"
             type="text"
             :password="!formData.showPassword"
             placeholder="请输入密码"
             v-model="formData.password"
           />
-          <text 
-            class="uni-icons password-toggle" 
+          <text
+            class="uni-icons password-toggle"
             :class="[formData.showPassword ? 'uniui-eye-filled' : 'uniui-eye-slash-filled']"
             @click="togglePasswordVisibility"
           ></text>
         </view>
       </view>
-      
+
       <text class="forgot-password" @click="goToResetPassword">忘记密码？</text>
-      
+
       <button class="login-btn" @click="handleLogin">登 录</button>
-      
-      <view class="login-options">
-        <text class="option-link" @click="goToSmsLogin">验证码登录</text>
+
+      <!-- <view class="login-options">
         <text class="option-link" @click="goToResetPassword">忘记密码</text>
-      </view>
+      </view> -->
 
       <view class="register-link">
         <text>没有账号？</text>
-        <text class="register-text" @click="goToSmsRegister">短信验证码注册</text>
-        <text> | </text>
-        <text class="register-text" @click="goToCaptchaRegister">图形验证码注册</text>
+        <!-- <text class="register-text" @click="goToCaptchaRegister">图形验证码注册</text> -->
+        <text class="register-text" @click="goToCaptchaRegister">去注册</text>
       </view>
     </view>
-    
+
     <!-- 底部版权信息 -->
     <view class="login-footer">
-      <text>版权所有 © 2023-2024 金融交易平台</text>
+      <text></text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue';
-import { useUserStore } from '@/store';
-import { loginAPI } from '@/service/index/auth';
+import { ref, reactive, computed } from 'vue'
+import { useUserStore } from '@/store'
+import { loginAPI } from '@/service/index/auth'
 
 // 表单数据
 const formData = reactive({
   login_id: '',
   password: '',
-  showPassword: false
-});
+  showPassword: false,
+})
 
 // 用户状态
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 // 切换密码显示
 const togglePasswordVisibility = () => {
-  formData.showPassword = !formData.showPassword;
-};
+  formData.showPassword = !formData.showPassword
+}
 
 // 检查表单是否填写完整
 const isFormValid = computed(() => {
-  return formData.login_id.trim() !== '' && formData.password.trim() !== '';
-});
+  return formData.login_id.trim() !== '' && formData.password.trim() !== ''
+})
 
 // 处理登录
 const handleLogin = async () => {
   if (!isFormValid.value) {
     uni.showToast({
       title: '请填写完整信息',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
 
   try {
     uni.showLoading({
-      title: '登录中...'
-    });
-    
+      title: '登录中...',
+    })
+
     console.log('开始密码登录请求，参数:', {
       login_id: formData.login_id,
-      password: '******' // 密码不输出
-    });
+      password: '******', // 密码不输出
+    })
 
     const res = await loginAPI({
       login_id: formData.login_id,
-      password: formData.password
-    });
-    
-    console.log('密码登录响应:', res);
+      password: formData.password,
+    })
 
-    uni.hideLoading();
+    console.log('密码登录响应:', res)
+
+    uni.hideLoading()
 
     if (res && res.status === 'success' && res.data) {
       // 保存用户信息和token
       userStore.setUserInfo({
         ...res.data.user,
-        token: res.data.access_token
-      });
-      
+        token: res.data.access_token,
+      })
+
       // 重置登录重定向标志
       uni.setStorageSync('redirecting_to_login', 'false')
-      
+
       uni.showToast({
         title: '登录成功',
-        icon: 'success'
-      });
+        icon: 'success',
+      })
 
       // 获取平台设置和用户信息
       uni.showLoading({
         title: '加载数据...',
-      });
-      
+      })
+
       try {
         // 导入需要的store
-        const { usePlatformStore } = await import('@/store/platform');
-        const { useAppStore } = await import('@/store/app');
-        
-        const platformStore = usePlatformStore();
-        const appStore = useAppStore();
-        
+        const { usePlatformStore } = await import('@/store/platform')
+        const { useAppStore } = await import('@/store/app')
+
+        const platformStore = usePlatformStore()
+        const appStore = useAppStore()
+
         // 获取平台功能开关设置
-        await platformStore.fetchPlatformSettings();
+        await platformStore.fetchPlatformSettings()
         // 获取银行卡开户预存金
-        appStore.fetchBankCardOpenFee();
+        appStore.fetchBankCardOpenFee()
         // 刷新用户信息
-        await userStore.fetchUserInfo();
-        
-        uni.hideLoading();
+        await userStore.fetchUserInfo()
+
+        uni.hideLoading()
       } catch (error) {
-        console.error('加载平台数据失败', error);
-        uni.hideLoading();
+        console.error('加载平台数据失败', error)
+        uni.hideLoading()
       }
 
       // 延迟跳转到首页
@@ -185,54 +184,40 @@ const handleLogin = async () => {
             console.error('跳转到首页失败:', err)
             // 如果switchTab失败，尝试使用reLaunch
             uni.reLaunch({
-              url: '/pages/index/index'
+              url: '/pages/index/index',
             })
-          }
-        });
-      }, 1000);
+          },
+        })
+      }, 1000)
     } else {
       // 登录失败但服务器有返回消息
       uni.showToast({
         title: res?.message || '登录失败，请重试',
-        icon: 'none'
-      });
+        icon: 'none',
+      })
     }
   } catch (error: any) {
-    uni.hideLoading();
+    uni.hideLoading()
     uni.showToast({
       title: error?.data?.message || error?.message || '登录失败，请重试',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   }
-};
-
-// 前往验证码登录页面
-const goToSmsLogin = () => {
-  uni.navigateTo({
-    url: '/pages/login/index'
-  });
-};
+}
 
 // 前往密码重置页面
 const goToResetPassword = () => {
   uni.navigateTo({
-    url: '/pages/login/reset-password'
-  });
-};
-
-// 前往短信验证码注册页面
-const goToSmsRegister = () => {
-  uni.navigateTo({
-    url: '/pages/register/index'
-  });
-};
+    url: '/pages/login/reset-password',
+  })
+}
 
 // 前往图形验证码注册页面
 const goToCaptchaRegister = () => {
   uni.navigateTo({
-    url: '/pages/register/captcha'
-  });
-};
+    url: '/pages/register/captcha',
+  })
+}
 </script>
 
 <style lang="scss">
@@ -415,4 +400,4 @@ page {
   color: #3498db;
   padding: 0 10rpx;
 }
-</style> 
+</style>

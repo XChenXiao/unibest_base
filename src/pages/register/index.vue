@@ -135,7 +135,7 @@
 <script lang="ts" setup>
 import { ref, reactive, computed, onUnmounted } from 'vue'
 import { sendSmsCodeAPI, smsRegisterAPI } from '@/service/index/auth'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onHide, onUnload } from '@dcloudio/uni-app'
 
 // 表单数据
 const formData = reactive({
@@ -161,6 +161,27 @@ onLoad((options) => {
     formData.referrer_invite_code = Object.values(options)[0]
     console.log(formData, 'formData.referrer_invite_code')
   }
+
+  // 保存当前页面路径到缓存，确保从应用切回时能够正确识别
+  const currentPath = '/pages/register/index'
+  console.log('注册页面加载，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
+})
+
+// 页面隐藏时保存路径
+onHide(() => {
+  // 保存当前页面路径到缓存
+  const currentPath = '/pages/register/index'
+  console.log('注册页面隐藏，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
+})
+
+// 页面卸载时保存路径
+onUnload(() => {
+  // 保存当前页面路径到缓存
+  const currentPath = '/pages/register/index'
+  console.log('注册页面卸载，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
 })
 
 // 组件销毁时清除定时器
@@ -382,7 +403,7 @@ const handleRegister = async () => {
     }
 
     uni.showToast({
-      title: error?.message || '注册失败，请重试',
+      title: error.data.?.message || '注册失败，请重试',
       icon: 'none',
     })
   }
@@ -561,7 +582,7 @@ page {
   .register-options {
     text-align: center;
     margin-bottom: 20rpx;
-    
+
     .option-link {
       font-size: 26rpx;
       color: #3498db;

@@ -76,6 +76,7 @@ export default defineUniPages({
       path: 'pages/register/captcha',
       style: {
         navigationBarTitleText: '图形验证码注册',
+        navigationStyle: 'custom',
       },
     },
   ],

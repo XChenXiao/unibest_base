@@ -36,13 +36,13 @@ const navigateToLogin = () => {
   if (isOnLoginPage()) {
     return
   }
-  
+
   // 如果已经有一个重定向到登录页面的过程在进行，则不再重复跳转
   if (isRedirectingToLogin()) {
     console.log('已有重定向到登录页面的过程，跳过重复跳转')
     return
   }
-  
+
   // 设置重定向状态为true
   setRedirectingToLogin(true)
 
@@ -52,14 +52,14 @@ const navigateToLogin = () => {
   })
 
   setTimeout(() => {
-    uni.reLaunch({ 
-      url: '/pages/login/index',
+    uni.reLaunch({
+      url: '/pages/login/password',
       success: () => {
         console.log('成功跳转到登录页面')
       },
       fail: () => {
         setRedirectingToLogin(false)
-      }
+      },
     })
   }, 1500)
 }

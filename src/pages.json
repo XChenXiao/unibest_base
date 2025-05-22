@@ -95,14 +95,16 @@
       "path": "pages/login/index",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "登录"
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/login/password",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "密码登录"
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -251,7 +253,8 @@
       "path": "pages/register/captcha",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "图形验证码注册"
+        "navigationBarTitleText": "图形验证码注册",
+        "navigationStyle": "custom"
       }
     },
     {

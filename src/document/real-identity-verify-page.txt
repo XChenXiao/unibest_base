@@ -399,7 +399,7 @@ page {
 .verify-status-card {
   background-color: white;
   border-radius: 20rpx;
-  margin: 0 30rpx 30rpx;
+  margin: 20rpx 30rpx 30rpx;
   padding: 40rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
   display: flex;

@@ -112,21 +112,3 @@ export const markAnnouncementAsReadAPI = async (id: number) => {
     throw error
   }
 }
-
-/**
- * 获取未读公告数量
- * @returns 未读公告数量数据
- */
-export const getUnreadAnnouncementCountAPI = async () => {
-  try {
-    const result = await http.get<{
-      unread_count: number
-      personal_unread: number
-      global_unread: number
-    }>(`/api/messages/unread-count`)
-    return result
-  } catch (error) {
-    console.error('获取未读公告数量失败:', error)
-    throw error
-  }
-}

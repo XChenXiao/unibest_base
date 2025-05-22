@@ -4,7 +4,6 @@ import { getUserInfoAPI, loginAPI, logoutAPI, registerAPI } from '@/service/inde
 import { getVerificationStatusAPI, IVerificationStatus } from '@/service/index/verification'
 import { checkBankCardStatusAPI, getBankCardsAPI, IBankCard } from '@/service/index/bankcard'
 import { getTeamInfoAPI, getTeamStatsAPI } from '@/service/index/team'
-import { getUnreadAnnouncementCountAPI } from '@/service/index/message'
 
 // 用户基本信息接口
 export interface IUserInfo {
@@ -372,26 +371,13 @@ export const useUserInfoStore = defineStore(
         return false
       }
 
-      try {
-        const res = await getUnreadAnnouncementCountAPI()
-
-        // 使用类型断言处理API返回的数据
-        const messageData = res as any
-
-        if (messageData && messageData.unread_count !== undefined) {
-          messageInfo.value = {
-            unread_count: Number(messageData.unread_count || 0),
-            personal_unread: Number(messageData.personal_unread || 0),
-            global_unread: Number(messageData.global_unread || 0),
-          }
-          return true
-        }
-
-        return false
-      } catch (error) {
-        console.error('获取未读消息数量失败', error)
-        return false
+      // 直接设置默认值，不再调用API
+      messageInfo.value = {
+        unread_count: 0,
+        personal_unread: 0,
+        global_unread: 0,
       }
+      return true
     }
 
     // 刷新所有用户相关数据

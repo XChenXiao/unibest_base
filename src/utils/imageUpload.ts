@@ -371,23 +371,14 @@ export const chooseAndUploadAlipayQRCode = (): Promise<IUploadResult> => {
       success: (res) => {
         const tempFilePath = res.tempFilePaths[0];
         
-        // 上传文件
-        uni.uploadFile({
-          url: '/api/upload/alipay-qrcode',
-          filePath: tempFilePath,
-          name: 'file',
-          success: (uploadRes) => {
-            try {
-              const data = JSON.parse(uploadRes.data);
-              resolve(data as IUploadResult);
-            } catch (error) {
-              reject(new Error('解析上传响应失败'));
-            }
-          },
-          fail: (error) => {
-            reject(error);
-          }
-        });
+        // 上传文件 - 使用与微信相同的方式
+        uploadAlipayQRCode(tempFilePath)
+          .then((uploadRes) => {
+            resolve(uploadRes as IUploadResult)
+          })
+          .catch((error) => {
+            reject(error)
+          })
       },
       fail: (error) => {
         reject(error);

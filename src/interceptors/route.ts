@@ -7,12 +7,13 @@ import { useUserStore } from '@/store'
 import { ref } from 'vue'
 
 // 登录页面路径
-const loginRoute = '/pages/login/index'
+const loginRoute = '/pages/login/password'
 
-// 定义黑名单路径 - 这些页面不需要登录
+// 定义白名单路径 - 这些页面不需要登录
 const noLoginPages = [
   '/pages/login/index', // 登录页面
   '/pages/register/index', // 注册页面
+  '/pages/register/captcha', // 图形验证码注册页面
   '/pages/login/password', // 密码登录
   '/pages/login/reset-password', // 重置密码
 ]
@@ -20,13 +21,30 @@ const noLoginPages = [
 // 添加一个标志位，避免多次重定向
 const isRedirecting = ref(false)
 
+// 保存白名单到本地缓存
+const saveNoLoginPathsToStorage = () => {
+  uni.setStorageSync('no_login_paths', JSON.stringify(noLoginPages))
+}
+
+// 从本地缓存获取白名单
+const getNoLoginPathsFromStorage = () => {
+  const paths = uni.getStorageSync('no_login_paths')
+  return paths ? JSON.parse(paths) : noLoginPages
+}
+
+// 检查页面是否在白名单中
+const isInNoLoginPaths = (path: string) => {
+  const paths = getNoLoginPathsFromStorage()
+  return paths.some((noLoginPath: string) => path.startsWith(noLoginPath))
+}
+
 // 检查是否已登录
 const isLogined = () => {
   const userStore = useUserStore()
   return userStore.isLogined
 }
 
-// 登录拦截器 - 默认所有页面都需要登录，除了黑名单中的页面
+// 登录拦截器 - 默认所有页面都需要登录，除了白名单中的页面
 const navigateToInterceptor = {
   // 注意，这里的url是 '/' 开头的，如 '/pages/index/index'，跟 'pages.json' 里面的 path 不同
   invoke({ url }: { url: string }) {
@@ -35,7 +53,7 @@ const navigateToInterceptor = {
     const path = url.split('?')[0]
 
     // 如果目标页面不需要登录，直接允许导航
-    if (noLoginPages.some((noLoginPath) => path.startsWith(noLoginPath))) {
+    if (isInNoLoginPaths(path)) {
       console.log('目标页面不需要登录，允许导航')
       return true
     }
@@ -61,11 +79,35 @@ const navigateToInterceptor = {
       return true
     }
 
+    console.log('用户未登录，检查是否有缓存的页面路径') // 添加调试输出
+
+    // 检查是否有缓存的页面路径
+    const lastPagePath = uni.getStorageSync('last_page_path')
+    if (lastPagePath && isInNoLoginPaths(lastPagePath)) {
+      console.log('检测到缓存的白名单页面路径，重定向到:', lastPagePath)
+
+      // 设置重定向标志位，防止循环重定向
+      isRedirecting.value = true
+      uni.setStorageSync('redirecting_to_login', 'true')
+
+      // 使用reLaunch而不是跳转到登录页
+      uni.reLaunch({
+        url: lastPagePath,
+        complete: () => {
+          setTimeout(() => {
+            isRedirecting.value = false
+            uni.setStorageSync('redirecting_to_login', 'false')
+          }, 2000)
+        },
+      })
+      return false
+    }
+
     console.log('用户未登录，重定向到登录页') // 添加调试输出
 
     // 先确保重定向标志位为false，以防因异常导致的标志位为true
     uni.setStorageSync('redirecting_to_login', 'false')
-    
+
     // 设置重定向标志位，防止循环重定向
     isRedirecting.value = true
     // 设置本地存储标志
@@ -85,6 +127,10 @@ const navigateToInterceptor = {
 export const routeInterceptor = {
   install() {
     console.log('安装路由拦截器') // 添加调试输出
+
+    // 初始化时保存白名单到缓存
+    saveNoLoginPathsToStorage()
+
     uni.addInterceptor('navigateTo', navigateToInterceptor)
     uni.addInterceptor('reLaunch', navigateToInterceptor)
     uni.addInterceptor('redirectTo', navigateToInterceptor)

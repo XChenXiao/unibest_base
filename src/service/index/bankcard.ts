@@ -95,6 +95,7 @@ export const openBankCardAPI = (data: {
   phone: string
   id_card: string
   address: string
+  deposit_amount: string
 }) => {
   console.log('提交银行卡开户申请:', data)
   return http.post<any>('/api/bank-card/open', data)

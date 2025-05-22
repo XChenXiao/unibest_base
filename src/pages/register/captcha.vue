@@ -2,6 +2,7 @@
 {
   style: {
     navigationBarTitleText: '图形验证码注册',
+    navigationStyle: 'custom',
   },
 }
 </route>
@@ -13,7 +14,6 @@
     <!-- 标题区域 -->
     <view class="title-area">
       <text class="main-title">注册账号</text>
-      <text class="sub-title">使用图形验证码注册</text>
     </view>
 
     <!-- 注册表单 -->
@@ -45,7 +45,12 @@
             v-model="formData.captcha_code"
           />
           <view class="captcha-container" @click="refreshCaptcha">
-            <image v-if="captchaImage" :src="captchaImage" class="captcha-image" mode="aspectFit"></image>
+            <image
+              v-if="captchaImage"
+              :src="captchaImage"
+              class="captcha-image"
+              mode="aspectFit"
+            ></image>
             <view v-else class="captcha-loading">加载中...</view>
           </view>
         </view>
@@ -120,9 +125,9 @@
 
       <button class="register-btn" :disabled="!isFormValid" @click="handleRegister">注 册</button>
 
-      <view class="register-options">
+      <!-- <view class="register-options">
         <text class="option-link" @click="goToSmsRegister">短信验证码注册</text>
-      </view>
+      </view> -->
 
       <view class="login-link">
         <text>已有账号？</text>
@@ -135,7 +140,7 @@
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { captchaRegisterAPI, generateCaptchaAPI } from '@/service/index/auth'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onHide, onUnload } from '@dcloudio/uni-app'
 
 // 表单数据
 const formData = reactive({
@@ -159,6 +164,27 @@ onLoad((options) => {
   if (Object.values(options).length > 0) {
     formData.referrer_invite_code = Object.values(options)[0]
   }
+
+  // 保存当前页面路径到缓存，确保从应用切回时能够正确识别
+  const currentPath = '/pages/register/captcha'
+  console.log('图形验证码注册页面加载，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
+})
+
+// 页面隐藏时保存路径
+onHide(() => {
+  // 保存当前页面路径到缓存
+  const currentPath = '/pages/register/captcha'
+  console.log('图形验证码注册页面隐藏，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
+})
+
+// 页面卸载时保存路径
+onUnload(() => {
+  // 保存当前页面路径到缓存
+  const currentPath = '/pages/register/captcha'
+  console.log('图形验证码注册页面卸载，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
 })
 
 // 页面加载时获取验证码
@@ -187,7 +213,7 @@ const toggleAgreement = () => {
 const refreshCaptcha = async () => {
   try {
     const res = await generateCaptchaAPI({ type: 'register' })
-    
+
     if (res && res.status === 'success' && res.data) {
       captchaImage.value = res.data.captcha_image
       formData.captcha_id = res.data.captcha_id
@@ -333,7 +359,7 @@ const handleRegister = async () => {
     }
 
     uni.showToast({
-      title: error?.message || '注册失败，请重试',
+      title: error?.data.message || '注册失败，请重试',
       icon: 'none',
     })
   }
@@ -440,18 +466,18 @@ page {
         height: 80rpx;
         font-size: 28rpx;
       }
-      
+
       .captcha-container {
-        width: 120rpx;
-        height: 60rpx;
+        width: 160rpx;
+        height: 80rpx;
         border-radius: 4rpx;
         overflow: hidden;
-        
+
         .captcha-image {
           width: 100%;
           height: 100%;
         }
-        
+
         .captcha-loading {
           width: 100%;
           height: 100%;
@@ -522,7 +548,7 @@ page {
   .register-options {
     text-align: center;
     margin-bottom: 20rpx;
-    
+
     .option-link {
       font-size: 26rpx;
       color: #3498db;
@@ -541,4 +567,4 @@ page {
     }
   }
 }
-</style> 
+</style>

@@ -29,8 +29,8 @@
       </wd-tabbar-item>
       <wd-tabbar-item v-else-if="item.iconType === 'local'" :title="item.text">
         <template #icon>
-          <image v-if="idx === tabbarStore.curIdx" :src="getIconPath(item.iconHL)" h-40rpx w-40rpx />
-          <image v-else :src="getIconPath(item.icon)" h-40rpx w-40rpx />
+          <image v-if="idx === tabbarStore.curIdx" :src="item.iconHL" h-40rpx w-40rpx />
+          <image v-else :src="item.icon" h-40rpx w-40rpx />
         </template>
       </wd-tabbar-item>
     </block>
@@ -56,14 +56,14 @@ function getIconPath(iconPath: string): string {
   if (iconPath.startsWith('http') || iconPath.startsWith('//')) {
     return iconPath
   }
-  
+
   // 优先使用VITE_APP_PUBLIC_BASE，如果不存在则使用BASE_URL或默认的'/'
   const baseUrl = import.meta.env.VITE_APP_PUBLIC_BASE || import.meta.env.BASE_URL || '/'
   const basePath = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
-  
+
   // 移除iconPath开头的斜杠，避免路径重复
   const cleanIconPath = iconPath.startsWith('/') ? iconPath.slice(1) : iconPath
-  
+
   return `${basePath}${cleanIconPath}`
 }
 
@@ -92,7 +92,8 @@ onLoad(() => {
   z-index: 500 !important; /* 设置较低的层级，确保弹窗能覆盖tabbar */
 }
 
-:deep(.wd-tabbar), :deep(.wd-tabbar__content) {
+:deep(.wd-tabbar),
+:deep(.wd-tabbar__content) {
   z-index: 500 !important;
 }
 </style>

@@ -2,6 +2,7 @@
 {
   style: {
     navigationBarTitleText: '登录',
+    navigationStyle: 'custom',
   },
 }
 </route>
@@ -12,10 +13,8 @@
 
     <!-- Logo区域 -->
     <view class="logo-area">
-      <view class="logo">
-        <text class="logo-text">财</text>
-      </view>
-      <text class="app-name">理财管理平台</text>
+      <image src="/src/static/images/logo/logo.jpg" class="logo" />
+      <text class="app-name">中银易捷</text>
       <text class="app-slogan">专业的财富管理伙伴</text>
     </view>
 
@@ -64,22 +63,30 @@
       <view class="register-link">
         <text>没有账号？</text>
         <text class="register-text" @click="goToSmsRegister">短信验证码注册</text>
-        <text> | </text>
+        <text>|</text>
         <text class="register-text" @click="goToCaptchaRegister">图形验证码注册</text>
       </view>
     </view>
 
     <!-- 底部版权信息 -->
     <view class="login-footer">
-      <text>版权所有 © 2023-2024 金融交易平台</text>
+      <text></text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onUnmounted, computed } from 'vue'
+import { ref, reactive, onUnmounted, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store'
 import { sendSmsCodeAPI, smsLoginAPI } from '@/service/index/auth'
+
+// 添加重定向逻辑，在组件挂载时自动重定向到密码登录页面
+onMounted(() => {
+  // 自动重定向到密码登录页面
+  uni.redirectTo({
+    url: '/pages/login/password',
+  })
+})
 
 // 表单数据
 const formData = reactive({
@@ -201,10 +208,10 @@ const handleLogin = async () => {
     uni.showLoading({
       title: '登录中...',
     })
-    
+
     console.log('开始登录请求，参数:', {
       phone: formData.phone,
-      code: formData.code
+      code: formData.code,
     })
 
     // 调用短信登录API
@@ -212,7 +219,7 @@ const handleLogin = async () => {
       phone: formData.phone,
       code: formData.code,
     })
-    
+
     console.log('登录响应:', res)
 
     // 隐藏加载提示
@@ -222,12 +229,12 @@ const handleLogin = async () => {
       // 保存用户信息和token
       userStore.setUserInfo({
         ...res.data.user,
-        token: res.data.access_token
-      });
-      
+        token: res.data.access_token,
+      })
+
       // 重置登录重定向标志
       uni.setStorageSync('redirecting_to_login', 'false')
-      
+
       uni.showToast({
         title: '登录成功',
         icon: 'success',
@@ -237,22 +244,22 @@ const handleLogin = async () => {
       uni.showLoading({
         title: '加载数据...',
       })
-      
+
       try {
         // 导入需要的store
         const { usePlatformStore } = await import('@/store/platform')
         const { useAppStore } = await import('@/store/app')
-        
+
         const platformStore = usePlatformStore()
         const appStore = useAppStore()
-        
+
         // 获取平台功能开关设置
         await platformStore.fetchPlatformSettings()
         // 获取银行卡开户预存金
         appStore.fetchBankCardOpenFee()
         // 刷新用户信息
         await userStore.fetchUserInfo()
-        
+
         uni.hideLoading()
       } catch (error) {
         console.error('加载平台数据失败', error)
@@ -270,9 +277,9 @@ const handleLogin = async () => {
             console.error('跳转到首页失败:', err)
             // 如果switchTab失败，尝试使用reLaunch
             uni.reLaunch({
-              url: '/pages/index/index'
+              url: '/pages/index/index',
             })
-          }
+          },
         })
       }, 1000)
     }

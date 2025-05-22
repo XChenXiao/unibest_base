@@ -26,17 +26,63 @@ const appOpenCount = ref(0)
 // 添加一个标志位，防止多次重定向
 const isRedirecting = ref(false)
 
+// 定义白名单路径 - 这些页面不需要登录
+const noLoginPaths = [
+  '/pages/login/index',
+  '/pages/register/index',
+  '/pages/register/captcha',
+  '/pages/login/password',
+  '/pages/login/reset-password',
+  '/pages/index/index',
+]
+
+// 保存白名单到本地缓存
+const saveNoLoginPathsToStorage = () => {
+  uni.setStorageSync('no_login_paths', JSON.stringify(noLoginPaths))
+}
+
+// 从本地缓存获取白名单
+const getNoLoginPathsFromStorage = () => {
+  const paths = uni.getStorageSync('no_login_paths')
+  return paths ? JSON.parse(paths) : noLoginPaths
+}
+
+// 检查页面是否在白名单中
+const isInNoLoginPaths = (path: string) => {
+  const paths = getNoLoginPathsFromStorage()
+  return paths.some((noLoginPath: string) => path.startsWith(noLoginPath))
+}
+
+// 保存当前页面路径到缓存
+const saveCurrentPageToStorage = () => {
+  const pages = getCurrentPages()
+  if (pages.length > 0) {
+    const currentPage = pages[pages.length - 1]
+    const currentPath = '/' + currentPage.route
+    console.log('保存当前页面路径到缓存:', currentPath)
+    uni.setStorageSync('last_page_path', currentPath)
+  }
+}
+
+// 从缓存获取上次的页面路径
+const getLastPageFromStorage = () => {
+  return uni.getStorageSync('last_page_path') || ''
+}
+
 onLaunch(async () => {
   // 应用启动时，无论如何都重置登录重定向标志位
   // 这样即使上次应用异常退出，也能确保本次启动正常跳转到登录页
   uni.setStorageSync('redirecting_to_login', 'false')
   console.log('应用启动，重置登录重定向标志位')
-  
+
+  // 保存白名单到本地缓存
+  saveNoLoginPathsToStorage()
+
   // 初始化tabbar，设置首页索引为0
   tabbarStore.initTabbar()
 
   console.log('应用启动，检查登录状态...')
-  
+
   // 检查是否有本地存储的token
   if (userStore.isLogined) {
     console.log('检测到用户token，获取用户信息和平台设置')
@@ -48,18 +94,49 @@ onLaunch(async () => {
         await platformStore.fetchPlatformSettings()
         // 获取银行卡开户预存金
         appStore.fetchBankCardOpenFee()
-        
-        // 登录成功后导航到首页
-        uni.switchTab({
-          url: '/pages/index/index',
-          fail: (err) => {
-            console.error('跳转到首页失败，尝试使用reLaunch', err)
+
+        // 获取缓存的上一次页面路径
+        const lastPagePath = getLastPageFromStorage()
+        if (
+          lastPagePath &&
+          lastPagePath !== '/pages/login/index' &&
+          lastPagePath !== '/pages/login/password'
+        ) {
+          // 如果有缓存的页面路径且不是登录页，跳转到该页面
+          console.log('从缓存恢复页面:', lastPagePath)
+
+          // 判断是否是tabbar页面
+          if (['/pages/index/index', '/pages/my/index'].includes(lastPagePath)) {
+            uni.switchTab({
+              url: lastPagePath,
+              fail: (err) => {
+                console.error('跳转到缓存页面失败，回到首页', err)
+                uni.switchTab({ url: '/pages/index/index' })
+              },
+            })
+          } else {
+            // 非tabbar页面使用reLaunch
             uni.reLaunch({
-              url: '/pages/index/index'
+              url: lastPagePath,
+              fail: (err) => {
+                console.error('跳转到缓存页面失败，回到首页', err)
+                uni.switchTab({ url: '/pages/index/index' })
+              },
             })
           }
-        })
-        
+        } else {
+          // 没有缓存的页面或是登录页，直接跳转到首页
+          uni.switchTab({
+            url: '/pages/index/index',
+            fail: (err) => {
+              console.error('跳转到首页失败，尝试使用reLaunch', err)
+              uni.reLaunch({
+                url: '/pages/index/index',
+              })
+            },
+          })
+        }
+
         // 关闭启动封面
         closeSplashscreen()
       } else {
@@ -76,8 +153,42 @@ onLaunch(async () => {
       navigateToLogin()
     }
   } else {
-    console.log('用户未登录，直接跳转到登录页')
-    // 用户未登录，直接跳转到登录页
+    console.log('用户未登录，检查缓存的页面路径')
+
+    // 获取缓存的上一次页面路径
+    const lastPagePath = getLastPageFromStorage()
+
+    // 如果有缓存的页面且在白名单中，直接跳转到该页面
+    if (lastPagePath && isInNoLoginPaths(lastPagePath)) {
+      console.log('恢复到缓存的白名单页面:', lastPagePath)
+      uni.reLaunch({
+        url: lastPagePath,
+        success: () => {
+          console.log('成功恢复到缓存页面')
+        },
+        fail: (err) => {
+          console.error('恢复缓存页面失败，跳转到登录页', err)
+          navigateToLogin()
+        },
+      })
+      return
+    }
+
+    // 获取当前页面路径
+    const pages = getCurrentPages()
+    if (pages.length > 0) {
+      const currentPage = pages[pages.length - 1]
+      const currentPath = '/' + currentPage.route
+
+      // 检查当前页面是否在白名单中
+      if (isInNoLoginPaths(currentPath)) {
+        console.log('当前页面在白名单中，无需跳转到登录页')
+        return
+      }
+    }
+
+    // 不在白名单中，跳转到登录页
+    console.log('用户未登录且不在白名单中，直接跳转到登录页')
     setTimeout(() => {
       navigateToLogin()
     }, 500)
@@ -99,13 +210,13 @@ const navigateToLogin = () => {
   // 先确保重定向标志位为false
   // 这样可以防止前一次异常导致标志位为true而跳过跳转
   uni.setStorageSync('redirecting_to_login', 'false')
-  
+
   // 检查是否正在重定向到登录页面
   if (uni.getStorageSync('redirecting_to_login') === 'true') {
     console.log('已有重定向到登录页面的过程，跳过重复跳转')
     return
   }
-  
+
   // 如果已经在重定向中，则不再执行
   if (isRedirecting.value) {
     console.log('已经在重定向过程中，跳过重复跳转')
@@ -132,16 +243,16 @@ const navigateToLogin = () => {
   // 设置本地存储标志
   uni.setStorageSync('redirecting_to_login', 'true')
 
-  // 重定向到登录页
+  // 重定向到密码登录页
   uni.reLaunch({
-    url: '/pages/login/index',
+    url: '/pages/login/password',
     complete: () => {
       // 完成后重置标志
       setTimeout(() => {
         isRedirecting.value = false
         // 不重置本地存储标志，让登录页面来重置
       }, 2000)
-      
+
       // 在跳转完成后关闭启动封面
       closeSplashscreen()
     },
@@ -211,44 +322,44 @@ onShow(() => {
   console.log('应用显示，刷新平台功能开关设置...')
   platformStore.fetchPlatformSettings()
 
-  // 检查是否在白名单页面，避免重复登录检查
-  const pages = getCurrentPages()
-
-  if (pages.length > 0) {
-    const currentPage = pages[pages.length - 1]
-    const currentPath = '/' + currentPage.route
-
-    const whitelistPaths = [
-      '/pages/login/index',
-      '/pages/register/index',
-      '/pages/login/password',
-      '/pages/login/reset-password',
-      '/pages/index/index',
-    ]
-
-    // 如果当前页面在白名单中，不做额外处理
-    if (whitelistPaths.some((path) => currentPath.startsWith(path))) {
-      console.log('当前页面在白名单中，无需处理登录状态:', currentPath)
-      return
-    }
-    
-    // 检查登录状态
-    if (!userStore.isLogined) {
-      console.log('用户未登录，自动跳转到登录页')
-      setTimeout(() => {
-        navigateToLogin()
-      }, 500)
-    }
-  }
+  // 注意：不再在onShow中触发登录跳转逻辑
+  // 仅在第一次启动应用时(onLaunch)检查登录状态
+  console.log('应用显示，不再检查登录状态以避免意外跳转')
 })
 
 onHide(() => {
   console.log('App Hide - 应用进入后台')
+  // 应用退出到后台时，保存当前页面路径
+  saveCurrentPageToStorage()
+
   // 应用退出到后台时，重置登录重定向标志位
   // 这样当用户再次进入时可以正常触发登录跳转
   uni.setStorageSync('redirecting_to_login', 'false')
   console.log('应用退出到后台，重置登录重定向标志位')
 })
+
+// UniApp不支持直接使用window.addEventListener
+// 改为使用uni.onError捕获应用错误，同时保存页面状态
+uni.onError((err) => {
+  console.error('应用发生错误，保存当前页面状态:', err)
+  saveCurrentPageToStorage()
+})
+
+// 在页面上注册unload事件（仅H5环境有效）
+// #ifdef H5
+onMounted(() => {
+  window.addEventListener('beforeunload', () => {
+    saveCurrentPageToStorage()
+    console.log('页面即将刷新，保存当前页面路径')
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', () => {
+    saveCurrentPageToStorage()
+  })
+})
+// #endif
 </script>
 
 <template>

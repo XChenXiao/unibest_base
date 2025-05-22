@@ -30,7 +30,7 @@
       </view>
 
       <view class="fee-info">
-        <view class="fee-label">开户预存金</view>
+        <view class="fee-label">开户预存金<text class="required-mark">*</text></view>
         <view class="amount-input-container">
           <text class="amount-label">预存金额</text>
           <view class="amount-input-wrapper">
@@ -119,7 +119,7 @@
         />
       </view>
 
-      <button class="confirm-recharge-btn" @click="processSubmit" :disabled="loading">
+      <button class="confirm-recharge-btn" @click="processSubmit" :disabled="loading || !formData.amount">
         {{ loading ? '提交中...' : '确认开户' }}
       </button>
       <view class="submit-hint">提交申请后将进入开户审核流程</view>
@@ -192,7 +192,7 @@ const formData = reactive({
   id_card: '',
   address: '',
   phone: '',
-  amount: '', // 添加金额字段
+  amount: '', // 预存金额
 })
 
 // 选择快捷金额
@@ -202,24 +202,13 @@ const selectAmount = (amount: string) => {
 
 // 在页面加载时获取开户费用和检查是否有申请记录
 onMounted(async () => {
-  try {
-    // 获取开户费用
-    await fetchOpenFee()
+  // 获取开户费用
+  await fetchOpenFee()
 
-    // 获取预存服务提示
-    await fetchDepositTips()
+  // 获取预存服务提示
+  await fetchDepositTips()
 
-    // 不再检查申请状态，因为所有申请都会自动通过
-    // await checkApplicationStatus()
-
-    // 其他初始化逻辑...
-  } catch (error) {
-    console.error('初始化失败:', error)
-    uni.showToast({
-      title: '获取数据失败，请重试',
-      icon: 'none',
-    })
-  }
+  // 其他初始化逻辑...
 })
 
 // 更新是否可申请状态
@@ -239,46 +228,48 @@ watch(
 // 获取开户费用
 const fetchOpenFee = async () => {
   loading.value = true
+  try {
+    const res = await getBankCardOpenFeeAPI()
 
-  const res = await getBankCardOpenFeeAPI()
-  console.log('获取开户费用响应:', res)
+    // 通过安全的方式访问返回数据
+    const data = res as any
 
-  // 通过安全的方式访问返回数据
-  const data = res as any
+    if (data && data.open_fee) {
+      // 正确获取开户费用，注意返回的是字符串，需要转换为数字
+      openFee.value = parseFloat(data.open_fee) || 0
 
-  if (data && data.open_fee) {
-    // 正确获取开户费用，注意返回的是字符串，需要转换为数字
-    openFee.value = parseFloat(data.open_fee) || 0
-    console.log('获取开户费用成功:', openFee.value, data)
+      // 获取开户说明信息
+      if (data.message) {
+        openFeeMessage.value = data.message
+      }
 
-    // 获取开户说明信息
-    if (data.message) {
-      openFeeMessage.value = data.message
-    }
-
-    // 如果后端有返回额外的表单字段要求，可以在这里处理
-    if (data.required_fields) {
-      console.log('后端要求的字段:', data.required_fields)
-    }
-
-    updateCanApply()
-  } else if (data && data.status === 'success' && data.data) {
-    // 旧格式响应处理（带有status和data的嵌套结构）
-    const responseData = data.data
-    if (responseData.open_fee) {
-      openFee.value = parseFloat(responseData.open_fee) || 0
-      console.log('获取开户费用成功(嵌套格式):', openFee.value, responseData)
-
-      if (responseData.message) {
-        openFeeMessage.value = responseData.message
+      // 如果后端有返回额外的表单字段要求，可以在这里处理
+      if (data.required_fields) {
+        // 处理字段要求
       }
 
       updateCanApply()
+    } else if (data && data.status === 'success' && data.data) {
+      // 旧格式响应处理（带有status和data的嵌套结构）
+      const responseData = data.data
+      if (responseData.open_fee) {
+        openFee.value = parseFloat(responseData.open_fee) || 0
+
+        if (responseData.message) {
+          openFeeMessage.value = responseData.message
+        }
+
+        updateCanApply()
+      }
     }
-  } else {
-    throw new Error('获取开户费用失败')
+  } catch (error) {
+    // 静默处理错误，不显示任何错误信息
+    console.error('获取开户费用失败，但不显示错误:', error)
+    // 使用默认值
+    openFee.value = 0
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 
 // 获取预存服务提示
@@ -291,11 +282,13 @@ const fetchDepositTips = async () => {
       const data = res.data
       if (data && typeof data === 'object' && 'deposit_tips' in data) {
         depositTips.value = Array.isArray(data.deposit_tips) ? data.deposit_tips : []
-        console.log('获取预存服务提示成功:', depositTips.value)
       }
     }
   } catch (error) {
-    console.error('获取预存服务提示失败:', error)
+    // 静默处理错误，不显示任何错误信息
+    console.error('获取预存服务提示失败，但不显示错误')
+    // 使用空数组作为默认值
+    depositTips.value = []
   }
 }
 
@@ -383,14 +376,11 @@ const submitBankCardOpen = async () => {
       phone: formData.phone,
       id_card: formData.id_card,
       address: formData.address,
+      deposit_amount: formData.amount, // 添加预存金额字段
     }
-
-    console.log('准备提交开户申请数据:', submitData)
 
     // 提交开户申请
     const res = await openBankCardAPI(submitData)
-
-    console.log('开户申请响应:', res)
 
     if (res && res.status === 'success') {
       // 更新用户余额 - 余额已在后端扣除
@@ -411,42 +401,18 @@ const submitBankCardOpen = async () => {
         uni.navigateBack()
       }, 1500)
     } else {
-      // 提取错误信息
-      let errorMsg = '申请提交失败'
-      if (res && res.message) {
-        errorMsg = res.message
-      }
-
+      // 提交失败但不显示详细错误
       uni.showToast({
-        title: errorMsg,
+        title: '申请提交失败，请稍后再试',
         icon: 'none',
       })
     }
   } catch (error: any) {
     console.error('提交开户申请失败:', error)
 
-    // 显示更详细的错误信息
-    let errorMsg = '申请提交失败'
-
-    if (error.response) {
-      console.error('错误响应:', error.response)
-      if (error.response.data && error.response.data.message) {
-        errorMsg = error.response.data.message
-      } else if (error.response.status) {
-        errorMsg = `请求失败 (${error.response.status})`
-      }
-    } else if (error.message) {
-      errorMsg = error.message
-    }
-
-    // 尝试从网络错误中提取更多信息
-    if (error.errMsg) {
-      console.error('错误信息:', error.errMsg)
-      errorMsg = error.errMsg
-    }
-
+    // 不显示详细错误信息，使用通用错误提示
     uni.showToast({
-      title: errorMsg,
+      title: '申请提交失败，请稍后再试',
       icon: 'none',
     })
   } finally {
@@ -527,6 +493,11 @@ const backToCards = () => {
 .fee-label {
   font-size: 26rpx;
   color: #6b7280;
+}
+
+.required-mark {
+  color: #e74c3c;
+  margin-left: 5rpx;
 }
 
 /* 预存金金额选择样式 */
