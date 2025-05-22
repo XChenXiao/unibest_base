@@ -84,30 +84,18 @@ onLaunch(async () => {
 
   // 检查是否有token (通过pinia持久化存储)
   if (userStore.isLogined) {
-    console.log('检测到用户token，获取用户信息和平台设置')
+    console.log('检测到用户token，获取用户基本信息')
     try {
-      // 获取用户信息 - 使用用户管理器获取完整用户信息（包括银行卡和团队信息）
-      // 这是首次启动时的完整请求，其他页面应该使用特定的API来避免重复请求
-      const userCompleteInfo = await userManagerStore.getUserCompleteInfo(true)
+      // 获取用户基本信息 - 只获取用户信息和认证状态，不请求银行卡和团队信息
+      await userStore.fetchUserInfo()
 
-      if (userCompleteInfo) {
-        // 登录有效，获取平台功能开关设置
-        await platformStore.fetchPlatformSettings()
-        // 获取银行卡开户预存金
-        appStore.fetchBankCardOpenFee()
+      // 登录有效，获取平台功能开关设置
+      await platformStore.fetchPlatformSettings()
+      // 获取银行卡开户预存金
+      appStore.fetchBankCardOpenFee()
 
-        // 获取缓存的上一次页面路径
-
-        // 关闭启动封面
-        closeSplashscreen()
-      } else {
-        // 清除过期的token
-        userManagerStore.clearAllUserData()
-        // 跳转到登录页
-        navigateToLogin()
-        // 关闭启动封面
-        closeSplashscreen()
-      }
+      // 关闭启动封面
+      closeSplashscreen()
     } catch (error) {
       console.error('获取用户信息失败', error)
       // 出错时清除token
