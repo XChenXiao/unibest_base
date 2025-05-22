@@ -96,13 +96,8 @@ const handleNavToBankCard = () => {
 
 // 页面加载时
 onMounted(() => {
-  // 刷新用户信息以确保余额数据是最新的
-  userStore.fetchUserInfo()
-
-  // 监听页面显示事件，每次页面显示时刷新数据
-  uni.$on('page-show', () => {
-    userStore.fetchUserInfo()
-  })
+  // 不再主动请求用户信息，仅依赖store中已有的数据
+  console.log('钱包页面加载，当前store中的余额:', userStore.userInfo.balance)
 
   // 监听余额更新事件
   uni.$on('user_balance_updated', (data) => {
@@ -115,7 +110,6 @@ onMounted(() => {
 
 // 在页面卸载时移除事件监听
 onUnmounted(() => {
-  uni.$off('page-show')
   uni.$off('user_balance_updated')
 })
 </script>

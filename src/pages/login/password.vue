@@ -157,8 +157,8 @@ const handleLogin = async () => {
         const platformStore = usePlatformStore()
         const appStore = useAppStore()
 
-        // 获取平台功能开关设置
-        await platformStore.fetchPlatformSettings()
+        // 获取平台功能开关设置（登录时强制更新）
+        await platformStore.fetchPlatformSettings(true)
         // 获取银行卡开户预存金
         appStore.fetchBankCardOpenFee()
         // 刷新用户信息

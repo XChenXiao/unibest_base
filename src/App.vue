@@ -283,9 +283,9 @@ onShow(() => {
   console.log('App onShow')
   // 移除自动刷新用户信息的逻辑，只在首页刷新
 
-  // 每次应用显示时刷新平台功能开关设置
-  console.log('应用显示，刷新平台功能开关设置...')
-  platformStore.fetchPlatformSettings()
+  // 不再在每次应用显示时刷新平台功能开关设置
+  console.log('应用显示，不再重复请求平台功能开关设置')
+  // platformStore.fetchPlatformSettings() // 移除此处调用，仅在首次启动时请求
 
   // 注意：不再在onShow中触发登录跳转逻辑
   // 仅在第一次启动应用时(onLaunch)检查登录状态
