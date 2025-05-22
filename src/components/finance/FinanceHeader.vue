@@ -102,8 +102,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
-import { useUserStore } from '@/store'
+import { ref, computed, onMounted, defineEmits } from 'vue'
+import { useUserStore, useVerificationStore } from '@/store'
 
 defineProps({
   safeAreaInsets: {
@@ -119,6 +119,7 @@ defineProps({
 
 const emit = defineEmits(['menu-click'])
 const userStore = useUserStore()
+const verificationStore = useVerificationStore()
 
 const handleMenuClick = (type: string) => {
   emit('menu-click', type)
@@ -150,7 +151,7 @@ const handleMenuClick = (type: string) => {
 const checkVerificationStatus = async () => {
   try {
     // 获取用户信息，检查认证状态
-    if (userStore.isVerified) {
+    if (verificationStore.isVerified) {
       uni.showToast({
         title: '您已完成实名认证',
         icon: 'success',
@@ -174,7 +175,7 @@ const checkVerificationStatus = async () => {
 // 跳转到邀请好友页面
 const navigateToInviteFriend = () => {
   // 检查实名认证状态
-  if (!userStore.isVerified) {
+  if (!verificationStore.isVerified) {
     uni.showToast({
       title: '请先完成实名认证',
       icon: 'none',
@@ -192,7 +193,7 @@ const navigateToInviteFriend = () => {
 // 跳转到我的团队页面
 const navigateToTeam = () => {
   // 检查实名认证状态
-  if (!userStore.isVerified) {
+  if (!verificationStore.isVerified) {
     uni.showToast({
       title: '请先完成实名认证',
       icon: 'none',

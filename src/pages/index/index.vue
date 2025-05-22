@@ -55,10 +55,10 @@ import FinanceMilestones from '@/components/finance/FinanceMilestones.vue'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import VerificationGuidePopup from '@/components/common/VerificationGuidePopup.vue'
 import { getCheckInStatsAPI, getCheckInDailyStatusAPI, checkInAPI } from '@/service/index/checkin'
-import { useUserStore } from '@/store'
+import { useUserStore, useVerificationStore, useUserManagerStore } from '@/store'
 import { API_URL } from '@/config/api'
-import { getVerificationStatus } from '@/service/app/user'
 import checkUpdate from '@/uni_modules/uni-upgrade-center-app/utils/check-update'
+import { useTabItemTap } from '@/hooks/useTabItemTap'
 
 defineOptions({
   name: 'FinanceHome',
@@ -69,6 +69,26 @@ const { safeAreaInsets } = uni.getSystemInfoSync()
 
 // 获取用户状态
 const userStore = useUserStore()
+// 获取验证状态
+const verificationStore = useVerificationStore()
+// 获取用户管理器
+const userManagerStore = useUserManagerStore()
+
+// 使用TabBar钩子，配置首页信息
+useTabItemTap({
+  refreshUserInfo: true,
+  pageName: '首页',
+  isIndexPage: true, // 明确标识这是首页
+  onTabTap: () => {
+    console.log('首页Tab被点击，刷新数据')
+    // 刷新签到数据
+    fetchCheckInData()
+    // 刷新用户所有信息
+    refreshUserAllData()
+    // 检查实名认证状态
+    checkVerificationStatusAndShowPopups()
+  },
+})
 
 // 数据
 const isCheckingIn = ref(false)
@@ -117,6 +137,8 @@ onMounted(() => {
 // 监听页面显示（每次进入页面都会调用）
 onShow(() => {
   console.log('首页被显示')
+  // 每次页面激活时刷新用户所有信息
+  refreshUserAllData()
   // 每次页面激活时都检查用户实名认证状态
   checkVerificationStatusAndShowPopups()
 })
@@ -264,32 +286,23 @@ const handleCheckIn = async () => {
 // 获取用户实名认证状态
 const fetchVerificationStatus = async () => {
   try {
-    // 首先从userStore中检查认证状态，避免重复请求
-    if (userStore.isVerified) {
+    // 如果用户未登录，不获取认证状态
+    if (!userStore.isLogined) {
+      return false
+    }
+
+    // 首先从verificationStore中检查认证状态
+    if (verificationStore.isVerified) {
       console.log('首页从store中获取到用户已实名认证')
       return true
     }
 
-    // 如果store中没有明确的认证状态，再发起请求
-    console.log('首页获取实名认证状态')
-    const res: any = await getVerificationStatus({})
-    console.log('实名认证状态返回:', res)
+    // 如果store中没有明确的认证状态，通过用户管理器刷新认证信息
+    console.log('首页刷新用户实名认证状态')
+    await verificationStore.fetchVerificationStatus()
 
-    if (res.status === 'success') {
-      verificationStatus.value = res
-
-      // 更新用户的认证状态到store中
-      if (res.data?.is_verified) {
-        // 用户已认证，更新状态到store
-        userStore.verificationStatus.verified = true
-        return true
-      } else {
-        // 用户未认证
-        userStore.verificationStatus.verified = false
-        return false
-      }
-    }
-    return false
+    // 返回最新的认证状态
+    return verificationStore.isVerified
   } catch (error) {
     console.error('获取实名认证状态失败:', error)
     return false
@@ -298,8 +311,8 @@ const fetchVerificationStatus = async () => {
 
 // 检查用户实名认证状态并显示相应弹窗
 const checkVerificationStatusAndShowPopups = async () => {
-  // 获取最新的实名认证状态，优先使用store中的状态
-  const isVerified = userStore.isVerified || (await fetchVerificationStatus())
+  // 获取最新的实名认证状态
+  const isVerified = await fetchVerificationStatus()
 
   // 如果用户未实名认证，显示实名认证指引弹窗
   if (!isVerified) {
@@ -347,6 +360,16 @@ const handleVerificationGuideClose = (data: { later: boolean }) => {
   if (data.later) {
     // 用户选择了"稍后认证"，可以在这里添加额外逻辑
     checkAndShowAnnouncement() // 可以考虑显示公告弹窗
+  }
+}
+
+// 刷新用户所有信息
+const refreshUserAllData = async () => {
+  if (userStore.isLogined) {
+    console.log('刷新用户所有信息')
+    await userManagerStore.refreshAllUserData()
+  } else {
+    console.log('用户未登录，不刷新用户数据')
   }
 }
 </script>

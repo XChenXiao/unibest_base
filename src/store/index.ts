@@ -13,6 +13,11 @@ store.use(
 
 export default store
 
-// 模块统一导出
-export * from './user'
+// 导出各个模块store
+export * from './modules/user'
+export * from './modules/verification'
+export * from './modules/bankcard'
+export * from './modules/team'
+export * from './modules/message'
+export * from './user-manager'
 export * from './platform'

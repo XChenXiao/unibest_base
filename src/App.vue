@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only'
-import { useUserStore } from '@/store'
+import { useUserStore, useUserManagerStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { usePlatformStore } from '@/store/platform'
 import { getNeedLoginPages, clearPageCache } from '@/utils'
@@ -12,6 +12,8 @@ import { API_URL } from '@/config/api'
 
 // 初始化用户状态
 const userStore = useUserStore()
+// 用户管理器
+const userManagerStore = useUserManagerStore()
 // 初始化应用状态
 const appStore = useAppStore()
 // 初始化平台设置状态
@@ -80,13 +82,14 @@ onLaunch(async () => {
   // 初始化tabbar，设置首页索引为0
   tabbarStore.initTabbar()
 
-  // 检查是否有本地存储的token
+  // 检查是否有token (通过pinia持久化存储)
   if (userStore.isLogined) {
     console.log('检测到用户token，获取用户信息和平台设置')
     try {
-      // 获取用户信息
-      const success = await userStore.fetchUserInfo()
-      if (success) {
+      // 获取用户信息 - 使用用户管理器
+      const userCompleteInfo = await userManagerStore.getUserCompleteInfo(true)
+
+      if (userCompleteInfo) {
         // 登录有效，获取平台功能开关设置
         await platformStore.fetchPlatformSettings()
         // 获取银行卡开户预存金
@@ -98,7 +101,7 @@ onLaunch(async () => {
         closeSplashscreen()
       } else {
         // 清除过期的token
-        userStore.clearUserInfo()
+        userManagerStore.clearAllUserData()
         // 跳转到登录页
         navigateToLogin()
         // 关闭启动封面
@@ -107,7 +110,7 @@ onLaunch(async () => {
     } catch (error) {
       console.error('获取用户信息失败', error)
       // 出错时清除token
-      userStore.clearUserInfo()
+      userManagerStore.clearAllUserData()
       // 跳转到登录页
       navigateToLogin()
       // 关闭启动封面
@@ -276,6 +279,9 @@ const navigateToLogin = () => {
 // }
 
 onShow(() => {
+  console.log('App onShow')
+  // 移除自动刷新用户信息的逻辑，只在首页刷新
+
   // 每次应用显示时刷新平台功能开关设置
   console.log('应用显示，刷新平台功能开关设置...')
   platformStore.fetchPlatformSettings()

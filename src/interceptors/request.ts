@@ -113,7 +113,7 @@ const httpInterceptor = {
 
     // 3. 添加 token 请求头标识 - 默认为所有请求添加token
     try {
-      // 直接从pinia store获取token
+      // 从pinia store获取token
       const userStore = useUserStore()
       const token = userStore?.userInfo?.token
 
@@ -122,7 +122,6 @@ const httpInterceptor = {
         options.header.Authorization = `Bearer ${token}`
         console.log(`拦截器已添加token到请求头:`, options.url)
       } else {
-        // 如果没有token，这里不处理错误，让http层再尝试获取一次
         console.warn(`拦截器未找到token:`, options.url)
       }
     } catch (error) {

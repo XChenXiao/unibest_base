@@ -5,6 +5,9 @@ import { getVerificationStatusAPI, IVerificationStatus } from '@/service/index/v
 import { checkBankCardStatusAPI, getBankCardsAPI, IBankCard } from '@/service/index/bankcard'
 import { getTeamInfoAPI, getTeamStatsAPI } from '@/service/index/team'
 
+// 最小更新时间间隔(毫秒)：5分钟
+const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
+
 // 用户基本信息接口
 export interface IUserInfo {
   id?: number
@@ -202,6 +205,10 @@ export const useUserInfoStore = defineStore(
             id_card_number: userData.verification?.id_card_number,
           }
 
+          // 保存用户信息更新时间
+          uni.setStorageSync('userInfoUpdateTime', Date.now())
+          
+          console.log('用户信息已更新:', userInfo.value)
           return true
         }
 
@@ -209,6 +216,37 @@ export const useUserInfoStore = defineStore(
       } catch (error) {
         console.error('获取用户信息失败', error)
         return false
+      }
+    }
+
+    // 获取完整用户信息（包括余额和认证状态等）
+    const getUserCompleteInfo = async (forceUpdate = false) => {
+      // 检查上次更新时间
+      const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0
+      const now = Date.now()
+      
+      // 如果是强制更新，则忽略时间间隔直接刷新数据
+      if (forceUpdate && userInfo.value.token) {
+        console.log('强制获取最新用户信息数据')
+        await fetchUserInfo()
+      }
+      // 如果不是强制更新，只在以下情况更新：
+      // 1. 没有上次更新时间记录
+      // 2. 距离上次更新超过了最小更新间隔
+      else if (userInfo.value.token && (!lastUpdateTime || (now - lastUpdateTime > MIN_UPDATE_INTERVAL))) {
+        console.log('获取最新用户信息数据')
+        await fetchUserInfo()
+      } else {
+        console.log('使用缓存的用户信息数据')
+      }
+      
+      return {
+        userInfo: userInfo.value,
+        verificationInfo: verificationInfo.value,
+        bankCardStatus: bankCardStatus.value,
+        bankCards: bankCards.value,
+        teamInfo: teamInfo.value,
+        messageInfo: messageInfo.value
       }
     }
 
@@ -453,6 +491,7 @@ export const useUserInfoStore = defineStore(
       clearUserInfo,
       updateUserBalance,
       fetchUserInfo,
+      getUserCompleteInfo,
       fetchVerificationStatus,
       fetchBankCardStatus,
       fetchBankCards,

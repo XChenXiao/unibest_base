@@ -1,6 +1,7 @@
 import { onLoad, onUnload, onShow, onHide, onTabItemTap } from '@dcloudio/uni-app';
 import { ref } from 'vue';
 import { useUserStore } from '@/store/user';
+import { useUserInfoStore } from '@/store/userInfo';
 
 /**
  * TabBar页面切换监听钩子
@@ -13,12 +14,15 @@ export function useTabItemTap(options: {
   refreshUserInfo?: boolean;
   // 当前页面名称，用于日志
   pageName?: string;
+  // 是否为首页
+  isIndexPage?: boolean;
   // 切换到该页面时的回调
   onTabTap?: () => void;
 }) {
   const {
     refreshUserInfo = true,
     pageName = '当前页面',
+    isIndexPage = false,
     onTabTap
   } = options;
   
@@ -28,29 +32,29 @@ export function useTabItemTap(options: {
   const isVisible = ref(false);
   // 用户数据存储
   const userStore = useUserStore();
+  // 增强版用户信息存储
+  const userInfoStore = useUserInfoStore();
   
   // 检查用户信息
   const checkUserInfo = async () => {
-    // 只有当配置了刷新用户信息且用户已登录时才执行
-    if (refreshUserInfo && userStore.isLogined) {
-      // 获取上次更新时间
-      const lastUpdateTime = uni.getStorageSync('userInfoUpdateTime') || 0;
-      const currentTime = Date.now();
-      const timeElapsed = currentTime - lastUpdateTime;
-      
-      // 如果距离上次更新超过1分钟，则重新获取用户信息
-      if (timeElapsed > 1 * 60 * 1000) {
-        console.log(`[${pageName}] 用户数据需要刷新`);
-        await userStore.fetchUserInfo();
-      } else {
-        console.log(`[${pageName}] 用户数据在有效期内，无需刷新`);
-      }
+    // 只在首页或明确要求刷新用户信息时才获取用户数据
+    if (refreshUserInfo && userStore.isLogined && isIndexPage) {
+      console.log(`[${pageName}] 首页加载，刷新用户数据`);
+      // 使用增强版用户信息store获取用户数据，强制刷新
+      await userInfoStore.getUserCompleteInfo(true);
+      // 同时保持原有的userStore更新，确保兼容性
+      await userStore.fetchUserInfo();
     }
   };
   
   // 监听页面加载
   onLoad(() => {
     console.log(`[${pageName}] 页面加载`);
+    
+    // 如果是首页，在页面首次加载时获取最新用户数据
+    if (isIndexPage) {
+      checkUserInfo();
+    }
   });
   
   // 监听页面显示
@@ -58,8 +62,10 @@ export function useTabItemTap(options: {
     isVisible.value = true;
     console.log(`[${pageName}] 页面显示`);
     
-    // 判断是否需要刷新用户数据
-    checkUserInfo();
+    // 如果是首页，在页面显示时刷新用户数据
+    if (isIndexPage) {
+      checkUserInfo();
+    }
     
     // 执行用户自定义回调
     if (onTabTap) {
@@ -83,8 +89,8 @@ export function useTabItemTap(options: {
     console.log(`[${pageName}] TabItem被点击:`, item);
     fromTabSwitch.value = true;
     
-    // TabBar项被点击时，也检查刷新用户数据
-    if (isVisible.value) {
+    // 仅当是首页时，在TabBar项被点击时刷新用户数据
+    if (isVisible.value && isIndexPage) {
       checkUserInfo();
     }
   });

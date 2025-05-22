@@ -209,6 +209,10 @@ import type { UserCurrency } from '@/service/app/types'
 import SellEquityPopup from '@/components/equity/SellEquityPopup.vue'
 import BuyUsdtDialog from '@/components/currency/BuyUsdtDialog.vue'
 import { useTabItemTap } from '@/hooks/useTabItemTap'
+import { useUserInfoStore } from '@/store/userInfo'
+
+// 初始化用户信息store
+const userInfoStore = useUserInfoStore()
 
 // 控制资产显示隐藏
 const showAssets = ref(true)
@@ -285,14 +289,25 @@ const fetchCurrencyOrders = async () => {
     // 根据当前标签获取买入或卖出订单
     const orderType = activeCurrencyTab.value
 
-    // 先获取用户持有的货币
-    const userResponse = await getUserCurrencies()
-    console.log('用户持有货币数据:', JSON.stringify(userResponse.data))
+    // 获取用户信息，包括持有的货币数据
+    let userCurrencyData = null
+    
+    // 先尝试从store获取用户数据
+    const userData = await userInfoStore.getUserCompleteInfo()
+    
+    // 如果有用户数据，尝试获取用户持有的货币
+    if (userData && userData.userInfo.token) {
+      userCurrencyData = await getUserCurrencies()
+    } else {
+      console.log('用户未登录，无法获取用户持有货币')
+    }
+
+    console.log('用户持有货币数据:', JSON.stringify(userCurrencyData?.data || {}))
 
     // 创建一个用户货币映射表，用于快速查找
     const userCurrencyMap = new Map()
-    if (userResponse.status === 'success' && Array.isArray(userResponse.data)) {
-      userResponse.data.forEach((currency) => {
+    if (userCurrencyData?.status === 'success' && Array.isArray(userCurrencyData.data)) {
+      userCurrencyData.data.forEach((currency) => {
         if (currency && currency.symbol) {
           // 确保数据转换正确
           const availableBalance =
@@ -446,12 +461,22 @@ const fetchUsdtInfo = async () => {
 // 获取用户余额
 const fetchUserBalance = async () => {
   try {
-    // 直接使用getUserBalance API获取用户余额
-    const response = await getUserBalance()
+    // 先尝试从store获取用户余额
+    const userData = await userInfoStore.getUserCompleteInfo()
+    
+    // 如果store中有用户余额数据，直接使用
+    if (userData && userData.userInfo.balance !== undefined) {
+      userBalance.value = userData.userInfo.balance
+      console.log('从store获取用户余额:', userBalance.value)
+    } else {
+      // 否则从API获取用户余额
+      console.log('从API获取用户余额')
+      const response = await getUserBalance()
 
-    if (response.status === 'success' && response.data !== undefined) {
-      userBalance.value = parseFloat(response.data.toString() || '0')
-      console.log('用户余额:', userBalance.value)
+      if (response.status === 'success' && response.data !== undefined) {
+        userBalance.value = parseFloat(response.data.toString() || '0')
+        console.log('用户余额:', userBalance.value)
+      }
     }
   } catch (error) {
     console.error('获取用户余额失败:', error)
@@ -509,12 +534,21 @@ const filteredCurrencies = computed(() => {
 })
 
 // 格式化金额显示
-const formatAmount = (amount: number) => {
+const formatAmount = (amount: any) => {
   // 处理undefined、null或NaN的情况
-  if (amount === undefined || amount === null || isNaN(amount)) {
+  if (amount === undefined || amount === null) {
     return '0.00'
   }
-  return amount.toFixed(2)
+  
+  // 确保amount是数字类型
+  const numAmount = typeof amount === 'number' ? amount : parseFloat(amount)
+  
+  // 检查转换后是否为有效数字
+  if (isNaN(numAmount)) {
+    return '0.00'
+  }
+  
+  return numAmount.toFixed(2)
 }
 
 // 获取股权信息
@@ -728,10 +762,12 @@ const confirmSellEquity = async (amount: number) => {
 
 // 使用TabBar切换钩子，自动刷新交易所数据
 useTabItemTap({
-  refreshUserInfo: false, // 交易所页面不需要刷新用户信息
+  refreshUserInfo: false, // 修改为false，交易所页面不需要自动刷新用户信息
   pageName: '交易所页面',
+  isIndexPage: false, // 明确标记不是首页
   onTabTap: () => {
     console.log('交易所页面Tab被点击，刷新当前选中的数据')
+    // 不再从store刷新用户信息，而是直接使用已有数据
     // 根据当前选中的标签刷新对应数据
     if (activeTab.value === 'currency') {
       fetchCurrencyOrders()
@@ -742,7 +778,10 @@ useTabItemTap({
 })
 
 // 页面加载时获取数据
-onMounted(() => {
+onMounted(async () => {
+  // 从store获取用户信息，但不强制刷新
+  await userInfoStore.getUserCompleteInfo(false)
+  
   if (activeTab.value === 'currency') {
     currencies.length = 0
     fetchCurrencyOrders()

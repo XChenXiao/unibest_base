@@ -81,7 +81,7 @@
     
     <!-- 底部版权信息 -->
     <view class="settings-footer">
-      <text>© 2025 理财管理平台 版权所有</text>
+      <text></text>
     </view>
   </view>
 </template>

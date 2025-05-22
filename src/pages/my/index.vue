@@ -105,11 +105,11 @@
           <text class="menu-title">个人信息</text>
           <text class="menu-desc">
             {{
-              userStore.isVerified
+              verificationStore.isVerified
                 ? '已实名'
-                : userStore.isPendingVerification
+                : verificationStore.isPendingVerification
                   ? '审核中'
-                  : userStore.isRejectedVerification
+                  : verificationStore.isRejectedVerification
                     ? '已拒绝'
                     : '未实名'
             }}
@@ -231,19 +231,18 @@
 
     <!-- 版权信息 -->
     <view class="my-footer">
-      <text>© 2025 理财管理平台 版权所有</text>
+      <text></text>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import { useUserStore } from '@/store/user'
+import { useUserStore, useVerificationStore, usePlatformStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { useTabItemTap } from '@/hooks/useTabItemTap'
 import { API_URL } from '@/config/api'
 import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
-import { usePlatformStore } from '@/store/platform'
 
 // 定义接口类型
 interface DepositTip {
@@ -261,6 +260,8 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 // 获取平台设置状态
 const platformStore = usePlatformStore()
+// 获取验证状态
+const verificationStore = useVerificationStore()
 
 // 判断是否为浏览器环境
 const isBrowser = ref(false)
@@ -351,7 +352,7 @@ const checkUserInfo = () => {
 
 // 获取用户名首字母或默认头像文字
 const getUserInitial = () => {
-  if (userStore.isVerified && userStore.userInfo.name) {
+  if (verificationStore.isVerified && userStore.userInfo.name) {
     return userStore.userInfo.name.charAt(0)
   }
   return '用'
@@ -360,7 +361,7 @@ const getUserInitial = () => {
 // 获取用户显示名称
 const getUserDisplayName = () => {
   // 已认证用户优先显示姓名（通过API已处理为实名信息中的真实姓名）
-  if (userStore.isVerified && userStore.userInfo.name) {
+  if (verificationStore.isVerified && userStore.userInfo.name) {
     return userStore.userInfo.name
   }
   // 未认证用户或姓名为空时显示手机号
@@ -398,7 +399,7 @@ const navigateTo = (url) => {
 // 处理个人信息点击
 const handleProfileClick = () => {
   // 如果已经实名认证，显示简单提示
-  if (userStore.isVerified) {
+  if (verificationStore.isVerified) {
     uni.showToast({
       title: '您已完成实名认证',
       icon: 'success',
@@ -408,7 +409,7 @@ const handleProfileClick = () => {
   }
 
   // 如果实名认证审核中，显示提示
-  if (userStore.isPendingVerification) {
+  if (verificationStore.isPendingVerification) {
     uni.showToast({
       title: '您的认证正在审核中',
       icon: 'none',

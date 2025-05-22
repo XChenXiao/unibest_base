@@ -128,14 +128,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { getTeamInfoAPI, getTeamStatsAPI, getInvitedUsersAPI } from '@/service/index/team'
 import { IResData } from '@/types/response'
-import { useUserStore } from '@/store/user'
+import { useUserStore, useVerificationStore } from '@/store'
 
 defineOptions({
   name: 'TeamPage',
 })
 
 // 获取用户数据存储
-const userStore = useUserStore();
+const userStore = useUserStore()
+// 获取认证状态存储
+const verificationStore = useVerificationStore()
 
 // 定义数据类型
 interface TeamInfo {
@@ -322,11 +324,11 @@ const showVerifyTip = () => {
     success: (res) => {
       if (res.confirm) {
         uni.navigateTo({
-          url: '/pages/my/identity-verify'
-        });
+          url: '/pages/my/identity-verify',
+        })
       }
-    }
-  });
+    },
+  })
 }
 
 // 页面首次加载
