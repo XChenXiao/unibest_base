@@ -35,7 +35,11 @@
     <finance-milestones :milestones="milestones" />
 
     <!-- 公告弹窗组件 - 降低层级 -->
-    <AnnouncementPopup v-model="showAnnouncementPopup" @close="handleAnnouncementClose" />
+    <AnnouncementPopup
+      v-model="showAnnouncementPopup"
+      :external-announcement="latestAnnouncement"
+      @close="handleAnnouncementClose"
+    />
 
     <!-- 实名认证指引弹窗 - 层级高于公告弹窗 -->
     <VerificationGuidePopup
@@ -99,6 +103,7 @@ const milestones = ref([])
 
 // 公告弹窗状态
 const showAnnouncementPopup = ref(false)
+const latestAnnouncement = ref(null)
 // 实名认证指引弹窗状态
 const showVerificationGuidePopup = ref(false)
 // 用户实名认证状态
@@ -321,6 +326,8 @@ const checkAndShowAnnouncement = async () => {
     // 如果有公告，则显示弹窗
     if (result.status === 'success' && result.data) {
       console.log('首页显示最新公告弹窗')
+      // 保存公告数据
+      latestAnnouncement.value = result.data
       // 延迟显示，确保首页已完全加载
       setTimeout(() => {
         showAnnouncementPopup.value = true

@@ -91,7 +91,7 @@
         </view>
         <view class="menu-content">
           <text class="menu-title">平台公告</text>
-          <text class="menu-desc">{{ hasNewAnnouncement ? '有新公告' : '无新公告' }}</text>
+          <text class="menu-desc">查看平台公告</text>
         </view>
         <wd-icon name="arrow-right" class="menu-arrow" />
       </view>
@@ -266,9 +266,6 @@ const verificationStore = useVerificationStore()
 // 判断是否为浏览器环境
 const isBrowser = ref(false)
 
-// 是否有新公告
-const hasNewAnnouncement = ref(false)
-
 // 余额显示控制
 const showBalance = ref(true)
 
@@ -284,20 +281,12 @@ onShow(() => {
   console.log('我的页面显示，刷新数据')
   // 检查用户数据和余额
   checkUserInfo()
-  // 检查是否有未读公告
-  checkAnnouncementStatus()
   // 获取预存金额提示
   fetchDepositTips()
 })
 
 // 页面挂载时添加事件监听
 onMounted(() => {
-  // 监听余额更新事件
-  uni.$on('user_balance_updated', handleBalanceUpdated)
-
-  // 监听未读公告状态更新事件
-  uni.$on('refresh_unread_announcements', checkAnnouncementStatus)
-
   // 判断当前环境
   // #ifdef H5
   isBrowser.value = true
@@ -313,16 +302,8 @@ const downloadApp = () => {
 
 // 页面卸载时移除事件监听
 onUnmounted(() => {
-  // 移除事件监听
-  uni.$off('user_balance_updated', handleBalanceUpdated)
-  uni.$off('refresh_unread_announcements', checkAnnouncementStatus)
+  // 不需要移除事件监听，因为没有添加任何事件监听
 })
-
-// 处理余额更新事件
-const handleBalanceUpdated = (data: any) => {
-  console.log('收到余额更新事件:', data)
-  // 无需额外操作，因为Pinia中的数据已经更新，这里只记录日志
-}
 
 // 检查用户信息，确保数据是最新的
 const checkUserInfo = () => {
@@ -663,12 +644,6 @@ const handleRecharge = () => {
 
   // 获取最新的预存金提示
   fetchDepositTips()
-}
-
-// 检查是否有未读公告
-const checkAnnouncementStatus = async () => {
-  // 不再调用API，默认为没有未读公告
-  hasNewAnnouncement.value = false
 }
 
 // 获取预存服务提示
