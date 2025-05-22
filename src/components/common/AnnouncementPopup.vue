@@ -94,6 +94,7 @@ const dontShowAgain = ref(false)
 const fetchLatestAnnouncement = async () => {
   // 如果已提供外部公告数据，则直接使用而不发送请求
   if (props.externalAnnouncement) {
+    console.log('使用外部传入的公告数据:', props.externalAnnouncement)
     announcement.value = props.externalAnnouncement
     loading.value = false
 
@@ -104,14 +105,17 @@ const fetchLatestAnnouncement = async () => {
     return
   }
 
+  console.log('开始请求最新公告数据')
   loading.value = true
   error.value = ''
 
   try {
     const result = await getLatestAnnouncementAPI()
+    console.log('获取公告API返回:', result)
 
     if (result.status === 'success' && result.data) {
       announcement.value = result.data
+      console.log('成功获取公告数据')
 
       // 自动标记为已读
       if (announcement.value.id && !announcement.value.is_read) {
@@ -119,6 +123,7 @@ const fetchLatestAnnouncement = async () => {
       }
     } else {
       error.value = '暂无公告'
+      console.log('没有可显示的公告')
       closePopup()
     }
   } catch (e) {
@@ -195,11 +200,9 @@ const goToAnnouncementDetail = () => {
   })
 }
 
-// 组件挂载时获取最新公告
+// 组件挂载时不自动获取公告，因为已经从外部传入
 onMounted(() => {
-  if (showPopup.value) {
-    fetchLatestAnnouncement()
-  }
+  console.log('公告弹窗组件已挂载')
 })
 
 // 组件卸载时不进行任何操作
@@ -207,12 +210,30 @@ onUnmounted(() => {
   // 不做任何操作，确保每次进入首页都显示公告
 })
 
-// 监听弹窗显示状态
+// 监听弹窗显示状态，但只有在没有外部传入公告数据时才请求
 watch(
   () => showPopup.value,
   (newVal) => {
     if (newVal) {
-      fetchLatestAnnouncement()
+      console.log('弹窗显示状态变化:', newVal, '外部公告数据:', !!props.externalAnnouncement)
+      if (!props.externalAnnouncement) {
+        console.log('弹窗显示时获取公告，无外部数据')
+        fetchLatestAnnouncement()
+      } else {
+        console.log('弹窗显示时使用外部传入的公告数据，不发送请求')
+        // 确保使用外部数据
+        if (props.externalAnnouncement) {
+          console.log('确保使用最新的外部公告数据')
+          announcement.value = props.externalAnnouncement
+          loading.value = false
+
+          // 自动标记为已读
+          if (announcement.value.id && !announcement.value.is_read) {
+            console.log('标记外部传入的公告为已读(弹窗显示时)')
+            markAsRead(announcement.value.id)
+          }
+        }
+      }
     }
   },
 )
@@ -222,11 +243,13 @@ watch(
   () => props.externalAnnouncement,
   (newVal) => {
     if (newVal) {
+      console.log('外部公告数据变化，使用新数据:', newVal)
       announcement.value = newVal
       loading.value = false
 
       // 自动标记为已读
       if (announcement.value.id && !announcement.value.is_read) {
+        console.log('标记外部传入的公告为已读')
         markAsRead(announcement.value.id)
       }
     }

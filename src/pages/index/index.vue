@@ -127,7 +127,9 @@ onShow(() => {
   console.log('首页被显示')
   // 每次页面激活时只刷新基本用户信息，不包括银行卡和团队信息
   refreshBasicUserData()
-  // 每次页面激活时都检查用户实名认证状态
+
+  // 每次页面显示时都检查用户认证状态并获取最新公告
+  console.log('页面显示，检查认证状态并获取最新公告')
   checkVerificationStatusAndShowPopups()
 })
 
@@ -310,31 +312,67 @@ const checkVerificationStatusAndShowPopups = async () => {
     }, 800)
   } else {
     // 用户已实名认证，直接显示公告弹窗
-    checkAndShowAnnouncement()
+    console.log('用户已实名认证，获取最新公告')
+    await checkAndShowAnnouncement()
   }
 }
+
+// 防止短时间内多次请求
+let isRequestingAnnouncement = false
+let announcementRequestTimer: ReturnType<typeof setTimeout> | null = null
 
 // 检查并显示公告
 const checkAndShowAnnouncement = async () => {
   try {
+    // 如果正在请求中，直接返回，避免重复请求
+    if (isRequestingAnnouncement) {
+      console.log('正在请求公告数据中，不重复发送请求')
+      return
+    }
+
+    // 设置请求标记
+    isRequestingAnnouncement = true
+
+    // 清除可能存在的定时器
+    if (announcementRequestTimer) {
+      clearTimeout(announcementRequestTimer)
+    }
+
     console.log('首页检查最新公告')
 
     // 检查是否有最新公告
     const { getLatestAnnouncementAPI } = await import('@/service/index/message')
+    console.log('开始请求公告API')
     const result = await getLatestAnnouncementAPI()
+    console.log('公告API请求完成', result)
 
     // 如果有公告，则显示弹窗
     if (result.status === 'success' && result.data) {
-      console.log('首页显示最新公告弹窗')
-      // 保存公告数据
+      console.log('首页获取到公告数据:', result.data)
+
+      // 保存公告数据到组件属性
       latestAnnouncement.value = result.data
+
+      // 准备显示公告弹窗
+      console.log('首页准备显示公告弹窗')
+
       // 延迟显示，确保首页已完全加载
       setTimeout(() => {
         showAnnouncementPopup.value = true
+        console.log('首页已显示公告弹窗，传递外部公告数据')
       }, 800)
+    } else {
+      console.log('没有获取到公告数据或没有可显示的公告')
+      latestAnnouncement.value = null
     }
   } catch (error) {
     console.error('首页检查公告失败:', error)
+    latestAnnouncement.value = null
+  } finally {
+    // 设置一个延迟，在这段时间内不再重复请求
+    announcementRequestTimer = setTimeout(() => {
+      isRequestingAnnouncement = false
+    }, 3000) // 3秒内不重复请求
   }
 }
 
@@ -349,7 +387,10 @@ const handleVerificationGuideClose = (data: { later: boolean }) => {
 
   if (data.later) {
     // 用户选择了"稍后认证"，可以在这里添加额外逻辑
-    checkAndShowAnnouncement() // 可以考虑显示公告弹窗
+    console.log('用户选择了稍后认证，获取最新公告')
+
+    // 请求并显示最新公告
+    checkAndShowAnnouncement()
   }
 }
 
