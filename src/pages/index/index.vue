@@ -58,7 +58,6 @@ import { getCheckInStatsAPI, getCheckInDailyStatusAPI, checkInAPI } from '@/serv
 import { useUserStore, useVerificationStore, useUserManagerStore } from '@/store'
 import { API_URL } from '@/config/api'
 import checkUpdate from '@/uni_modules/uni-upgrade-center-app/utils/check-update'
-import { useTabItemTap } from '@/hooks/useTabItemTap'
 
 defineOptions({
   name: 'FinanceHome',
@@ -73,22 +72,6 @@ const userStore = useUserStore()
 const verificationStore = useVerificationStore()
 // 获取用户管理器
 const userManagerStore = useUserManagerStore()
-
-// 使用TabBar钩子，配置首页信息
-useTabItemTap({
-  refreshUserInfo: true,
-  pageName: '首页',
-  isIndexPage: true, // 明确标识这是首页
-  onTabTap: () => {
-    console.log('首页Tab被点击，刷新数据')
-    // 刷新签到数据
-    fetchCheckInData()
-    // 刷新用户所有信息
-    refreshUserAllData()
-    // 检查实名认证状态
-    checkVerificationStatusAndShowPopups()
-  },
-})
 
 // 数据
 const isCheckingIn = ref(false)

@@ -238,9 +238,9 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore, useVerificationStore, usePlatformStore } from '@/store'
 import { useAppStore } from '@/store/app'
-import { useTabItemTap } from '@/hooks/useTabItemTap'
 import { API_URL } from '@/config/api'
 import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
 
@@ -279,13 +279,15 @@ const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000']
 // 预存服务提示列表
 const depositTips = ref<DepositTip[]>([])
 
-// 使用TabBar切换钩子，自动处理用户数据刷新
-useTabItemTap({
-  refreshUserInfo: true,
-  pageName: '我的页面',
-  onTabTap: () => {
-    console.log('我的页面Tab被点击，可以在这里执行额外的业务逻辑')
-  },
+// 使用UniApp的onShow生命周期函数
+onShow(() => {
+  console.log('我的页面显示，刷新数据')
+  // 检查用户数据和余额
+  checkUserInfo()
+  // 检查是否有未读公告
+  checkAnnouncementStatus()
+  // 获取预存金额提示
+  fetchDepositTips()
 })
 
 // 页面挂载时添加事件监听
@@ -295,15 +297,6 @@ onMounted(() => {
 
   // 监听未读公告状态更新事件
   uni.$on('refresh_unread_announcements', checkAnnouncementStatus)
-
-  // 初始检查用户数据和余额
-  checkUserInfo()
-
-  // 检查是否有未读公告
-  checkAnnouncementStatus()
-
-  // 获取预存金额提示
-  fetchDepositTips()
 
   // 判断当前环境
   // #ifdef H5
