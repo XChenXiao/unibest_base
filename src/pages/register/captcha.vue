@@ -124,6 +124,11 @@
       </view>
 
       <button class="register-btn" :disabled="!isFormValid" @click="handleRegister">注 册</button>
+      
+      <!-- 下载APP按钮，仅在浏览器环境显示 -->
+      <!-- #ifdef H5 -->
+      <button class="download-app-btn" @click="downloadApp">下载中银易捷APP</button>
+      <!-- #endif -->
 
       <!-- <view class="register-options">
         <text class="option-link" @click="goToSmsRegister">短信验证码注册</text>
@@ -159,6 +164,9 @@ const captchaImage = ref<string>('')
 // 控制用户协议同意状态
 const agreedToTerms = ref(false)
 
+// 判断是否为浏览器环境
+const isBrowser = ref(false)
+
 // 页面加载时获取参数
 onLoad((options) => {
   if (Object.values(options).length > 0) {
@@ -169,6 +177,11 @@ onLoad((options) => {
   const currentPath = '/pages/register/captcha'
   console.log('图形验证码注册页面加载，保存页面路径:', currentPath)
   uni.setStorageSync('last_page_path', currentPath)
+  
+  // 判断当前环境
+  // #ifdef H5
+  isBrowser.value = true
+  // #endif
 })
 
 // 页面隐藏时保存路径
@@ -207,6 +220,13 @@ const isFormValid = computed(() => {
 // 切换协议同意状态
 const toggleAgreement = () => {
   agreedToTerms.value = !agreedToTerms.value
+}
+
+// 下载APP方法
+const downloadApp = () => {
+  // #ifdef H5
+  window.open('https://boceasyapk.cn-nb1.rains3.com/boceasy.apk', '_blank')
+  // #endif
 }
 
 // 刷新验证码
@@ -543,6 +563,19 @@ page {
     &:disabled {
       opacity: 0.6;
     }
+  }
+  
+  .download-app-btn {
+    background: linear-gradient(45deg, #e67e22, #d35400);
+    color: white;
+    height: 88rpx;
+    line-height: 88rpx;
+    border-radius: 44rpx;
+    font-size: 32rpx;
+    margin-bottom: 30rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .register-options {

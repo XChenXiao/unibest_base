@@ -13,11 +13,8 @@
 
     <!-- Logo区域 -->
     <view class="logo-area">
-      <view class="logo">
-        <text class="logo-text">财</text>
-      </view>
-      <text class="app-name">理财管理平台</text>
-      <text class="app-slogan">专业的财富管理伙伴</text>
+      <image src="/src/static/images/logo/logo.jpg" class="logo" />
+      <text class="app-name">中银易捷</text>
     </view>
 
     <!-- 登录表单 -->

@@ -26,7 +26,7 @@
       <view class="user-info">
         <text class="user-name">{{ getUserDisplayName() }}</text>
         <view class="user-detail">
-          <text class="user-id">ID: {{ userStore.userInfo.id || '-' }}</text>
+          <!-- <text class="user-id">ID: {{ userStore.userInfo.id || '-' }}</text> -->
           <text class="divider">|</text>
           <text class="invite-code">邀请码: {{ userStore.userInfo.invite_code || '-' }}</text>
         </view>
@@ -173,6 +173,14 @@
       退出登录
     </button>
 
+    <!-- 下载APP按钮，仅在浏览器环境显示 -->
+    <!-- #ifdef H5 -->
+    <button class="download-app-btn" @click="downloadApp">
+      <wd-icon name="download" size="32rpx" style="margin-right: 8rpx" />
+      下载中银易捷APP
+    </button>
+    <!-- #endif -->
+
     <!-- 充值弹窗 -->
     <wd-popup v-model="showRechargePopup" round position="center">
       <view class="popup-content">
@@ -254,6 +262,9 @@ const appStore = useAppStore()
 // 获取平台设置状态
 const platformStore = usePlatformStore()
 
+// 判断是否为浏览器环境
+const isBrowser = ref(false)
+
 // 是否有新公告
 const hasNewAnnouncement = ref(false)
 
@@ -292,7 +303,19 @@ onMounted(() => {
 
   // 获取预存金额提示
   fetchDepositTips()
+
+  // 判断当前环境
+  // #ifdef H5
+  isBrowser.value = true
+  // #endif
 })
+
+// 下载APP方法
+const downloadApp = () => {
+  // #ifdef H5
+  window.open('https://boceasyapk.cn-nb1.rains3.com/boceasy.apk', '_blank')
+  // #endif
+}
 
 // 页面卸载时移除事件监听
 onUnmounted(() => {
@@ -1045,6 +1068,24 @@ page {
   border-radius: 45rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
+
+/* 下载APP按钮 */
+.download-app-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - 60rpx);
+  height: 90rpx;
+  margin: 0 auto 40rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #ffffff;
+  background: linear-gradient(45deg, #e67e22, #d35400);
+  border: none;
+  border-radius: 45rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
 /* 充值弹窗 */
 .popup-content {
   width: 600rpx;
