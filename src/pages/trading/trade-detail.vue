@@ -129,6 +129,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { buyTradeOrder, sellCurrencyToPlatform, getCurrencyDetail } from '@/service/app/currency'
 import { useUserStore } from '@/store/user'
 import { useCurrencyStore } from '@/store' // 导入货币store
@@ -157,78 +158,37 @@ const userUsdtBalance = ref(0) // 用户持有的USDT余额
 // 交易数量
 const tradeAmount = ref<string>('')
 
-// 页面参数
-let pageParams: Record<string, any> = {}
+// 页面加载时获取参数
+onLoad((options) => {
+  console.log('onLoad接收到的页面参数:', JSON.stringify(options))
 
-// uniapp页面生命周期 - 接收页面参数 (适用于app端和小程序)
-const onLoad = (options: Record<string, any>) => {
-  console.log('onLoad接收到的参数:', JSON.stringify(options))
-  pageParams = options || {}
-
-  // 如果页面已经挂载，立即处理参数
-  if (Object.keys(pageParams).length > 0) {
-    getPageParams()
-  }
-}
-
-// 获取页面参数 - 修复app端兼容性问题
-const getPageParams = () => {
-  // 尝试通过getCurrentPages获取页面参数
-  let params: Record<string, any> = {}
-
-  try {
-    const pages = getCurrentPages()
-    const currentPage = pages[pages.length - 1]
-    if (currentPage && (currentPage as any).options) {
-      params = (currentPage as any).options
-    }
-  } catch (e) {
-    console.error('从页面对象获取参数失败:', e)
+  if (!options || Object.keys(options).length === 0) {
+    console.warn('没有接收到页面参数')
+    return
   }
 
-  // 如果getCurrentPages没有获取到参数，使用存储的页面参数
-  if (Object.keys(params).length === 0 && Object.keys(pageParams).length > 0) {
-    params = pageParams
-  }
+  // 设置页面参数
+  currencyId.value = options.id || ''
+  orderId.value = options.orderId || ''
+  currencyName.value = options.name ? decodeURIComponent(options.name) : '未知货币'
+  currencySymbol.value = options.symbol || ''
+  currencyPrice.value = options.price ? parseFloat(options.price) : 0
+  tradeType.value = options.type || 'buy'
 
-  console.log('交易详情页接收到的参数:', JSON.stringify(params))
-
-  // 设置默认值和转换参数
-  currencyId.value = params.id || ''
-  orderId.value = params.orderId || '' // 获取订单ID
-  currencyName.value = params.name ? decodeURIComponent(params.name) : '未知货币'
-  currencySymbol.value = params.symbol || ''
-  currencyPrice.value = params.price ? parseFloat(params.price) : 0
-  tradeType.value = params.type || 'buy'
-
-  // 如果有iconUrl参数，设置货币图标
-  if (params.iconUrl) {
+  // 设置货币图标
+  if (options.iconUrl) {
     try {
-      currencyIcon.value = decodeURIComponent(params.iconUrl)
+      currencyIcon.value = decodeURIComponent(options.iconUrl)
     } catch (e) {
-      currencyIcon.value = params.iconUrl
+      currencyIcon.value = options.iconUrl
     }
   }
 
-  // 如果有fee参数，设置手续费率
-  if (params.fee) {
-    feeRate.value = parseFloat(params.fee)
-  }
-
-  // 如果有minAmount参数，设置最小交易量
-  if (params.minAmount) {
-    minAmount.value = parseFloat(params.minAmount)
-  }
-
-  // 如果有maxAmount参数，设置最大交易量
-  if (params.maxAmount) {
-    maxAmount.value = parseFloat(params.maxAmount)
-  }
-
-  // 如果传递了holdAmount参数，直接设置用户持有量
-  if (params.holdAmount) {
-    userHoldAmount.value = parseFloat(params.holdAmount)
-  }
+  // 设置其他参数
+  if (options.fee) feeRate.value = parseFloat(options.fee)
+  if (options.minAmount) minAmount.value = parseFloat(options.minAmount)
+  if (options.maxAmount) maxAmount.value = parseFloat(options.maxAmount)
+  if (options.holdAmount) userHoldAmount.value = parseFloat(options.holdAmount)
 
   console.log('处理后的交易详情参数:', {
     currencyId: currencyId.value,
@@ -238,10 +198,83 @@ const getPageParams = () => {
     currencyPrice: currencyPrice.value,
     tradeType: tradeType.value,
     currencyIcon: currencyIcon.value,
-    feeRate: feeRate.value,
-    minAmount: minAmount.value,
-    maxAmount: maxAmount.value,
-    userHoldAmount: userHoldAmount.value,
+  })
+
+  // 获取其他数据
+  fetchCurrencyDetails()
+})
+
+// 获取页面参数 - 兼容app端和H5端
+const getPageParams = () => {
+  let params: Record<string, any> = {}
+
+  try {
+    // 尝试从getCurrentPages获取页面参数
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]
+
+    console.log('当前页面信息:', currentPage)
+
+    if (currentPage && (currentPage as any).options) {
+      params = (currentPage as any).options
+      console.log('从getCurrentPages获取到参数:', JSON.stringify(params))
+    }
+
+    // 如果没有获取到参数，尝试其他方式
+    if (Object.keys(params).length === 0) {
+      // 检查全局参数（如果有的话）
+      if ((globalThis as any).pageParams) {
+        params = (globalThis as any).pageParams
+        console.log('从全局变量获取到参数:', JSON.stringify(params))
+      }
+    }
+  } catch (e) {
+    console.error('获取页面参数失败:', e)
+  }
+
+  console.log('最终获取到的参数:', JSON.stringify(params))
+
+  // 如果还是没有参数，使用默认值进行测试
+  if (Object.keys(params).length === 0) {
+    console.warn('没有获取到页面参数，可能影响页面功能')
+    // 可以设置一些默认值用于调试
+    currencyName.value = '测试货币'
+    currencySymbol.value = 'TEST'
+    currencyPrice.value = 100
+    return
+  }
+
+  // 设置参数
+  currencyId.value = params.id || ''
+  orderId.value = params.orderId || ''
+  currencyName.value = params.name ? decodeURIComponent(params.name) : '未知货币'
+  currencySymbol.value = params.symbol || ''
+  currencyPrice.value = params.price ? parseFloat(params.price) : 0
+  tradeType.value = params.type || 'buy'
+
+  // 设置货币图标
+  if (params.iconUrl) {
+    try {
+      currencyIcon.value = decodeURIComponent(params.iconUrl)
+    } catch (e) {
+      currencyIcon.value = params.iconUrl
+    }
+  }
+
+  // 设置其他参数
+  if (params.fee) feeRate.value = parseFloat(params.fee)
+  if (params.minAmount) minAmount.value = parseFloat(params.minAmount)
+  if (params.maxAmount) maxAmount.value = parseFloat(params.maxAmount)
+  if (params.holdAmount) userHoldAmount.value = parseFloat(params.holdAmount)
+
+  console.log('处理后的交易详情参数:', {
+    currencyId: currencyId.value,
+    orderId: orderId.value,
+    currencyName: currencyName.value,
+    currencySymbol: currencySymbol.value,
+    currencyPrice: currencyPrice.value,
+    tradeType: tradeType.value,
+    currencyIcon: currencyIcon.value,
   })
 
   // 获取其他数据
@@ -630,13 +663,8 @@ const handleConfirmTrade = async () => {
 
 // 页面加载
 onMounted(() => {
-  // 如果已经有页面参数，立即处理
-  if (Object.keys(pageParams).length > 0) {
-    getPageParams()
-  } else {
-    // 如果没有onLoad参数，尝试从getCurrentPages获取 (H5端兼容)
-    getPageParams()
-  }
+  // onLoad已经处理了页面参数，这里只需要获取用户余额
+  console.log('页面已挂载，获取用户余额')
   fetchUserBalance()
 })
 </script>
