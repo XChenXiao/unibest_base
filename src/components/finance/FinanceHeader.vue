@@ -1,5 +1,5 @@
 <template>
-  <view class="header" :style="{ paddingTop: safeAreaInsets?.top + 'px' }">
+  <view class="header">
     <view class="header-bg"></view>
 
     <!-- 菜单容器 -->
