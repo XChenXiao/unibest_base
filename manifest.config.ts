@@ -17,8 +17,8 @@ export default defineManifestConfig({
   name: VITE_APP_TITLE,
   appid: VITE_UNI_APPID,
   description: '',
-  versionName: '1.0.4',
-  versionCode: '104',
+  versionName: '1.0.6',
+  versionCode: '106',
   transformPx: false,
   locale: VITE_FALLBACK_LOCALE, // 'zh-Hans'
   h5: {
@@ -67,7 +67,7 @@ export default defineManifestConfig({
           '<uses-feature android:name="android.hardware.camera"/>',
           '<uses-permission android:name="android.permission.WRITE_SETTINGS"/>',
         ],
-        schemes : ""
+        schemes: '',
       },
       /* ios打包配置 */
       ios: {},
