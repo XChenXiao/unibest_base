@@ -331,7 +331,7 @@ const navigateToTeam = () => {
 .first-row-menu {
   padding-bottom: 170rpx;
   /* border-radius: 20rpx; */
-  margin-top: 17rpx;
+  // margin-top: 17rpx;
   background-image: url('@/static/images/bg/topHeader.png');
   background-repeat: no-repeat;
   background-size: 100% 100%;

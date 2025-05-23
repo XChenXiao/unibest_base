@@ -700,8 +700,6 @@ const claimReward = async (type: string) => {
 
         // 强制刷新货币store数据
         await currencyStore.forceRefreshUserCurrencies()
-        
-        
 
         // 领取成功提示
         uni.showToast({
@@ -769,9 +767,6 @@ const claimReward = async (type: string) => {
         await refreshData()
         // 强制刷新货币store数据
         await currencyStore.forceRefreshUserCurrencies()
-
-        
-        
 
         // 领取成功提示
         uni.showToast({
@@ -851,9 +846,6 @@ const claimReward = async (type: string) => {
         await refreshData()
         // 强制刷新货币store数据
         await currencyStore.forceRefreshUserCurrencies()
-
-        
-        
 
         // 领取成功提示
         uni.showToast({

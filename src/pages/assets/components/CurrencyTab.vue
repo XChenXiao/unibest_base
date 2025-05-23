@@ -418,12 +418,18 @@ const handleClaimCurrency = async (currency: CurrencyData) => {
   }
 
   try {
-    const currencyId =
-      'id' in currency
-        ? currency.id
-        : isUserCurrency(currency) && currency.currency
-          ? currency.currency.id
-          : 0
+    let currencyId = 0
+
+    if ('id' in currency && typeof currency.id === 'number') {
+      currencyId = currency.id
+    } else if (
+      isUserCurrency(currency) &&
+      currency.currency &&
+      typeof currency.currency === 'object' &&
+      'id' in currency.currency
+    ) {
+      currencyId = (currency.currency as any).id
+    }
 
     if (!currencyId) {
       showToast('无效的货币信息')

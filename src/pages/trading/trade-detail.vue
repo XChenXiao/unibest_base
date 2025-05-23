@@ -61,7 +61,7 @@
       <view class="amount-input-container">
         <input
           class="amount-input"
-          type="digit"
+          type="number"
           v-model="tradeAmount"
           :placeholder="`请输入${isTypeBuy ? '买入' : '卖出'}数量`"
         />
@@ -157,13 +157,26 @@ const userUsdtBalance = ref(0) // 用户持有的USDT余额
 // 交易数量
 const tradeAmount = ref<string>('')
 
-// 获取页面参数
+// 页面参数
+let pageParams: Record<string, any> = {}
+
+// uniapp页面生命周期 - 接收页面参数 (适用于app端和小程序)
+const onLoad = (options: Record<string, any>) => {
+  console.log('onLoad接收到的参数:', JSON.stringify(options))
+  pageParams = options || {}
+
+  // 如果页面已经挂载，立即处理参数
+  if (Object.keys(pageParams).length > 0) {
+    getPageParams()
+  }
+}
+
+// 获取页面参数 - 修复app端兼容性问题
 const getPageParams = () => {
-  // 尝试通过不同的方式获取页面参数
+  // 尝试通过getCurrentPages获取页面参数
   let params: Record<string, any> = {}
 
   try {
-    // 方法1: 从onLoad参数获取 (小程序常用方式)
     const pages = getCurrentPages()
     const currentPage = pages[pages.length - 1]
     if (currentPage && (currentPage as any).options) {
@@ -173,12 +186,9 @@ const getPageParams = () => {
     console.error('从页面对象获取参数失败:', e)
   }
 
-  // 如果没有获取到参数，使用备用方式
-  if (Object.keys(params).length === 0) {
-    const sysInfoParams = (uni.getSystemInfoSync() as any)?.options?.query
-    if (sysInfoParams) {
-      params = sysInfoParams
-    }
+  // 如果getCurrentPages没有获取到参数，使用存储的页面参数
+  if (Object.keys(params).length === 0 && Object.keys(pageParams).length > 0) {
+    params = pageParams
   }
 
   console.log('交易详情页接收到的参数:', JSON.stringify(params))
@@ -534,14 +544,6 @@ const handleConfirmTrade = async () => {
             console.log('交易成功，刷新store中的货币数据')
             await currencyStore.fetchUserCurrencies(true)
 
-            // 发送全局事件通知，告知用户余额已更新
-            uni.$emit('user_balance_updated', {
-              balance: newBalance,
-              operation: isTypeBuy.value ? 'buy' : 'sell',
-              amount: amount,
-              symbol: currencySymbol.value,
-            })
-
             // 交易成功，显示成功提示
             uni.showToast({
               title: isTypeBuy.value ? '买入成功' : '卖出成功',
@@ -556,34 +558,24 @@ const handleConfirmTrade = async () => {
 
             // 如果是交易成功，等待2秒后返回上一页
             setTimeout(() => {
-              // 返回上一页并刷新
+              // 返回上一页，依赖各页面的onShow生命周期自动刷新数据
               uni.navigateBack()
 
-              // 尝试通知上一页刷新数据
+              // 尝试直接调用上一页的刷新方法（如果存在）
               try {
                 const pages = getCurrentPages()
                 const prevPage = pages[pages.length - 2]
 
-                // 检查上一页是否是交易所页面并调用其刷新方法
+                // 检查上一页是否有刷新方法并调用
                 if (prevPage && typeof (prevPage as any).refreshData === 'function') {
                   console.log('调用上一页的刷新方法')
                   ;(prevPage as any).refreshData()
                 } else {
-                  // 如果上一页没有refreshData方法，使用替代方案
-                  console.log('上一页没有刷新方法，使用替代方案')
-                  // 在返回到上一页后通过自定义事件刷新
-                  uni.$emit('trade_completed', {
-                    type: isTypeBuy.value ? 'buy' : 'sell',
-                    currency_id: currencyId.value,
-                  })
+                  console.log('上一页没有刷新方法，依赖onShow生命周期自动刷新')
                 }
               } catch (e) {
-                console.error('通知上一页刷新失败:', e)
-                // 出错时也尝试使用事件通知
-                uni.$emit('trade_completed', {
-                  type: isTypeBuy.value ? 'buy' : 'sell',
-                  currency_id: currencyId.value,
-                })
+                console.error('调用上一页刷新方法失败:', e)
+                console.log('将依赖上一页的onShow生命周期自动刷新数据')
               }
             }, 2000)
           } else {
@@ -638,7 +630,13 @@ const handleConfirmTrade = async () => {
 
 // 页面加载
 onMounted(() => {
-  getPageParams()
+  // 如果已经有页面参数，立即处理
+  if (Object.keys(pageParams).length > 0) {
+    getPageParams()
+  } else {
+    // 如果没有onLoad参数，尝试从getCurrentPages获取 (H5端兼容)
+    getPageParams()
+  }
   fetchUserBalance()
 })
 </script>

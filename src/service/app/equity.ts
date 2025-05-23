@@ -122,6 +122,13 @@ export function claimReward(transactionId: number): Promise<IResData<any>> {
 }
 
 /**
+ * 管理员同步可领取奖励记录（仅管理员可用）
+ */
+export function syncClaimableRewards(): Promise<IResData<any>> {
+  return http.post('/api/admin/equity/sync-claimable-rewards') as Promise<IResData<any>>;
+}
+
+/**
  * 按类型领取股权奖励 (兼容旧接口)
  * @param type 奖励类型 - register(注册奖励) 或 invitation(邀请奖励) 
  */

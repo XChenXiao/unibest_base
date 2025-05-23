@@ -255,7 +255,7 @@ const handleCheckIn = async () => {
 
     if (res) {
       uni.showToast({
-        title: '签到成功',
+        title: '打卡成功',
         icon: 'success',
       })
 
@@ -413,9 +413,9 @@ page {
 }
 
 .wave-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
+  // top: 0;
+  // left: 0;
   width: 100%;
   height: 16rpx;
   background: linear-gradient(to right, #f39c12, #e74c3c);
