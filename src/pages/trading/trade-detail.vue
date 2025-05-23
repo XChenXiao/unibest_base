@@ -93,9 +93,7 @@
         <view class="info-row" v-if="!isTypeBuy">
           <text class="info-label">手续费 ({{ feeRate }}%)</text>
           <text class="info-value">
-            {{
-              formatUsdtAmount((parseFloat(tradeAmount) || 0) * currencyPrice * (feeRate / 100))
-            }}
+            {{ formatUsdtAmount((parseFloat(tradeAmount) || 0) * currencyPrice * (feeRate / 100)) }}
             USDT
           </text>
         </view>
@@ -131,21 +129,18 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
-import {
-  buyTradeOrder,
-  sellCurrencyToPlatform,
-  getUserCurrencies,
-  getCurrencyDetail,
-  getUserBalance,
-} from '@/service/app/currency'
+import { buyTradeOrder, sellCurrencyToPlatform, getCurrencyDetail } from '@/service/app/currency'
 import { useUserStore } from '@/store/user'
+import { useCurrencyStore } from '@/store' // 导入货币store
 
 // 引入用户store
 const userStore = useUserStore()
+// 引入货币store
+const currencyStore = useCurrencyStore()
 
 // 页面参数
-const currencyId = ref('')
-const orderId = ref('') // 添加订单ID
+const currencyId = ref<string | number>('')
+const orderId = ref<string | number>('') // 添加订单ID
 const currencyName = ref('')
 const currencySymbol = ref('')
 const currencyPrice = ref(0)
@@ -250,51 +245,34 @@ const fetchCurrencyDetails = async () => {
 
     // 获取用户持有的货币
     if (tradeType.value === 'sell') {
-      const response = await getUserCurrencies()
-      console.log('交易详情页获取用户货币响应:', JSON.stringify(response))
+      // 先从store获取货币列表
+      await currencyStore.fetchUserCurrencies(false)
+      console.log('交易详情页从store获取用户货币数据')
 
-      if (response.status === 'success' && Array.isArray(response.data)) {
+      if (currencyStore.userCurrencies && currencyStore.userCurrencies.length > 0) {
         // 直接打印所有货币ID和符号，帮助排查问题
         console.log(
           '所有货币列表:',
-          response.data.map((c) => ({ id: c.id, symbol: c.symbol })),
+          currencyStore.userCurrencies.map((c) => ({
+            id: c.id,
+            symbol: c.symbol || c.currency?.symbol,
+          })),
         )
         console.log('当前查找的货币ID:', currencyId.value, '符号:', currencySymbol.value)
 
-        // 首先尝试通过id匹配
-        let userCurrency = response.data.find((c) => String(c.id) === String(currencyId.value))
+        // 通过符号从store获取持有量
+        const holdAmount = currencyStore.getUserCurrencyAmount(currencySymbol.value)
+        console.log('从store获取的货币持有量:', holdAmount)
 
-        // 如果没找到，尝试通过符号匹配
-        if (!userCurrency) {
-          userCurrency = response.data.find((c) => c.symbol === currencySymbol.value)
-        }
+        userHoldAmount.value = holdAmount
 
-        console.log('找到的货币:', userCurrency ? JSON.stringify(userCurrency) : '未找到')
-
-        if (userCurrency) {
-          // 使用user_available_balance作为用户持有量
-          const availableBalance =
-            typeof userCurrency.user_available_balance === 'number'
-              ? userCurrency.user_available_balance
-              : parseFloat(String(userCurrency.user_available_balance) || '0')
-
-          console.log(
-            '可用余额字段:',
-            userCurrency.user_available_balance,
-            '解析后:',
-            availableBalance,
-          )
-
-          userHoldAmount.value = availableBalance
-
-          // 卖出时，最大交易量不能超过持有量
-          maxAmount.value = Math.min(maxAmount.value, userHoldAmount.value)
-          console.log('更新后的用户持有量:', userHoldAmount.value, '最大交易量:', maxAmount.value)
-        } else {
-          console.log('未找到匹配的货币数据')
-          userHoldAmount.value = 0
-          maxAmount.value = 0
-        }
+        // 卖出时，最大交易量不能超过持有量
+        maxAmount.value = Math.min(maxAmount.value, userHoldAmount.value)
+        console.log('更新后的用户持有量:', userHoldAmount.value, '最大交易量:', maxAmount.value)
+      } else {
+        console.log('store中没有货币数据')
+        userHoldAmount.value = 0
+        maxAmount.value = 0
       }
     }
 
@@ -392,26 +370,29 @@ const formatUsdtAmount = (amount: number) => {
 // 获取用户余额
 const fetchUserBalance = async () => {
   try {
-    const response = await getUserBalance()
-    if (response.status === 'success' && response.data) {
-      // 更新本地余额变量
-      userBalance.value = response.data.balance
+    // 不再调用API接口，直接从store获取数据
+    console.log('从userStore获取用户余额数据')
 
-      // 同时更新Pinia中的用户余额
-      userStore.updateUserBalance(response.data.balance, response.data.frozen_balance)
+    // 确保类型转换正确
+    if (userStore.userInfo && userStore.userInfo.balance !== undefined) {
+      // 将store中的balance转换为数字类型
+      const balanceValue =
+        typeof userStore.userInfo.balance === 'string'
+          ? parseFloat(userStore.userInfo.balance)
+          : userStore.userInfo.balance || 0
 
-      console.log('获取并更新用户余额成功:', response.data)
+      userBalance.value = balanceValue
+      console.log('从store获取的用户余额:', balanceValue)
     } else {
-      // 如果API获取失败，使用store中的数据
-      userBalance.value = userStore.userInfo.balance || 0
+      console.log('用户余额数据不存在，设置为0')
+      userBalance.value = 0
     }
 
     // 获取用户USDT余额
     await fetchUserUsdtBalance()
   } catch (error) {
     console.error('获取用户余额失败:', error)
-    // 使用store中的数据作为备选
-    userBalance.value = userStore.userInfo.balance || 0
+    userBalance.value = 0
 
     // 即使获取人民币余额失败，也尝试获取USDT余额
     await fetchUserUsdtBalance()
@@ -421,22 +402,13 @@ const fetchUserBalance = async () => {
 // 获取用户USDT余额
 const fetchUserUsdtBalance = async () => {
   try {
-    const response = await getUserCurrencies()
-    if (response.status === 'success' && Array.isArray(response.data)) {
-      // 查找USDT货币
-      const usdtCurrency = response.data.find((c) => c.symbol === 'USDT')
-      if (usdtCurrency) {
-        userUsdtBalance.value =
-          typeof usdtCurrency.user_available_balance === 'number'
-            ? usdtCurrency.user_available_balance
-            : parseFloat(String(usdtCurrency.user_available_balance) || '0')
+    // 从store获取USDT余额
+    await currencyStore.fetchUserCurrencies(false)
 
-        console.log('用户USDT余额:', userUsdtBalance.value)
-      } else {
-        console.log('未找到USDT货币')
-        userUsdtBalance.value = 0
-      }
-    }
+    // 通过store获取USDT持有量
+    const usdtAmount = currencyStore.getUserCurrencyAmount('USDT')
+    userUsdtBalance.value = usdtAmount
+    console.log('从store获取的用户USDT余额:', usdtAmount)
   } catch (error) {
     console.error('获取USDT余额失败:', error)
     userUsdtBalance.value = 0
@@ -527,11 +499,17 @@ const handleConfirmTrade = async () => {
           if (isTypeBuy.value) {
             // 买入操作 - 调用API进行交易订单购买
             // API路径: /api/currencies/trade-orders/{id}/buy
-            response = await buyTradeOrder(orderId.value, amount)
+            // 转换成number类型
+            const orderIdVal =
+              typeof orderId.value === 'string' ? parseInt(orderId.value) : orderId.value
+            response = await buyTradeOrder(orderIdVal, amount)
           } else {
             // 卖出操作 - 调用API出售货币到平台
             // API路径: /api/currencies/sell-to-platform
-            response = await sellCurrencyToPlatform(currencyId.value, amount)
+            // 转换成number类型
+            const currencyIdVal =
+              typeof currencyId.value === 'string' ? parseInt(currencyId.value) : currencyId.value
+            response = await sellCurrencyToPlatform(currencyIdVal, amount)
           }
 
           // 打印API响应结果
@@ -552,6 +530,10 @@ const handleConfirmTrade = async () => {
             // 更新Pinia中的用户余额
             userStore.updateUserBalance(newBalance)
 
+            // 刷新store中的货币数据
+            console.log('交易成功，刷新store中的货币数据')
+            await currencyStore.fetchUserCurrencies(true)
+
             // 发送全局事件通知，告知用户余额已更新
             uni.$emit('user_balance_updated', {
               balance: newBalance,
@@ -567,7 +549,9 @@ const handleConfirmTrade = async () => {
               duration: 2000,
             })
 
-            // 更新用户数据
+            // 更新用户余额数据 - 使用store而非API
+            console.log('交易成功，使用store获取最新数据')
+            // 直接从userStore和currencyStore获取更新后的数据
             fetchUserBalance()
 
             // 如果是交易成功，等待2秒后返回上一页

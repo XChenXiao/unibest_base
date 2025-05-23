@@ -27,7 +27,7 @@
             class="form-control"
             type="text"
             inputmode="numeric"
-            maxlength="11"
+            :maxlength="11"
             placeholder="请输入手机号码"
             v-model="formData.login_id"
           />
@@ -131,9 +131,11 @@ const handleLogin = async () => {
 
     if (res && res.status === 'success' && res.data) {
       // 保存用户信息和token
+      // 使用类型断言避免类型检查错误
+      const userData = res.data as any
       userStore.setUserInfo({
-        ...res.data.user,
-        token: res.data.access_token,
+        ...(userData.user || {}),
+        token: userData.access_token,
       })
 
       // 重置登录重定向标志
@@ -153,9 +155,11 @@ const handleLogin = async () => {
         // 导入需要的store
         const { usePlatformStore } = await import('@/store/platform')
         const { useAppStore } = await import('@/store/app')
+        const { useCurrencyStore } = await import('@/store')
 
         const platformStore = usePlatformStore()
         const appStore = useAppStore()
+        const currencyStore = useCurrencyStore()
 
         // 获取平台功能开关设置（登录时强制更新）
         await platformStore.fetchPlatformSettings(true)
@@ -163,6 +167,11 @@ const handleLogin = async () => {
         appStore.fetchBankCardOpenFee()
         // 刷新用户信息
         await userStore.fetchUserInfo()
+
+        // 登录成功后获取用户货币数据
+        console.log('登录成功，获取用户持有货币数据')
+        await currencyStore.fetchUserCurrencies(true)
+        console.log('登录成功后初始化用户货币数据完成')
 
         uni.hideLoading()
       } catch (error) {

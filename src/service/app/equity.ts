@@ -90,10 +90,8 @@ export function getEquityInfo(): Promise<IResData<EquityInfo>> {
  * 获取当前用户股权持有情况
  */
 export function getMyEquity(): Promise<IResData<EquityData>> {
-  console.log('调用股权API: /api/equity/my');
   return http.get('/api/equity/my')
     .then((res: any) => {
-      console.log('股权API返回数据:', res);
       return res as IResData<EquityData>;
     })
     .catch((error: any) => {

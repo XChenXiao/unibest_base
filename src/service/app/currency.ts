@@ -21,11 +21,10 @@ export async function getCurrencyDetail(id: number | string) {
 
 /**
  * 获取用户持有的货币列表
+ * @returns {Promise<{status: string, data: UserCurrency[], message: string}>}
  */
-export async function getUserCurrencies() {
-  return httpGet<{ status: string; data: UserCurrency[] }>(
-    '/api/user/currencies'
-  );
+export const getUserCurrencies = () => {
+  return httpGet<{status: string, data: UserCurrency[], message: string}>('/api/user/currencies')
 }
 
 /**

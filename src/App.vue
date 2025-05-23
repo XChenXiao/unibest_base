@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only'
-import { useUserStore, useUserManagerStore } from '@/store'
+import { useUserStore, useUserManagerStore, useCurrencyStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { usePlatformStore } from '@/store/platform'
 import { getNeedLoginPages, clearPageCache } from '@/utils'
@@ -18,6 +18,8 @@ const userManagerStore = useUserManagerStore()
 const appStore = useAppStore()
 // 初始化平台设置状态
 const platformStore = usePlatformStore()
+// 初始化货币数据store
+const currencyStore = useCurrencyStore()
 
 // 最小更新时间间隔(毫秒)：5分钟
 const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
@@ -88,6 +90,17 @@ onLaunch(async () => {
     try {
       // 获取用户基本信息 - 只获取用户信息和认证状态，不请求银行卡和团队信息
       await userStore.fetchUserInfo()
+
+      // 获取用户货币数据
+      console.log('开始获取用户持有货币数据')
+      currencyStore
+        .fetchUserCurrencies(true)
+        .then(() => {
+          console.log('初始化用户货币数据成功')
+        })
+        .catch((error) => {
+          console.error('初始化用户货币数据失败:', error)
+        })
 
       // 登录有效，获取平台功能开关设置
       await platformStore.fetchPlatformSettings()

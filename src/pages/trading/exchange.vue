@@ -37,14 +37,14 @@
       <view class="asset-tabs">
         <view
           class="tab-item"
-          :class="{ 'tab-active': activeTab === 'currency' }"
+          :class="{ 'tab-active': activeTab === 'currency', 'tab-disabled': loading }"
           @click="switchTab('currency')"
         >
           <text>黄金</text>
         </view>
         <view
           class="tab-item"
-          :class="{ 'tab-active': activeTab === 'equity' }"
+          :class="{ 'tab-active': activeTab === 'equity', 'tab-disabled': loading }"
           @click="switchTab('equity')"
         >
           <text>股权</text>
@@ -57,14 +57,17 @@
         <view class="currency-tabs">
           <view
             class="currency-tab-item"
-            :class="{ 'currency-tab-active': activeCurrencyTab === 'buy' }"
+            :class="{ 'currency-tab-active': activeCurrencyTab === 'buy', 'tab-disabled': loading }"
             @click="switchCurrencyTab('buy')"
           >
             <text>买入</text>
           </view>
           <view
             class="currency-tab-item"
-            :class="{ 'currency-tab-active': activeCurrencyTab === 'sell' }"
+            :class="{
+              'currency-tab-active': activeCurrencyTab === 'sell',
+              'tab-disabled': loading,
+            }"
             @click="switchCurrencyTab('sell')"
           >
             <text>卖出</text>
@@ -80,8 +83,14 @@
           </view> -->
         </view>
 
+        <!-- 加载状态提示 -->
+        <view class="loading-container" v-if="loading">
+          <wd-loading :size="40" color="#f39c12" />
+          <text class="loading-text">正在加载数据...</text>
+        </view>
+
         <!-- 货币列表 -->
-        <view class="currency-list">
+        <view class="currency-list" v-else>
           <view v-for="(item, index) in filteredCurrencies" :key="index" class="currency-item">
             <!-- 货币图标和信息 -->
             <view class="currency-info-container">
@@ -145,25 +154,33 @@
 
       <!-- 股权内容 -->
       <view class="tab-content" v-if="activeTab === 'equity'">
-        <view class="equity-card">
-          <view class="equity-info-container">
-            <view class="equity-info-item">
-              <text class="equity-label">股权价格</text>
-              <view class="equity-value-container">
-                <text class="equity-value">{{ formatAmount(equityPrice) }}</text>
-                <text class="equity-unit">元/股</text>
+        <!-- 加载状态提示 -->
+        <view class="loading-container" v-if="loading">
+          <wd-loading :size="40" color="#f39c12" />
+          <text class="loading-text">正在加载数据...</text>
+        </view>
+
+        <view v-else>
+          <view class="equity-card">
+            <view class="equity-info-container">
+              <view class="equity-info-item">
+                <text class="equity-label">股权价格</text>
+                <view class="equity-value-container">
+                  <text class="equity-value">{{ formatAmount(equityPrice) }}</text>
+                  <text class="equity-unit">元/股</text>
+                </view>
+              </view>
+              <view class="equity-divider"></view>
+              <view class="equity-info-item">
+                <text class="equity-label">我的股权</text>
+                <view class="equity-value-container">
+                  <text class="equity-value">{{ formatAmount(myEquity) }}</text>
+                  <text class="equity-unit">股</text>
+                </view>
               </view>
             </view>
-            <view class="equity-divider"></view>
-            <view class="equity-info-item">
-              <text class="equity-label">我的股权</text>
-              <view class="equity-value-container">
-                <text class="equity-value">{{ formatAmount(myEquity) }}</text>
-                <text class="equity-unit">股</text>
-              </view>
-            </view>
+            <button class="sell-equity-btn" @click="handleSellEquity">出售股权</button>
           </view>
-          <button class="sell-equity-btn" @click="handleSellEquity">出售股权</button>
         </view>
 
         <!-- 股权趋势图 -->
@@ -210,9 +227,12 @@ import SellEquityPopup from '@/components/equity/SellEquityPopup.vue'
 import BuyUsdtDialog from '@/components/currency/BuyUsdtDialog.vue'
 import { useTabItemTap } from '@/hooks/useTabItemTap'
 import { useUserInfoStore } from '@/store/userInfo'
+import { useCurrencyStore } from '@/store' // 导入货币store
 
 // 初始化用户信息store
 const userInfoStore = useUserInfoStore()
+// 初始化货币store
+const currencyStore = useCurrencyStore()
 
 // 控制资产显示隐藏
 const showAssets = ref(true)
@@ -284,41 +304,22 @@ const fetchCurrencyOrders = async () => {
   // 如果已经在加载中，则跳过
   if (loading.value) return
 
+  // 设置加载中状态
   loading.value = true
+
   try {
     // 根据当前标签获取买入或卖出订单
     const orderType = activeCurrencyTab.value
 
-    // 获取用户信息，包括持有的货币数据
-    let userCurrencyData = null
-    
-    // 先尝试从store获取用户数据
+    // 获取用户信息
     const userData = await userInfoStore.getUserCompleteInfo()
-    
-    // 如果有用户数据，尝试获取用户持有的货币
+
+    // 获取用户持有的货币数据 (使用currency store)
     if (userData && userData.userInfo.token) {
-      userCurrencyData = await getUserCurrencies()
+      // 获取用户持有货币数据
+      await currencyStore.fetchUserCurrencies(false)
     } else {
       console.log('用户未登录，无法获取用户持有货币')
-    }
-
-    console.log('用户持有货币数据:', JSON.stringify(userCurrencyData?.data || {}))
-
-    // 创建一个用户货币映射表，用于快速查找
-    const userCurrencyMap = new Map()
-    if (userCurrencyData?.status === 'success' && Array.isArray(userCurrencyData.data)) {
-      userCurrencyData.data.forEach((currency) => {
-        if (currency && currency.symbol) {
-          // 确保数据转换正确
-          const availableBalance =
-            typeof currency.user_available_balance === 'number'
-              ? currency.user_available_balance
-              : parseFloat(currency.user_available_balance || '0')
-
-          console.log(`货币 ${currency.symbol} 的持有量: ${availableBalance}`)
-          userCurrencyMap.set(currency.symbol, availableBalance)
-        }
-      })
     }
 
     // 获取平台发布的货币订单（平台卖出 = 用户买入，平台买入 = 用户卖出）
@@ -338,10 +339,8 @@ const fetchCurrencyOrders = async () => {
           const order = response.data[i]
           // 排除USDT订单，因为我们会手动添加USDT
           if (order.currency_symbol !== 'USDT') {
-            // 获取用户持有量
-            const holdAmount = userCurrencyMap.has(order.currency_symbol)
-              ? userCurrencyMap.get(order.currency_symbol)
-              : 0
+            // 获取用户持有量 - 使用currency store获取
+            const holdAmount = currencyStore.getUserCurrencyAmount(order.currency_symbol)
 
             currencies.push({
               id: order.currency_id, // 使用货币ID而不是订单ID
@@ -371,11 +370,12 @@ const fetchCurrencyOrders = async () => {
         // 获取USDT信息
         await fetchUsdtInfo()
 
-        // 更新USDT持有量
+        // 更新USDT持有量 - 使用currency store获取
         const usdtIndex = currencies.findIndex((c) => c.symbol === 'USDT')
-        if (usdtIndex !== -1 && userCurrencyMap.has('USDT')) {
-          currencies[usdtIndex].holdAmount = userCurrencyMap.get('USDT')
-          console.log(`更新USDT持有量: ${currencies[usdtIndex].holdAmount}`)
+        if (usdtIndex !== -1) {
+          const usdtAmount = currencyStore.getUserCurrencyAmount('USDT')
+          currencies[usdtIndex].holdAmount = usdtAmount
+          console.log(`更新USDT持有量: ${usdtAmount}`)
         }
       }
 
@@ -402,7 +402,7 @@ const fetchCurrencyOrders = async () => {
     // 延迟关闭加载状态，让用户看到加载指示器
     setTimeout(() => {
       loading.value = false
-    }, 500)
+    }, 100)
   }
 }
 
@@ -463,7 +463,7 @@ const fetchUserBalance = async () => {
   try {
     // 先尝试从store获取用户余额
     const userData = await userInfoStore.getUserCompleteInfo()
-    
+
     // 如果store中有用户余额数据，直接使用
     if (userData && userData.userInfo.balance !== undefined) {
       userBalance.value = userData.userInfo.balance
@@ -539,15 +539,15 @@ const formatAmount = (amount: any) => {
   if (amount === undefined || amount === null) {
     return '0.00'
   }
-  
+
   // 确保amount是数字类型
   const numAmount = typeof amount === 'number' ? amount : parseFloat(amount)
-  
+
   // 检查转换后是否为有效数字
   if (isNaN(numAmount)) {
     return '0.00'
   }
-  
+
   return numAmount.toFixed(2)
 }
 
@@ -604,29 +604,65 @@ const fetchEquityData = async () => {
     equityPrice.value = 0
     myEquity.value = 0
     equityAssets.value = 0
+
+    // 显示错误提示
+    uni.showToast({
+      title: '获取股权数据失败，请刷新重试',
+      icon: 'none',
+      duration: 2000,
+    })
   } finally {
-    loading.value = false
+    // 延迟关闭加载状态，保持与fetchCurrencyOrders一致的用户体验
+    setTimeout(() => {
+      loading.value = false
+    }, 100)
   }
 }
 
 // 切换资产标签
 const switchTab = (tab: string) => {
-  activeTab.value = tab
-  if (tab === 'equity') {
-    fetchEquityData()
-  } else {
-    // 切换到货币标签时先清空货币列表，再刷新货币订单
-    currencies.length = 0
-    fetchCurrencyOrders()
+  // 如果正在加载数据，则不允许切换标签
+  if (loading.value) {
+    uni.showToast({
+      title: '正在加载数据，请稍候...',
+      icon: 'none',
+      duration: 2000,
+    })
+    return
+  }
+
+  // 如果不是当前标签才进行切换和数据获取
+  if (activeTab.value !== tab) {
+    activeTab.value = tab
+    if (tab === 'equity') {
+      fetchEquityData()
+    } else {
+      // 切换到货币标签时先清空货币列表，再刷新货币订单
+      currencies.length = 0
+      fetchCurrencyOrders()
+    }
   }
 }
 
 // 切换货币交易子标签
 const switchCurrencyTab = (tab: string) => {
-  activeCurrencyTab.value = tab
-  // 切换标签时先清空货币列表，再重新获取货币订单
-  currencies.length = 0
-  fetchCurrencyOrders()
+  // 如果正在加载数据，则不允许切换标签
+  if (loading.value) {
+    uni.showToast({
+      title: '正在加载数据，请稍候...',
+      icon: 'none',
+      duration: 2000,
+    })
+    return
+  }
+
+  // 如果不是当前标签才进行切换和数据获取
+  if (activeCurrencyTab.value !== tab) {
+    activeCurrencyTab.value = tab
+    // 切换标签时先清空货币列表，再重新获取货币订单
+    currencies.length = 0
+    fetchCurrencyOrders()
+  }
 }
 
 // 导航到指定页面
@@ -707,7 +743,9 @@ const openBuyUsdtDialog = (item: any) => {
 
 // 处理USDT购买成功
 const handleBuyUsdtSuccess = () => {
-  // 刷新货币订单和用户货币数据
+  // 购买USDT成功后，刷新用户持有货币数据
+  currencyStore.fetchUserCurrencies(true)
+  // 刷新货币订单数据
   fetchCurrencyOrders()
 }
 
@@ -740,6 +778,9 @@ const confirmSellEquity = async (amount: number) => {
         title: '出售成功',
         icon: 'success',
       })
+
+      // 出售股权成功后，刷新用户持有货币数据
+      currencyStore.fetchUserCurrencies(true)
 
       // 刷新股权数据
       await fetchEquityData()
@@ -781,7 +822,12 @@ useTabItemTap({
 onMounted(async () => {
   // 从store获取用户信息，但不强制刷新
   await userInfoStore.getUserCompleteInfo(false)
-  
+
+  // 获取用户持有货币数据
+  if (userInfoStore.isLogined) {
+    await currencyStore.fetchUserCurrencies(true)
+  }
+
   if (activeTab.value === 'currency') {
     currencies.length = 0
     fetchCurrencyOrders()
@@ -797,6 +843,10 @@ onMounted(async () => {
       if (data.type === 'buy' || data.type === 'sell') {
         activeCurrencyTab.value = data.type
       }
+
+      // 交易完成后，刷新用户持有货币数据
+      currencyStore.fetchUserCurrencies(true)
+
       currencies.length = 0
       fetchCurrencyOrders()
     }
@@ -820,17 +870,24 @@ const refreshData = () => {
   }
 }
 
-// 暴露给页面实例以便外部调用
-defineExpose({
-  refreshData,
-})
+// 添加一个专门用于刷新用户持有货币数据的方法
+const refreshUserCurrencies = async () => {
+  console.log('开始刷新用户持有货币数据')
+  await currencyStore.fetchUserCurrencies(true)
+}
 
 // 处理下拉刷新
 const onRefresh = () => {
   console.log('开始下拉刷新')
   refreshing.value = true
 
+  // 下拉刷新时也设置loading状态，以防止用户切换标签
+  loading.value = true
+
   try {
+    // 先刷新用户持有货币数据
+    refreshUserCurrencies()
+
     if (activeTab.value === 'currency') {
       currencies.length = 0
       fetchCurrencyOrders()
@@ -839,18 +896,33 @@ const onRefresh = () => {
     }
   } catch (error) {
     console.error('下拉刷新出错:', error)
-  } finally {
-    // 延迟结束刷新状态，以提供更好的用户体验
-    setTimeout(() => {
-      refreshing.value = false
-      uni.showToast({
-        title: '刷新成功',
-        icon: 'success',
-        duration: 1000,
-      })
-    }, 800)
+    // 出错时显示提示
+    uni.showToast({
+      title: '刷新失败，请重试',
+      icon: 'none',
+      duration: 2000,
+    })
+    // 出错时重置loading和refreshing状态
+    loading.value = false
+    refreshing.value = false
   }
+  // 注意：fetchCurrencyOrders和fetchEquityData会自行处理loading状态
+  // 但我们需要单独处理refreshing状态
+  setTimeout(() => {
+    refreshing.value = false
+    uni.showToast({
+      title: '刷新成功',
+      icon: 'success',
+      duration: 1000,
+    })
+  }, 800)
 }
+
+// 暴露给页面实例以便外部调用
+defineExpose({
+  refreshData,
+  refreshUserCurrencies,
+})
 </script>
 
 <style lang="scss">
@@ -1378,5 +1450,26 @@ page {
 
 .spin {
   animation: spin 1s linear infinite;
+}
+
+/* 添加加载状态样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+  margin-top: 20rpx;
+}
+
+/* 禁用标签样式 */
+.tab-disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 </style>
