@@ -4,6 +4,7 @@ import { useVerificationStore } from './modules/verification'
 import { useBankCardStore } from './modules/bankcard'
 import { useTeamStore } from './modules/team'
 import { useMessageStore } from './modules/message'
+import { useDepositTipsStore } from './modules/deposit-tips'
 
 /**
  * 用户信息统一管理器，协调各个用户相关模块
@@ -164,12 +165,14 @@ export const useUserManagerStore = defineStore('userManager', () => {
     const bankCardStore = useBankCardStore()
     const teamStore = useTeamStore()
     const messageStore = useMessageStore()
+    const depositTipsStore = useDepositTipsStore()
 
     userStore.clearUserInfo()
     verificationStore.clearVerificationInfo()
     bankCardStore.clearBankCardInfo()
     teamStore.clearTeamInfo()
     messageStore.clearMessageInfo()
+    depositTipsStore.clearDepositTips()
   }
 
   return {

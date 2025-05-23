@@ -20,5 +20,6 @@ export * from './modules/bankcard'
 export * from './modules/team'
 export * from './modules/message'
 export * from './modules/currency' // 导出新的货币store
+export * from './modules/deposit-tips' // 导出预存金额提示store
 export * from './user-manager'
 export * from './platform'

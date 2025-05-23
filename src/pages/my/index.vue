@@ -27,7 +27,7 @@
         <text class="user-name">{{ getUserDisplayName() }}</text>
         <view class="user-detail">
           <!-- <text class="user-id">ID: {{ userStore.userInfo.id || '-' }}</text> -->
-          <text class="divider">|</text>
+          <!-- <text class="divider">|</text> -->
           <text class="invite-code">邀请码: {{ userStore.userInfo.invite_code || '-' }}</text>
         </view>
       </view>
@@ -205,8 +205,15 @@
           <!-- 银行卡开户预存金提示 -->
           <view class="open-fee-tip">
             <text class="tip-title">温馨提示</text>
-            <view class="deposit-tips-list" v-if="depositTips.length > 0">
-              <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
+            <view
+              class="deposit-tips-list"
+              v-if="depositTipsStore.getActiveDepositTips().length > 0"
+            >
+              <view
+                class="deposit-tip-item"
+                v-for="(tip, index) in depositTipsStore.getActiveDepositTips()"
+                :key="index"
+              >
                 <text class="tip-dot">•</text>
                 <text class="tip-desc">{{ tip.description }}</text>
               </view>
@@ -239,7 +246,13 @@
 <script lang="ts" setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useUserStore, useVerificationStore, usePlatformStore } from '@/store'
+import {
+  useUserStore,
+  useVerificationStore,
+  usePlatformStore,
+  useDepositTipsStore,
+  useUserManagerStore,
+} from '@/store'
 import { useAppStore } from '@/store/app'
 import { API_URL } from '@/config/api'
 import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
@@ -262,6 +275,10 @@ const appStore = useAppStore()
 const platformStore = usePlatformStore()
 // 获取验证状态
 const verificationStore = useVerificationStore()
+// 获取预存服务提示
+const depositTipsStore = useDepositTipsStore()
+// 获取用户管理状态
+const userManagerStore = useUserManagerStore()
 
 // 判断是否为浏览器环境
 const isBrowser = ref(false)
@@ -281,8 +298,6 @@ onShow(() => {
   console.log('我的页面显示，刷新数据')
   // 检查用户数据和余额
   checkUserInfo()
-  // 获取预存金额提示
-  fetchDepositTips()
 })
 
 // 页面挂载时添加事件监听
@@ -615,8 +630,8 @@ const handleLogout = () => {
     content: '确定要退出登录吗？',
     success: (res) => {
       if (res.confirm) {
-        // 清除登录信息
-        userStore.clearUserInfo()
+        // 清除所有用户相关数据（包括实名认证、银行卡、团队信息等）
+        userManagerStore.clearAllUserData()
 
         // 返回登录页
         uni.reLaunch({

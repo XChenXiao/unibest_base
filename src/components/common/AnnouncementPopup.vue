@@ -97,11 +97,6 @@ const fetchLatestAnnouncement = async () => {
     console.log('使用外部传入的公告数据:', props.externalAnnouncement)
     announcement.value = props.externalAnnouncement
     loading.value = false
-
-    // 自动标记为已读
-    if (announcement.value.id && !announcement.value.is_read) {
-      await markAsRead(announcement.value.id)
-    }
     return
   }
 
@@ -111,16 +106,11 @@ const fetchLatestAnnouncement = async () => {
 
   try {
     const result = await getLatestAnnouncementAPI()
-    console.log('获取公告API返回:', result)
+    console.log('公告API请求完成', result)
 
     if (result.status === 'success' && result.data) {
       announcement.value = result.data
       console.log('成功获取公告数据')
-
-      // 自动标记为已读
-      if (announcement.value.id && !announcement.value.is_read) {
-        await markAsRead(announcement.value.id)
-      }
     } else {
       error.value = '暂无公告'
       console.log('没有可显示的公告')
@@ -226,12 +216,6 @@ watch(
           console.log('确保使用最新的外部公告数据')
           announcement.value = props.externalAnnouncement
           loading.value = false
-
-          // 自动标记为已读
-          if (announcement.value.id && !announcement.value.is_read) {
-            console.log('标记外部传入的公告为已读(弹窗显示时)')
-            markAsRead(announcement.value.id)
-          }
         }
       }
     }
@@ -246,12 +230,6 @@ watch(
       console.log('外部公告数据变化，使用新数据:', newVal)
       announcement.value = newVal
       loading.value = false
-
-      // 自动标记为已读
-      if (announcement.value.id && !announcement.value.is_read) {
-        console.log('标记外部传入的公告为已读')
-        markAsRead(announcement.value.id)
-      }
     }
   },
   { immediate: true },

@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only'
-import { useUserStore, useUserManagerStore, useCurrencyStore } from '@/store'
+import { useUserStore, useUserManagerStore, useCurrencyStore, useDepositTipsStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { usePlatformStore } from '@/store/platform'
 import { getNeedLoginPages, clearPageCache } from '@/utils'
@@ -20,6 +20,8 @@ const appStore = useAppStore()
 const platformStore = usePlatformStore()
 // 初始化货币数据store
 const currencyStore = useCurrencyStore()
+// 初始化预存金额提示store
+const depositTipsStore = useDepositTipsStore()
 
 // 最小更新时间间隔(毫秒)：5分钟
 const MIN_UPDATE_INTERVAL = 5 * 60 * 1000
@@ -106,6 +108,11 @@ onLaunch(async () => {
       await platformStore.fetchPlatformSettings()
       // 获取银行卡开户预存金
       appStore.fetchBankCardOpenFee()
+
+      // 获取预存金额提示（在后台进行，不阻塞应用启动）
+      depositTipsStore.fetchDepositTips().catch((error) => {
+        console.error('初始化预存金额提示失败:', error)
+      })
 
       // 关闭启动封面
       closeSplashscreen()

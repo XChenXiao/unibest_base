@@ -30,7 +30,10 @@
       </view>
 
       <view class="fee-info">
-        <view class="fee-label">开户预存金<text class="required-mark">*</text></view>
+        <view class="fee-label">
+          开户预存金
+          <text class="required-mark">*</text>
+        </view>
         <view class="amount-input-container">
           <text class="amount-label">预存金额</text>
           <view class="amount-input-wrapper">
@@ -44,8 +47,12 @@
           <text class="tip-title">温馨提示</text>
 
           <!-- 预存服务提示列表 -->
-          <view class="deposit-tips-list" v-if="depositTips.length > 0">
-            <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
+          <view class="deposit-tips-list" v-if="depositTipsStore.getActiveDepositTips().length > 0">
+            <view
+              class="deposit-tip-item"
+              v-for="(tip, index) in depositTipsStore.getActiveDepositTips()"
+              :key="index"
+            >
               <text class="tip-dot">•</text>
               <text class="tip-desc">{{ tip.description }}</text>
             </view>
@@ -119,7 +126,11 @@
         />
       </view>
 
-      <button class="confirm-recharge-btn" @click="processSubmit" :disabled="loading || !formData.amount">
+      <button
+        class="confirm-recharge-btn"
+        @click="processSubmit"
+        :disabled="loading || !formData.amount"
+      >
         {{ loading ? '提交中...' : '确认开户' }}
       </button>
       <view class="submit-hint">提交申请后将进入开户审核流程</view>
@@ -160,10 +171,13 @@ import {
   IBankCardOpenRecord,
   IDepositTip,
 } from '@/service/index/bankcard'
-import { useUserStore } from '@/store/user'
+import { useUserStore, useDepositTipsStore } from '@/store'
 
 // 用户数据
 const userStore = useUserStore()
+
+// 预存服务提示store
+const depositTipsStore = useDepositTipsStore()
 
 // 申请步骤：form-表单填写，review-审核中
 const currentStep = ref('form')

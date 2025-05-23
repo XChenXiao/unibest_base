@@ -405,10 +405,21 @@ const refreshBasicUserData = async () => {
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
 page {
   background-color: #f5f5f5;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  padding-bottom: 50rpx;
+}
+
+.wave-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16rpx;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  z-index: 2;
 }
 
 /* 页面容器 */
@@ -425,4 +436,3 @@ ave-decoration {
   z-index: 2;
 }
 </style>
-z-index: 2;
