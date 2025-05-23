@@ -81,7 +81,11 @@ export const useCurrencyStore = defineStore(
 
     // 获取特定货币的持有量
     const getUserCurrencyAmount = (symbol: string): number => {
+      console.log(`查询货币 ${symbol} 的持有量`)
+      console.log('当前store中的所有货币数据:', userCurrencies.value)
+
       if (!userCurrencies.value || userCurrencies.value.length === 0) {
+        console.log('store中没有货币数据')
         return 0
       }
 
@@ -101,8 +105,11 @@ export const useCurrencyStore = defineStore(
       })
 
       if (!currency) {
+        console.log(`未找到货币 ${symbol}`)
         return 0
       }
+
+      console.log(`找到货币 ${symbol}，数据结构:`, currency)
 
       // 计算可用余额
       let availableBalance = 0
@@ -114,6 +121,14 @@ export const useCurrencyStore = defineStore(
           typeof currency.user_available_balance === 'number'
             ? currency.user_available_balance
             : parseFloat(String(currency.user_available_balance) || '0')
+        console.log(`使用user_available_balance字段: ${availableBalance}`)
+      } else if (currency.user_balance !== undefined) {
+        // 使用user_balance字段
+        availableBalance =
+          typeof currency.user_balance === 'number'
+            ? currency.user_balance
+            : parseFloat(String(currency.user_balance) || '0')
+        console.log(`使用user_balance字段: ${availableBalance}`)
       } else if (currency.amount !== undefined) {
         // 使用amount字段（可能是总持有量）
         const amount = currency.amount // 已经是number类型
@@ -122,15 +137,31 @@ export const useCurrencyStore = defineStore(
         const frozenAmount = currency.frozen_amount || 0
 
         availableBalance = amount - frozenAmount
+        console.log(
+          `使用amount字段: ${amount}, 冻结金额: ${frozenAmount}, 可用余额: ${availableBalance}`,
+        )
       } else if (currency.currency && currency.currency.user_available_balance !== undefined) {
         // 从currency子对象中获取
         availableBalance =
           typeof currency.currency.user_available_balance === 'number'
             ? currency.currency.user_available_balance
             : parseFloat(String(currency.currency.user_available_balance) || '0')
+        console.log(`使用currency.user_available_balance字段: ${availableBalance}`)
+      } else {
+        console.log(`货币 ${symbol} 没有找到可用的余额字段，当前数据:`, currency)
       }
 
+      console.log(`最终返回的持有量: ${availableBalance}`)
       return availableBalance
+    }
+
+    // 强制清除缓存并刷新数据（用于用户资产变化后）
+    const forceRefreshUserCurrencies = async () => {
+      console.log('强制清除缓存并刷新用户货币数据')
+      // 清除缓存
+      lastUpdateTime.value = 0
+      // 强制刷新
+      return await fetchUserCurrencies(true)
     }
 
     return {
@@ -141,6 +172,7 @@ export const useCurrencyStore = defineStore(
       clearUserCurrencies,
       fetchUserCurrencies,
       getUserCurrencyAmount,
+      forceRefreshUserCurrencies,
     }
   },
   {

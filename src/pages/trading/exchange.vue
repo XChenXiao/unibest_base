@@ -123,7 +123,7 @@
                     交易额: {{ formatAmount(item.minAmount) }}~{{ formatAmount(item.maxAmount) }}
                   </text>
                   <text class="remaining-text" v-if="item.symbol !== 'USDT'">
-                    剩余: {{ formatAmount(item.remainingAmount) }}
+                    剩余: {{ formatAmount(item.totalAmount) }}
                   </text>
                 </view>
               </view>
@@ -301,9 +301,6 @@ const getCurrencyIconUrl = (iconPath: string) => {
 
 // 从API获取货币订单数据
 const fetchCurrencyOrders = async () => {
-  // 如果已经在加载中，则跳过
-  if (loading.value) return
-
   // 设置加载中状态
   loading.value = true
 
@@ -314,10 +311,12 @@ const fetchCurrencyOrders = async () => {
     // 获取用户信息
     const userData = await userInfoStore.getUserCompleteInfo()
 
-    // 获取用户持有的货币数据 (使用currency store)
+    // 先获取用户持有的货币数据 (使用currency store)
     if (userData && userData.userInfo.token) {
-      // 获取用户持有货币数据
-      await currencyStore.fetchUserCurrencies(false)
+      // 强制刷新用户持有货币数据
+      console.log('开始获取用户持有货币数据...')
+      await currencyStore.fetchUserCurrencies(true)
+      console.log('用户持有货币数据获取完成，当前store中的数据:', currencyStore.userCurrencies)
     } else {
       console.log('用户未登录，无法获取用户持有货币')
     }
@@ -335,12 +334,16 @@ const fetchCurrencyOrders = async () => {
 
       // 处理数据，不再过滤掉USDT的货币订单并转换格式
       if (Array.isArray(response.data)) {
+        console.log('开始处理平台订单数据，订单数量:', response.data.length)
         for (let i = 0; i < response.data.length; i++) {
           const order = response.data[i]
+          console.log(`处理订单 ${i + 1}:`, order.currency_symbol, order.currency_name)
+
           // 排除USDT订单，因为我们会手动添加USDT
           if (order.currency_symbol !== 'USDT') {
             // 获取用户持有量 - 使用currency store获取
             const holdAmount = currencyStore.getUserCurrencyAmount(order.currency_symbol)
+            console.log(`货币 ${order.currency_symbol} 的持有量:`, holdAmount)
 
             currencies.push({
               id: order.currency_id, // 使用货币ID而不是订单ID
@@ -352,7 +355,7 @@ const fetchCurrencyOrders = async () => {
               sellPrice: parseFloat(order.price.toString()),
               holdAmount: holdAmount, // 直接设置持有量
               totalAmount: parseFloat(order.amount.toString()),
-              remainingAmount: parseFloat(order.remaining_amount.toString()),
+              remainingAmount: parseFloat(order.total_amount.toString()), // 使用total_amount作为剩余数量
               minAmount: parseFloat(order.min_order_amount.toString()),
               maxAmount: parseFloat(order.amount.toString()),
               fee: parseFloat(order.fee_rate.toString()),
@@ -361,8 +364,11 @@ const fetchCurrencyOrders = async () => {
             })
 
             console.log(`添加货币 ${order.currency_symbol} 到列表，持有量: ${holdAmount}`)
+          } else {
+            console.log('跳过USDT订单，将在后续手动添加')
           }
         }
+        console.log('平台订单处理完成，当前货币列表长度:', currencies.length)
       }
 
       // 如果是买入标签，添加USDT货币
@@ -430,26 +436,45 @@ const fetchUsdtInfo = async () => {
         icon: usdtData.icon,
       }
 
-      // 创建USDT币种信息并添加到货币列表中
-      currencies.push({
-        id: usdtData.id,
-        orderId: 0, // USDT没有平台订单ID
-        name: usdtData.name,
-        symbol: 'USDT',
-        iconUrl: getCurrencyIconUrl(usdtData.icon),
-        buyPrice: usdtData.price,
-        sellPrice: usdtData.price,
-        holdAmount: 0, // 这将在fetchUserCurrencies中更新
-        totalAmount: 1000000, // 一个比较大的数字
-        remainingAmount: 1000000, // 一个比较大的数字
-        minAmount: usdtData.min_transaction_amount,
-        maxAmount: usdtData.max_transaction_amount,
-        fee: 0, // USDT通常不收手续费
-        unit: '个',
-        bgColor: getBgColorBySymbol('USDT'),
-      })
+      // 检查是否已经存在USDT条目，避免重复添加
+      const existingUsdtIndex = currencies.findIndex((c) => c.symbol === 'USDT')
 
-      console.log('添加USDT到货币列表:', currencies[currencies.length - 1])
+      if (existingUsdtIndex === -1) {
+        // 如果不存在，则创建USDT币种信息并添加到货币列表中
+        currencies.push({
+          id: usdtData.id,
+          orderId: 0, // USDT没有平台订单ID
+          name: usdtData.name,
+          symbol: 'USDT',
+          iconUrl: getCurrencyIconUrl(usdtData.icon),
+          buyPrice: usdtData.price,
+          sellPrice: usdtData.price,
+          holdAmount: 0, // 这将在后续更新
+          totalAmount: 1000000, // 一个比较大的数字
+          remainingAmount: 1000000, // 一个比较大的数字
+          minAmount: usdtData.min_transaction_amount,
+          maxAmount: usdtData.max_transaction_amount,
+          fee: 0, // USDT通常不收手续费
+          unit: '个',
+          bgColor: getBgColorBySymbol('USDT'),
+        })
+
+        console.log('添加USDT到货币列表:', currencies[currencies.length - 1])
+      } else {
+        // 如果已存在，则更新现有的USDT信息
+        currencies[existingUsdtIndex] = {
+          ...currencies[existingUsdtIndex],
+          id: usdtData.id,
+          name: usdtData.name,
+          buyPrice: usdtData.price,
+          sellPrice: usdtData.price,
+          iconUrl: getCurrencyIconUrl(usdtData.icon),
+          minAmount: usdtData.min_transaction_amount,
+          maxAmount: usdtData.max_transaction_amount,
+        }
+
+        console.log('更新已存在的USDT信息:', currencies[existingUsdtIndex])
+      }
     } else {
       console.warn('获取USDT信息失败或返回数据为空')
     }
@@ -823,9 +848,11 @@ onMounted(async () => {
   // 从store获取用户信息，但不强制刷新
   await userInfoStore.getUserCompleteInfo(false)
 
-  // 获取用户持有货币数据
+  // 获取用户持有货币数据 - 强制刷新确保数据最新
   if (userInfoStore.isLogined) {
+    console.log('页面加载：开始强制刷新用户货币数据')
     await currencyStore.fetchUserCurrencies(true)
+    console.log('页面加载：用户货币数据刷新完成')
   }
 
   if (activeTab.value === 'currency') {
@@ -834,28 +861,6 @@ onMounted(async () => {
   } else {
     fetchEquityData()
   }
-
-  // 监听交易完成事件
-  uni.$on('trade_completed', (data) => {
-    console.log('接收到交易完成事件:', data)
-    // 根据交易类型切换到对应的标签并刷新数据
-    if (activeTab.value === 'currency') {
-      if (data.type === 'buy' || data.type === 'sell') {
-        activeCurrencyTab.value = data.type
-      }
-
-      // 交易完成后，刷新用户持有货币数据
-      currencyStore.fetchUserCurrencies(true)
-
-      currencies.length = 0
-      fetchCurrencyOrders()
-    }
-  })
-})
-
-// 在页面卸载时移除事件监听
-onUnmounted(() => {
-  uni.$off('trade_completed')
 })
 
 // 添加刷新数据方法，可以被其他页面调用
@@ -873,27 +878,33 @@ const refreshData = () => {
 // 添加一个专门用于刷新用户持有货币数据的方法
 const refreshUserCurrencies = async () => {
   console.log('开始刷新用户持有货币数据')
+  // 强制刷新，确保获取最新数据
   await currencyStore.fetchUserCurrencies(true)
+  console.log('用户持有货币数据刷新完成，当前store中的数据:', currencyStore.userCurrencies)
 }
 
 // 处理下拉刷新
-const onRefresh = () => {
+const onRefresh = async () => {
   console.log('开始下拉刷新')
   refreshing.value = true
 
-  // 下拉刷新时也设置loading状态，以防止用户切换标签
-  loading.value = true
-
   try {
-    // 先刷新用户持有货币数据
-    refreshUserCurrencies()
+    // 先刷新用户持有货币数据，等待完成
+    await refreshUserCurrencies()
 
     if (activeTab.value === 'currency') {
       currencies.length = 0
-      fetchCurrencyOrders()
+      await fetchCurrencyOrders()
     } else {
-      fetchEquityData()
+      await fetchEquityData()
     }
+
+    // 刷新成功提示
+    uni.showToast({
+      title: '刷新成功',
+      icon: 'success',
+      duration: 1000,
+    })
   } catch (error) {
     console.error('下拉刷新出错:', error)
     // 出错时显示提示
@@ -902,20 +913,10 @@ const onRefresh = () => {
       icon: 'none',
       duration: 2000,
     })
-    // 出错时重置loading和refreshing状态
-    loading.value = false
+  } finally {
+    // 确保在所有异步操作完成后再重置状态
     refreshing.value = false
   }
-  // 注意：fetchCurrencyOrders和fetchEquityData会自行处理loading状态
-  // 但我们需要单独处理refreshing状态
-  setTimeout(() => {
-    refreshing.value = false
-    uni.showToast({
-      title: '刷新成功',
-      icon: 'success',
-      duration: 1000,
-    })
-  }, 800)
 }
 
 // 暴露给页面实例以便外部调用

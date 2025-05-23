@@ -95,6 +95,7 @@ import {
   getUserBalance,
 } from '@/service/app'
 import { useUserStore } from '@/store/user'
+import { useCurrencyStore } from '@/store'
 
 // 获取弹窗组件实例
 const sellEquityPopup = ref(null)
@@ -152,6 +153,9 @@ const userBalance = ref(0)
 
 // 用户存储
 const userStore = useUserStore()
+
+// 初始化货币store
+const currencyStore = useCurrencyStore()
 
 // 自动刷新定时器
 let refreshTimer: ReturnType<typeof setInterval> | null = null
@@ -631,9 +635,12 @@ const confirmSellEquity = async (sellQuantity: number) => {
     // 刷新所有数据
     await refreshData()
 
+    // 强制刷新货币store数据
+    await currencyStore.forceRefreshUserCurrencies()
+
     // 出售成功提示
     uni.showToast({
-      title: res.message || '出售失败',
+      title: res.message || '出售成功',
       icon: 'success',
     })
   } else {
@@ -690,6 +697,11 @@ const claimReward = async (type: string) => {
       if (res.status === 'success') {
         // 刷新所有数据
         await refreshData()
+
+        // 强制刷新货币store数据
+        await currencyStore.forceRefreshUserCurrencies()
+        
+        
 
         // 领取成功提示
         uni.showToast({
@@ -755,6 +767,11 @@ const claimReward = async (type: string) => {
       if (res.status === 'success') {
         // 刷新所有数据
         await refreshData()
+        // 强制刷新货币store数据
+        await currencyStore.forceRefreshUserCurrencies()
+
+        
+        
 
         // 领取成功提示
         uni.showToast({
@@ -832,6 +849,11 @@ const claimReward = async (type: string) => {
       if (res.status === 'success') {
         // 刷新所有数据
         await refreshData()
+        // 强制刷新货币store数据
+        await currencyStore.forceRefreshUserCurrencies()
+
+        
+        
 
         // 领取成功提示
         uni.showToast({
