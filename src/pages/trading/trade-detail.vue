@@ -92,10 +92,7 @@
         </view>
         <view class="info-row" v-if="!isTypeBuy">
           <text class="info-label">手续费 ({{ feeRate }}%)</text>
-          <text class="info-value">
-            {{ formatUsdtAmount((parseFloat(tradeAmount) || 0) * currencyPrice * (feeRate / 100)) }}
-            USDT
-          </text>
+          <text class="info-value">{{ formatUsdtAmount(feeAmountInUsdt) }} USDT</text>
         </view>
         <view class="info-row total-row">
           <text class="info-label">实际{{ isTypeBuy ? '支付' : '获得' }}</text>
@@ -131,6 +128,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { buyTradeOrder, sellCurrencyToPlatform, getCurrencyDetail } from '@/service/app/currency'
+import { httpGet } from '@/utils/http'
 import { useUserStore } from '@/store/user'
 import { useCurrencyStore } from '@/store' // 导入货币store
 
@@ -157,6 +155,9 @@ const userUsdtBalance = ref(0) // 用户持有的USDT余额
 
 // 交易数量
 const tradeAmount = ref<string>('')
+
+// 获取USDT价格（用于手续费计算）
+const usdtPrice = ref(1.0) // USDT对人民币的价格，通常接近1
 
 // 页面加载时获取参数
 onLoad((options) => {
@@ -286,6 +287,9 @@ const fetchCurrencyDetails = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
 
+    // 获取USDT价格信息（用于手续费计算）
+    await fetchUsdtPrice()
+
     // 获取用户持有的货币
     if (tradeType.value === 'sell') {
       // 先从store获取货币列表
@@ -344,6 +348,39 @@ const fetchCurrencyDetails = async () => {
   }
 }
 
+// 获取USDT价格信息
+const fetchUsdtPrice = async () => {
+  try {
+    // 获取USDT信息，使用GET请求访问buy-usdt接口
+    const response = await httpGet<any>('/api/orders/buy-usdt')
+
+    console.log('获取USDT价格信息响应:', JSON.stringify(response))
+
+    if (response.status === 'success' && response.data) {
+      // 检查响应数据结构
+      const usdtData = response.data.currency || response.data
+
+      if (usdtData && usdtData.price) {
+        // 更新USDT价格
+        usdtPrice.value = parseFloat(usdtData.price.toString())
+        console.log('获取到USDT价格:', usdtPrice.value)
+      } else {
+        console.warn('USDT价格数据结构不正确:', response.data)
+        // 保持默认值
+        usdtPrice.value = 1.0
+      }
+    } else {
+      console.warn('获取USDT价格信息失败或返回数据为空')
+      // 保持默认值
+      usdtPrice.value = 1.0
+    }
+  } catch (error) {
+    console.error('获取USDT价格信息失败:', error)
+    // 保持默认值
+    usdtPrice.value = 1.0
+  }
+}
+
 // 获取货币图标URL
 const getCurrencyIconUrl = (iconPath: string) => {
   if (!iconPath) return ''
@@ -385,6 +422,17 @@ const actualAmount = computed(() => {
 
   // 无论买入还是卖出，都直接返回交易总额
   return total
+})
+
+// 计算手续费金额（USDT）
+const feeAmountInUsdt = computed(() => {
+  if (!isTypeBuy.value) {
+    const amount = parseFloat(tradeAmount.value) || 0
+    const totalAmount = amount * currencyPrice.value
+    // 交易总额 * 手续费率 / USDT价格 = 等价值的USDT手续费
+    return (totalAmount * (feeRate.value / 100)) / usdtPrice.value
+  }
+  return 0
 })
 
 // 处理滑块变化
@@ -509,7 +557,7 @@ const handleConfirmTrade = async () => {
 
   // 如果是卖出，验证用户USDT余额是否足够支付手续费
   if (!isTypeBuy.value) {
-    const feeAmount = amount * currencyPrice.value * (feeRate.value / 100)
+    const feeAmount = feeAmountInUsdt.value
     if (feeAmount > userUsdtBalance.value) {
       uni.showModal({
         title: 'USDT余额不足',

@@ -120,7 +120,11 @@
                 </view>
                 <view class="limit-info">
                   <text class="limit-text">
-                    交易额: {{ formatAmount(item.minAmount) }}~{{ formatAmount(item.maxAmount) }}
+                    交易额: {{ formatAmount(item.minAmount) }}~{{
+                      formatAmount(item.maxAmount) === '0.00'
+                        ? '不限'
+                        : formatAmount(item.maxAmount)
+                    }}
                   </text>
                   <text class="remaining-text" v-if="item.symbol !== 'USDT'">
                     剩余: {{ formatAmount(item.totalAmount) }}

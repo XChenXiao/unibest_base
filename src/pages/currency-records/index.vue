@@ -65,7 +65,7 @@
           <view class="record-right">
             <text class="record-amount" :class="record.symbol === '+' ? 'amount-green' : 'amount-red'">
               {{ record.type === 'system' ? 
-                `${record.symbol}${formatAmount(record.amount)} ${record.asset_symbol}` : 
+                `${record.symbol}${formatSystemAmount(record.amount, record.asset_symbol)} ${record.asset_symbol}` : 
                 `${record.symbol}${formatAmount(record.amount)}${record.asset_symbol === 'GOLD' ? '克' : record.asset_symbol === 'USDT' ? '' : ` ${record.asset_symbol}`}` 
               }}
             </text>
@@ -218,6 +218,16 @@ const formatDate = (dateStr: string) => {
 
 // 格式化数量，保留两位小数
 const formatAmount = (amount: string | number) => {
+  return Number(amount).toFixed(2);
+};
+
+// 格式化系统类型交易记录的金额
+const formatSystemAmount = (amount: string | number, assetSymbol: string) => {
+  // 对于USDT手续费，使用6位小数显示
+  if (assetSymbol === 'USDT') {
+    return Number(amount).toFixed(6);
+  }
+  // 其他情况使用2位小数
   return Number(amount).toFixed(2);
 };
 
