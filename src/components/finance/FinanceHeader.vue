@@ -153,7 +153,7 @@ const checkVerificationStatus = async () => {
     // 获取用户信息，检查认证状态
     if (verificationStore.isVerified) {
       uni.showToast({
-        title: '您已完成实名认证',
+        title: '您已实名',
         icon: 'success',
       })
       return // 添加return语句，确保已认证用户不会继续执行跳转

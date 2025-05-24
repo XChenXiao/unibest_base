@@ -8,7 +8,10 @@
 <template>
   <view class="verification-container p-4">
     <!-- 已认证状态 -->
-    <view v-if="verificationStatus && verificationStatus.data?.verification_status === 'approved'" class="status-box approved-box mb-6 p-4 rounded-lg">
+    <view
+      v-if="verificationStatus && verificationStatus.data?.verification_status === 'approved'"
+      class="status-box approved-box mb-6 p-4 rounded-lg"
+    >
       <view class="flex items-center mb-4">
         <text class="i-carbon-checkmark-filled text-3xl text-green-500 mr-2"></text>
         <text class="text-lg font-bold">认证成功</text>
@@ -23,24 +26,43 @@
       </view>
       <view class="info-item mb-2">
         <text class="label text-gray-500">认证时间：</text>
-        <text>{{ formatDate(verificationStatus.data?.verification?.verified_at || verificationStatus.data?.verification?.updated_at) }}</text>
+        <text>
+          {{
+            formatDate(
+              verificationStatus.data?.verification?.verified_at ||
+                verificationStatus.data?.verification?.updated_at,
+            )
+          }}
+        </text>
       </view>
     </view>
 
     <!-- 被拒绝状态 -->
-    <view v-else-if="verificationStatus && verificationStatus.data?.verification_status === 'rejected'" class="status-box rejected-box mb-6 p-4 rounded-lg">
+    <view
+      v-else-if="verificationStatus && verificationStatus.data?.verification_status === 'rejected'"
+      class="status-box rejected-box mb-6 p-4 rounded-lg"
+    >
       <view class="flex items-center mb-4">
         <text class="i-carbon-close-filled text-3xl text-red-500 mr-2"></text>
         <text class="text-lg font-bold">认证失败</text>
       </view>
       <view class="info-item mb-2">
         <text class="label text-gray-500">失败原因：</text>
-        <text class="text-red-500">{{ verificationStatus.data?.verification?.remark || '认证信息有误，请重新提交' }}</text>
+        <text class="text-red-500">
+          {{ verificationStatus.data?.verification?.remark || '认证信息有误，请重新提交' }}
+        </text>
       </view>
     </view>
 
     <!-- 表单 - 仅在未认证或认证被拒绝时显示 -->
-    <view v-if="!verificationStatus || verificationStatus.data?.verification_status === 'rejected' || verificationStatus.data?.verification_status === 'unsubmitted'" class="form-box">
+    <view
+      v-if="
+        !verificationStatus ||
+        verificationStatus.data?.verification_status === 'rejected' ||
+        verificationStatus.data?.verification_status === 'unsubmitted'
+      "
+      class="form-box"
+    >
       <view class="form-item mb-4">
         <view class="form-label mb-2">真实姓名</view>
         <input
@@ -62,9 +84,12 @@
       <view class="form-item mb-4">
         <view class="form-label mb-2">身份证正面照片</view>
         <view class="upload-tips text-sm text-gray-500 mb-2">请上传清晰的身份证人像面照片</view>
-        <view @click="chooseImage('front')" class="upload-box bg-gray-100 p-4 rounded-lg flex items-center justify-center">
+        <view
+          @click="chooseImage('front')"
+          class="upload-box bg-gray-100 p-4 rounded-lg flex items-center justify-center"
+        >
           <block v-if="frontImageUrl">
-            <image :src="frontImageUrl" class="w-full" style="height: 180rpx;" mode="aspectFit" />
+            <image :src="frontImageUrl" class="w-full" style="height: 180rpx" mode="aspectFit" />
           </block>
           <block v-else>
             <view class="flex-col flex items-center">
@@ -77,9 +102,12 @@
       <view class="form-item mb-4">
         <view class="form-label mb-2">身份证背面照片</view>
         <view class="upload-tips text-sm text-gray-500 mb-2">请上传清晰的身份证国徽面照片</view>
-        <view @click="chooseImage('back')" class="upload-box bg-gray-100 p-4 rounded-lg flex items-center justify-center">
+        <view
+          @click="chooseImage('back')"
+          class="upload-box bg-gray-100 p-4 rounded-lg flex items-center justify-center"
+        >
           <block v-if="backImageUrl">
-            <image :src="backImageUrl" class="w-full" style="height: 180rpx;" mode="aspectFit" />
+            <image :src="backImageUrl" class="w-full" style="height: 180rpx" mode="aspectFit" />
           </block>
           <block v-else>
             <view class="flex-col flex items-center">
@@ -106,11 +134,11 @@
 import { ref, onMounted } from 'vue'
 import { submitVerification, getVerificationStatus } from '@/service/app/user'
 import type { VerificationStatus } from '@/service/app/types'
-import { useUserStore } from '@/store'
-import { 
-  chooseAndUploadIdCardFront, 
+import { useUserStore, useVerificationStore } from '@/store'
+import {
+  chooseAndUploadIdCardFront,
   chooseAndUploadIdCardBack,
-  ImageType
+  ImageType,
 } from '@/utils/imageUpload'
 
 defineOptions({
@@ -119,6 +147,7 @@ defineOptions({
 
 // 用户状态
 const userStore = useUserStore()
+const verificationStore = useVerificationStore()
 
 // 认证表单数据
 const verificationForm = ref({
@@ -141,15 +170,15 @@ const loading = ref(false)
 // 获取认证状态
 const fetchVerificationStatus = async () => {
   // 如果用户已认证，从store中获取状态，避免重复请求
-  if (userStore.isVerified) {
+  if (verificationStore.isVerified) {
     console.log('用户已认证，从store中获取状态')
     const storeStatus = {
       status: 'success',
       data: {
         verification_status: 'approved',
         is_verified: true,
-        verification: (userStore.userInfo as any).verification || {}
-      }
+        verification: verificationStore.verificationInfo || {},
+      },
     }
     verificationStatus.value = storeStatus
     return
@@ -189,23 +218,21 @@ const chooseImage = (type: 'front' | 'back') => {
   // 显示加载中
   uni.showLoading({
     title: '正在选择图片...',
-    mask: true
-  });
+    mask: true,
+  })
 
   // 根据类型选择不同的上传方法
-  const uploadMethod = type === 'front' 
-    ? chooseAndUploadIdCardFront 
-    : chooseAndUploadIdCardBack
-  
+  const uploadMethod = type === 'front' ? chooseAndUploadIdCardFront : chooseAndUploadIdCardBack
+
   try {
     loading.value = true
-    
+
     // 调用上传方法
     uploadMethod()
-      .then(res => {
+      .then((res) => {
         // 隐藏加载提示
-        uni.hideLoading();
-        
+        uni.hideLoading()
+
         if (res.status === 'success' && res.data) {
           // 显示本地预览（如果有URL）
           if (res.data.url) {
@@ -215,11 +242,11 @@ const chooseImage = (type: 'front' | 'back') => {
               backImageUrl.value = res.data.url
             }
           }
-          
+
           // 保存上传后的图片路径 - 优先使用file_path
-          const filePath = res.data.file_path || res.data.path || '';
-          console.log('上传结果:', res.data);
-          
+          const filePath = res.data.file_path || res.data.path || ''
+          console.log('上传结果:', res.data)
+
           if (type === 'front') {
             verificationForm.value.id_card_front = filePath
             console.log('身份证正面上传成功:', filePath)
@@ -227,7 +254,7 @@ const chooseImage = (type: 'front' | 'back') => {
             verificationForm.value.id_card_back = filePath
             console.log('身份证背面上传成功:', filePath)
           }
-          
+
           uni.showToast({
             icon: 'success',
             title: '上传成功',
@@ -236,10 +263,10 @@ const chooseImage = (type: 'front' | 'back') => {
           throw new Error(res.message || '上传失败')
         }
       })
-      .catch(error => {
+      .catch((error) => {
         // 隐藏加载提示
-        uni.hideLoading();
-        
+        uni.hideLoading()
+
         console.error('图片上传错误:', error)
         uni.showToast({
           icon: 'none',
@@ -251,8 +278,8 @@ const chooseImage = (type: 'front' | 'back') => {
       })
   } catch (error: any) {
     // 隐藏加载提示
-    uni.hideLoading();
-    
+    uni.hideLoading()
+
     console.error('选择图片出错:', error)
     uni.showToast({
       icon: 'none',
@@ -279,9 +306,9 @@ const handleSubmit = async () => {
     })
     return
   }
-  
+
   // 简单验证身份证号码格式
-  const idCardReg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+  const idCardReg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/
   if (!idCardReg.test(verificationForm.value.id_card_number)) {
     uni.showToast({
       icon: 'none',
@@ -289,7 +316,7 @@ const handleSubmit = async () => {
     })
     return
   }
-  
+
   if (!verificationForm.value.id_card_front) {
     uni.showToast({
       icon: 'none',
@@ -307,53 +334,64 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true
-    
+
     // 显示提交中
     uni.showLoading({
       title: '提交中...',
-      mask: true
-    });
-    
+      mask: true,
+    })
+
     // 打印将要提交的数据，以便调试
     console.log('提交实名认证数据:', {
       real_name: verificationForm.value.real_name,
       id_card_number: verificationForm.value.id_card_number,
       id_card_front: verificationForm.value.id_card_front,
-      id_card_back: verificationForm.value.id_card_back
+      id_card_back: verificationForm.value.id_card_back,
     })
-    
+
     // 直接提交JSON数据，不使用FormData
     const res = await submitVerification({
       data: {
         real_name: verificationForm.value.real_name,
         id_card_number: verificationForm.value.id_card_number,
         id_card_front: verificationForm.value.id_card_front,
-        id_card_back: verificationForm.value.id_card_back
-      }
+        id_card_back: verificationForm.value.id_card_back,
+      },
     })
-    
+
     // 隐藏加载提示
-    uni.hideLoading();
-    
+    uni.hideLoading()
+
     // 提交成功
     if (res.status === 'success') {
       uni.showToast({
         icon: 'success',
-        title: '提交成功并已通过',
+        title: '实名认证提交成功并已通过',
       })
-      
-      // 重新获取验证状态
-      await fetchVerificationStatus()
-      
-      // 更新用户信息，确保认证状态一致
-      await userStore.fetchUserInfo()
+
+      // 直接更新verificationStore状态为已认证
+      verificationStore.setVerificationInfo({
+        verified: true,
+        pending: false,
+        rejected: false,
+        rejection_reason: '',
+        real_name: (res as any).data?.real_name,
+        id_card_number: (res as any).data?.id_card_number,
+      })
+
+      // 延迟1.5秒后返回首页，让用户看到成功提示
+      setTimeout(() => {
+        uni.reLaunch({
+          url: '/pages/index/index',
+        })
+      }, 1500)
     } else {
       throw new Error(res.message || '提交失败')
     }
   } catch (error: any) {
     // 隐藏加载提示
-    uni.hideLoading();
-    
+    uni.hideLoading()
+
     console.error('提交认证失败:', error)
     // 显示错误信息
     uni.showToast({
@@ -427,4 +465,4 @@ onUnload(() => {
 .upload-tips {
   color: #666;
 }
-</style> 
+</style>

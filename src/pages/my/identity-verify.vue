@@ -143,7 +143,7 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useUserStore } from '@/store/user'
+import { useUserStore, useVerificationStore } from '@/store'
 import { submitVerificationAPI, getVerificationStatusAPI } from '@/service/index/verification'
 import { getEnvBaseUploadUrl } from '@/utils'
 import {
@@ -154,6 +154,7 @@ import {
 
 // 获取用户状态
 const userStore = useUserStore()
+const verificationStore = useVerificationStore()
 
 // 上传服务基础URL
 const uploadBaseUrl = getEnvBaseUploadUrl()
@@ -249,8 +250,8 @@ const maskIdNumber = (idNumber: string) => {
 
 // 页面加载时检查认证状态
 onMounted(async () => {
-  // 直接从userStore获取认证状态
-  if (userStore.userInfo.is_verified) {
+  // 直接从verificationStore获取认证状态
+  if (verificationStore.isVerified) {
     // 用户已通过实名认证，直接设置状态为approved
     verifyStatus.value = 'approved'
 
@@ -284,14 +285,14 @@ onMounted(async () => {
     }
   } else {
     // 如果用户未通过实名认证，需要获取当前的认证状态
-    await userStore.fetchVerificationStatus()
+    await verificationStore.fetchVerificationStatus()
 
-    if (userStore.isPendingVerification) {
+    if (verificationStore.isPendingVerification) {
       verifyStatus.value = 'pending'
-    } else if (userStore.isRejectedVerification) {
+    } else if (verificationStore.isRejectedVerification) {
       verifyStatus.value = 'rejected'
       rejectReason.value =
-        userStore.verificationStatus.rejection_reason || '认证信息有误，请重新提交'
+        verificationStore.verificationInfo.rejection_reason || '认证信息有误，请重新提交'
     } else {
       verifyStatus.value = 'none'
     }
@@ -426,8 +427,15 @@ const handleSubmit = async () => {
     })
 
     if (res.status === 'success') {
-      // 更新认证状态
-      await userStore.fetchVerificationStatus()
+      // 直接更新verificationStore状态为已认证
+      verificationStore.setVerificationInfo({
+        verified: true,
+        pending: false,
+        rejected: false,
+        rejection_reason: '',
+        real_name: formData.name,
+        id_card_number: formData.idNumber,
+      })
 
       // 修改状态为已通过
       verifyStatus.value = 'approved'
@@ -439,9 +447,14 @@ const handleSubmit = async () => {
 
       // 提交成功提示
       uni.showToast({
-        title: '提交成功并已通过',
+        title: '实名认证提交成功并已通过',
         icon: 'success',
       })
+
+      // 延迟1.5秒后返回上一页，让用户看到成功提示
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
     }
   } catch (error: any) {
     uni.showToast({

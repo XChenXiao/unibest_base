@@ -161,18 +161,17 @@ const handleLogin = async () => {
         const appStore = useAppStore()
         const currencyStore = useCurrencyStore()
 
-        // 获取平台功能开关设置（登录时强制更新）
-        await platformStore.fetchPlatformSettings(true)
-        // 获取银行卡开户预存金
-        appStore.fetchBankCardOpenFee()
-        // 刷新用户信息
-        await userStore.fetchUserInfo()
+        // 登录成功后只获取必要的数据，避免与首页重复请求
+        await Promise.all([
+          // 获取平台功能开关设置（登录时强制更新）
+          platformStore.fetchPlatformSettings(true),
+          // 获取银行卡开户预存金
+          appStore.fetchBankCardOpenFee(),
+          // 获取用户货币数据
+          currencyStore.fetchUserCurrencies(true),
+        ])
 
-        // 登录成功后获取用户货币数据
-        console.log('登录成功，获取用户持有货币数据')
-        await currencyStore.fetchUserCurrencies(true)
-        console.log('登录成功后初始化用户货币数据完成')
-
+        console.log('登录成功后必要数据加载完成')
         uni.hideLoading()
       } catch (error) {
         console.error('加载平台数据失败', error)

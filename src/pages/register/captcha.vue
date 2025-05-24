@@ -63,7 +63,7 @@
           <input
             class="form-control"
             type="text"
-            placeholder="请输入邀请码（选填）"
+            placeholder="请输入邀请码"
             v-model="formData.referrer_invite_code"
           />
         </view>
@@ -124,7 +124,7 @@
       </view>
 
       <button class="register-btn" :disabled="!isFormValid" @click="handleRegister">注 册</button>
-      
+
       <!-- 下载APP按钮，仅在浏览器环境显示 -->
       <!-- #ifdef H5 -->
       <button class="download-app-btn" @click="downloadApp">下载中银易捷APP</button>
@@ -177,7 +177,7 @@ onLoad((options) => {
   const currentPath = '/pages/register/captcha'
   console.log('图形验证码注册页面加载，保存页面路径:', currentPath)
   uni.setStorageSync('last_page_path', currentPath)
-  
+
   // 判断当前环境
   // #ifdef H5
   isBrowser.value = true
@@ -564,7 +564,7 @@ page {
       opacity: 0.6;
     }
   }
-  
+
   .download-app-btn {
     background: linear-gradient(45deg, #e67e22, #d35400);
     color: white;

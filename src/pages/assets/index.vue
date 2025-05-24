@@ -78,6 +78,7 @@
 
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import AssetsOverview from '@/components/finance/AssetsOverview.vue'
 import EquityTab from './components/EquityTab.vue'
 import CurrencyTab from './components/CurrencyTab.vue'
@@ -875,6 +876,31 @@ const handleCurrencyBuySuccess = async () => {
   // 刷新所有数据
   await refreshData()
 }
+
+// 页面显示时刷新数据
+onShow(() => {
+  console.log('资产页面显示，开始刷新数据')
+
+  // 异步刷新数据
+  const refreshPageData = async () => {
+    // 强制刷新用户货币数据，确保数据最新
+    if (userStore.userInfo.id) {
+      console.log('用户已登录，强制刷新用户货币数据')
+      await currencyStore.fetchUserCurrencies(true)
+      console.log('用户货币数据刷新完成')
+    }
+
+    // 刷新页面数据
+    await refreshData()
+
+    console.log('资产页面数据刷新完成')
+  }
+
+  // 执行异步刷新
+  refreshPageData().catch((error) => {
+    console.error('资产页面数据刷新失败:', error)
+  })
+})
 </script>
 
 <style lang="scss">

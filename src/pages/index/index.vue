@@ -108,12 +108,14 @@ const latestAnnouncement = ref(null)
 const showVerificationGuidePopup = ref(false)
 // 用户实名认证状态
 const verificationStatus = ref<any>(null)
+// 标记是否是首次进入页面
+const isFirstEnter = ref(true)
 
 // 生命周期
 onMounted(() => {
   console.log('首页组件已挂载，准备获取签到数据')
-  // 获取签到数据
-  fetchCheckInData()
+  // 获取签到数据（首次加载需要包含日历状态）
+  fetchCheckInData(true)
 
   // 检查用户实名认证状态并显示相应弹窗
   checkVerificationStatusAndShowPopups()
@@ -125,12 +127,27 @@ onMounted(() => {
 // 监听页面显示（每次进入页面都会调用）
 onShow(() => {
   console.log('首页被显示')
-  // 每次页面激活时只刷新基本用户信息，不包括银行卡和团队信息
-  refreshBasicUserData()
 
-  // 每次页面显示时都检查用户认证状态并获取最新公告
-  console.log('页面显示，检查认证状态并获取最新公告')
-  checkVerificationStatusAndShowPopups()
+  // 如果是首次进入，跳过onShow的处理，避免与onMounted重复
+  if (isFirstEnter.value) {
+    isFirstEnter.value = false
+    console.log('首次进入页面，跳过onShow处理避免重复')
+    return
+  }
+
+  // 检查是否是从登录页面跳转而来，如果是则跳过所有数据刷新避免重复请求
+  const pages = getCurrentPages()
+  const fromLogin = pages.length > 1 && pages[pages.length - 2]?.route?.includes('login')
+
+  if (!fromLogin) {
+    // 只在非首次且非从登录页跳转时才进行数据刷新
+    console.log('非首次且非从登录页跳转，仅刷新签到统计数据')
+
+    // 只刷新签到统计数据，不获取日历状态数据
+    fetchCheckInData(false)
+  } else {
+    console.log('从登录页面跳转而来，跳过所有数据刷新避免重复请求')
+  }
 })
 
 // 页面卸载事件
@@ -149,8 +166,8 @@ const checkAppUpdate = async () => {
 
 // 方法
 // 获取签到数据
-const fetchCheckInData = async () => {
-  console.log('开始获取签到数据')
+const fetchCheckInData = async (includeDailyStatus = false) => {
+  console.log('开始获取签到数据，是否包含日历状态:', includeDailyStatus)
   try {
     // 获取打卡统计信息
     console.log('调用 getCheckInStatsAPI')
@@ -177,44 +194,49 @@ const fetchCheckInData = async () => {
         console.log('更新里程碑数据:', milestones.value)
       }
 
-      try {
-        // 获取打卡日历状态
-        console.log('调用 getCheckInDailyStatusAPI')
-        const dailyStatusRes = await getCheckInDailyStatusAPI()
-        console.log('getCheckInDailyStatusAPI 返回:', dailyStatusRes)
+      // 只在需要时获取日历状态（首次加载或签到成功后）
+      if (includeDailyStatus) {
+        try {
+          // 获取打卡日历状态
+          console.log('调用 getCheckInDailyStatusAPI')
+          const dailyStatusRes = await getCheckInDailyStatusAPI()
+          console.log('getCheckInDailyStatusAPI 返回:', dailyStatusRes)
 
-        if (dailyStatusRes && dailyStatusRes.data) {
-          const dailyStatus = dailyStatusRes.data.daily_status
+          if (dailyStatusRes && dailyStatusRes.data) {
+            const dailyStatus = dailyStatusRes.data.daily_status
 
-          // 处理已打卡和漏打卡的天
-          checkedDays.value = []
-          missedDays.value = []
+            // 处理已打卡和漏打卡的天
+            checkedDays.value = []
+            missedDays.value = []
 
-          dailyStatus.forEach((day, index) => {
-            const dayNumber = index + 1 // 从1开始计数
-            if (day.is_past_or_today) {
-              if (day.checked_in) {
-                checkedDays.value.push(dayNumber)
-              } else if (!day.is_today) {
-                // 今天未打卡不算漏打卡
-                missedDays.value.push(dayNumber)
+            dailyStatus.forEach((day, index) => {
+              const dayNumber = index + 1 // 从1开始计数
+              if (day.is_past_or_today) {
+                if (day.checked_in) {
+                  checkedDays.value.push(dayNumber)
+                } else if (!day.is_today) {
+                  // 今天未打卡不算漏打卡
+                  missedDays.value.push(dayNumber)
+                }
               }
-            }
-          })
-          console.log('更新签到日历数据:', {
-            checkedDays: checkedDays.value,
-            missedDays: missedDays.value,
-          })
+            })
+            console.log('更新签到日历数据:', {
+              checkedDays: checkedDays.value,
+              missedDays: missedDays.value,
+            })
+          }
+        } catch (dailyError) {
+          console.error('获取打卡日历状态失败:', dailyError)
+          // 检查具体的错误信息
+          if (dailyError.statusCode) {
+            console.error('HTTP状态码:', dailyError.statusCode)
+          }
+          if (dailyError.data) {
+            console.error('错误数据:', dailyError.data)
+          }
         }
-      } catch (dailyError) {
-        console.error('获取打卡日历状态失败:', dailyError)
-        // 检查具体的错误信息
-        if (dailyError.statusCode) {
-          console.error('HTTP状态码:', dailyError.statusCode)
-        }
-        if (dailyError.data) {
-          console.error('错误数据:', dailyError.data)
-        }
+      } else {
+        console.log('跳过日历状态获取，使用缓存数据')
       }
     }
   } catch (error) {
@@ -259,8 +281,8 @@ const handleCheckIn = async () => {
         icon: 'success',
       })
 
-      // 重新获取签到数据
-      await fetchCheckInData()
+      // 重新获取签到数据（签到成功后需要更新日历状态）
+      await fetchCheckInData(true)
     }
   } catch (error) {
     console.error('签到失败', error)
@@ -276,6 +298,12 @@ const handleCheckIn = async () => {
 // 获取用户实名认证状态
 const fetchVerificationStatus = async () => {
   try {
+    // 如果正在请求中，直接返回，避免重复请求
+    if (isRequestingVerification) {
+      console.log('正在请求实名认证状态中，不重复发送请求')
+      return verificationStore.isVerified
+    }
+
     // 如果用户未登录，不获取认证状态
     if (!userStore.isLogined) {
       return false
@@ -287,6 +315,14 @@ const fetchVerificationStatus = async () => {
       return true
     }
 
+    // 设置请求标记
+    isRequestingVerification = true
+
+    // 清除可能存在的定时器
+    if (verificationRequestTimer) {
+      clearTimeout(verificationRequestTimer)
+    }
+
     // 如果store中没有明确的认证状态，通过用户管理器刷新认证信息
     console.log('首页刷新用户实名认证状态')
     await verificationStore.fetchVerificationStatus()
@@ -296,6 +332,11 @@ const fetchVerificationStatus = async () => {
   } catch (error) {
     console.error('获取实名认证状态失败:', error)
     return false
+  } finally {
+    // 设置一个延迟，在这段时间内不再重复请求
+    verificationRequestTimer = setTimeout(() => {
+      isRequestingVerification = false
+    }, 2000) // 2秒内不重复请求
   }
 }
 
@@ -320,6 +361,10 @@ const checkVerificationStatusAndShowPopups = async () => {
 // 防止短时间内多次请求
 let isRequestingAnnouncement = false
 let announcementRequestTimer: ReturnType<typeof setTimeout> | null = null
+
+// 防止短时间内多次请求实名认证状态
+let isRequestingVerification = false
+let verificationRequestTimer: ReturnType<typeof setTimeout> | null = null
 
 // 检查并显示公告
 const checkAndShowAnnouncement = async () => {
@@ -403,6 +448,17 @@ const refreshBasicUserData = async () => {
     console.log('用户未登录，不刷新用户数据')
   }
 }
+
+// 刷新用户基本信息（但不包括实名认证状态）
+const refreshBasicUserDataOnly = async () => {
+  if (userStore.isLogined) {
+    console.log('刷新用户基本信息（不包括实名认证状态）')
+    // 直接调用用户store的fetchUserInfo，不调用userManagerStore避免重复的实名认证状态请求
+    await userStore.fetchUserInfo()
+  } else {
+    console.log('用户未登录，不刷新用户数据')
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -425,14 +481,5 @@ page {
 /* 页面容器 */
 .page-container {
   min-height: 100vh;
-}
-ave-decoration {
-  background-color: #f5f5f5;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 16rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  z-index: 2;
 }
 </style>

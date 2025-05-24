@@ -211,7 +211,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, toRefs } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import {
   getEquityInfo,
   getMyEquity,
@@ -242,9 +243,9 @@ const currencyStore = useCurrencyStore()
 const showAssets = ref(true)
 
 // 资产信息
-const totalAssets = ref(26850.75)
-const currencyAssets = ref(15850.75)
-const equityAssets = ref(11000.0)
+const totalAssets = ref(null)
+const currencyAssets = ref(null)
+const equityAssets = ref(null)
 
 // 当前激活的标签页
 const activeTab = ref('currency')
@@ -258,6 +259,10 @@ const myEquity = ref(1000)
 const loading = ref(false)
 // 下拉刷新状态
 const refreshing = ref(false)
+// 页面初始化状态
+const isInitialized = ref(false)
+// 数据请求防抖状态
+const requestingData = ref(false)
 
 // 图表时间周期
 const timePeriods = [
@@ -651,7 +656,7 @@ const fetchEquityData = async () => {
 // 切换资产标签
 const switchTab = (tab: string) => {
   // 如果正在加载数据，则不允许切换标签
-  if (loading.value) {
+  if (loading.value || requestingData.value) {
     uni.showToast({
       title: '正在加载数据，请稍候...',
       icon: 'none',
@@ -663,12 +668,9 @@ const switchTab = (tab: string) => {
   // 如果不是当前标签才进行切换和数据获取
   if (activeTab.value !== tab) {
     activeTab.value = tab
-    if (tab === 'equity') {
-      fetchEquityData()
-    } else {
-      // 切换到货币标签时先清空货币列表，再刷新货币订单
-      currencies.length = 0
-      fetchCurrencyOrders()
+    // 如果页面已初始化，才执行数据获取
+    if (isInitialized.value) {
+      fetchDataWithDebounce()
     }
   }
 }
@@ -676,7 +678,7 @@ const switchTab = (tab: string) => {
 // 切换货币交易子标签
 const switchCurrencyTab = (tab: string) => {
   // 如果正在加载数据，则不允许切换标签
-  if (loading.value) {
+  if (loading.value || requestingData.value) {
     uni.showToast({
       title: '正在加载数据，请稍候...',
       icon: 'none',
@@ -688,9 +690,12 @@ const switchCurrencyTab = (tab: string) => {
   // 如果不是当前标签才进行切换和数据获取
   if (activeCurrencyTab.value !== tab) {
     activeCurrencyTab.value = tab
-    // 切换标签时先清空货币列表，再重新获取货币订单
-    currencies.length = 0
-    fetchCurrencyOrders()
+    // 如果页面已初始化，才执行数据获取
+    if (isInitialized.value) {
+      // 切换标签时先清空货币列表，再重新获取货币订单
+      currencies.length = 0
+      fetchDataWithDebounce()
+    }
   }
 }
 
@@ -815,18 +820,41 @@ const confirmSellEquity = async (amount: number) => {
       await fetchEquityData()
     } else {
       uni.showToast({
-        title: response.message || '出售失败',
+        title: response.data.message || '出售失败',
         icon: 'none',
       })
     }
   } catch (error) {
     console.error('出售股权失败:', error)
     uni.showToast({
-      title: '出售失败，请重试',
+      title: error?.data.message || '出售失败，请重试',
       icon: 'none',
     })
   } finally {
     uni.hideLoading()
+  }
+}
+
+// 防重复请求的数据获取方法
+const fetchDataWithDebounce = async () => {
+  // 如果已经在请求数据，则跳过
+  if (requestingData.value) {
+    console.log('数据请求正在进行中，跳过重复请求')
+    return
+  }
+
+  requestingData.value = true
+  try {
+    // 根据当前选中的标签刷新对应数据
+    if (activeTab.value === 'currency') {
+      // 清空当前货币列表，重新获取交易订单数据
+      currencies.length = 0
+      await fetchCurrencyOrders()
+    } else {
+      await fetchEquityData()
+    }
+  } finally {
+    requestingData.value = false
   }
 }
 
@@ -837,18 +865,47 @@ useTabItemTap({
   isIndexPage: false, // 明确标记不是首页
   onTabTap: () => {
     console.log('交易所页面Tab被点击，刷新当前选中的数据')
+    // 如果页面未初始化，跳过Tab点击触发的请求
+    if (!isInitialized.value) {
+      console.log('页面未初始化完成，跳过Tab点击触发的数据请求')
+      return
+    }
     // 不再从store刷新用户信息，而是直接使用已有数据
     // 根据当前选中的标签刷新对应数据
-    if (activeTab.value === 'currency') {
-      fetchCurrencyOrders()
-    } else {
-      fetchEquityData()
-    }
+    fetchDataWithDebounce()
   },
+})
+
+// 页面显示时刷新数据
+onShow(() => {
+  console.log('交易所页面显示，开始刷新数据')
+
+  // 如果页面未初始化，跳过onShow触发的请求
+  if (!isInitialized.value) {
+    console.log('页面未初始化完成，跳过onShow触发的数据请求')
+    return
+  }
+
+  // 异步刷新数据
+  const refreshPageData = async () => {
+    // 移除强制刷新用户货币数据，改为使用现有缓存数据
+    console.log('使用现有的用户货币缓存数据，不强制刷新')
+
+    await fetchDataWithDebounce()
+
+    console.log('交易所页面数据刷新完成')
+  }
+
+  // 执行异步刷新
+  refreshPageData().catch((error) => {
+    console.error('交易所页面数据刷新失败:', error)
+  })
 })
 
 // 页面加载时获取数据
 onMounted(async () => {
+  console.log('交易所页面开始初始化')
+
   // 从store获取用户信息，但不强制刷新
   await userInfoStore.getUserCompleteInfo(false)
 
@@ -859,24 +916,29 @@ onMounted(async () => {
     console.log('页面加载：用户货币数据刷新完成')
   }
 
+  // 执行初始数据获取
   if (activeTab.value === 'currency') {
     currencies.length = 0
-    fetchCurrencyOrders()
+    await fetchCurrencyOrders()
   } else {
-    fetchEquityData()
+    await fetchEquityData()
   }
+
+  // 标记页面初始化完成
+  isInitialized.value = true
+  console.log('交易所页面初始化完成')
 })
 
 // 添加刷新数据方法，可以被其他页面调用
 // 这个方法需要放在当前模块的顶层作用域
 const refreshData = () => {
   console.log('交易所页面刷新数据')
-  if (activeTab.value === 'currency') {
-    currencies.length = 0
-    fetchCurrencyOrders()
-  } else {
-    fetchEquityData()
+  // 如果页面未初始化，跳过外部调用的请求
+  if (!isInitialized.value) {
+    console.log('页面未初始化完成，跳过外部调用的数据请求')
+    return
   }
+  fetchDataWithDebounce()
 }
 
 // 添加一个专门用于刷新用户持有货币数据的方法
@@ -896,12 +958,8 @@ const onRefresh = async () => {
     // 先刷新用户持有货币数据，等待完成
     await refreshUserCurrencies()
 
-    if (activeTab.value === 'currency') {
-      currencies.length = 0
-      await fetchCurrencyOrders()
-    } else {
-      await fetchEquityData()
-    }
+    // 使用防重复的数据获取方法
+    await fetchDataWithDebounce()
 
     // 刷新成功提示
     uni.showToast({

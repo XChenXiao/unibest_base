@@ -390,7 +390,7 @@ const handleProfileClick = () => {
   // 如果已经实名认证，显示简单提示
   if (verificationStore.isVerified) {
     uni.showToast({
-      title: '您已完成实名认证',
+      title: '您已实名',
       icon: 'success',
       duration: 1500,
     })
