@@ -256,6 +256,7 @@ import {
 import { useAppStore } from '@/store/app'
 import { API_URL } from '@/config/api'
 import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
+import { rechargeAPI, getBalanceAPI } from '@/service/index/balance'
 
 // 定义接口类型
 interface DepositTip {
@@ -321,7 +322,7 @@ onUnmounted(() => {
 })
 
 // 检查用户信息，确保数据是最新的
-const checkUserInfo = () => {
+const checkUserInfo = async () => {
   // 如果用户已登录，尝试刷新用户信息
   if (userStore.isLogined) {
     // 获取上次更新时间
@@ -335,6 +336,24 @@ const checkUserInfo = () => {
       userStore.fetchUserInfo()
     } else {
       console.log('用户数据在有效期内，无需重新获取')
+    }
+
+    // 每次显示页面时都刷新最新余额
+    try {
+      const balanceRes = await getBalanceAPI()
+      if (balanceRes.status === 'success' && balanceRes.data) {
+        // 更新用户余额信息
+        const userBalanceData = balanceRes.data as any
+        userStore.setUserInfo({
+          ...userStore.userInfo,
+          balance: userBalanceData.balance,
+          frozen_balance: userBalanceData.frozen_balance || 0
+        })
+        console.log('余额已更新:', userBalanceData.balance)
+      }
+    } catch (error) {
+      console.error('获取余额失败:', error)
+      // 余额获取失败时不影响页面正常显示
     }
   }
 }
@@ -598,27 +617,69 @@ const confirmRecharge = async () => {
   try {
     // 显示加载状态
     uni.showLoading({
-      title: '处理中...',
+      title: '创建充值订单...',
     })
 
-    // 这里替换为实际的充值API调用
-    // const res = await api.recharge({ amount: parseFloat(rechargeAmount.value) });
+    // 调用充值API，默认使用支付宝
+    const res = await rechargeAPI({
+      amount: parseFloat(rechargeAmount.value),
+      payment_type: 'alipay'
+    })
 
-    // 模拟第三方支付跳转
-    setTimeout(() => {
-      uni.hideLoading()
+    uni.hideLoading()
+
+    if (res.status === 'success' && res.data) {
+      // 关闭充值弹窗
       closeRechargePopup()
 
-      // 模拟跳转到第三方支付
-      uni.navigateTo({
-        url: `/pages/payment/third-party?amount=${rechargeAmount.value}`,
+      // 充值订单创建成功，显示成功消息
+      uni.showToast({
+        title: '充值订单创建成功',
+        icon: 'success',
+        duration: 2000
       })
-    }, 1000)
+
+      // 可以根据返回的支付信息进行后续处理
+      console.log('充值订单信息:', res.data)
+      
+      // 如果有支付信息，可以进行支付跳转
+      const rechargeData = res.data as any
+      if (rechargeData.pay_info) {
+        // 这里可以根据支付信息进行相应的处理
+        // 比如跳转到支付页面或显示支付二维码等
+        console.log('支付信息:', rechargeData.pay_info)
+      }
+
+      // 刷新用户信息以更新余额
+      setTimeout(() => {
+        userStore.fetchUserInfo()
+      }, 1000)
+
+    } else {
+      uni.showToast({
+        title: res.message || '充值失败，请重试',
+        icon: 'none',
+        duration: 2000
+      })
+    }
   } catch (error) {
     uni.hideLoading()
+    console.error('充值失败:', error)
+    
+    // 处理错误信息
+    let errorMessage = '充值失败，请重试'
+    if (error && typeof error === 'object') {
+      if ('message' in error && error.message) {
+        errorMessage = error.message
+      } else if ('data' in error && error.data && error.data.message) {
+        errorMessage = error.data.message
+      }
+    }
+    
     uni.showToast({
-      title: '充值失败，请重试',
+      title: errorMessage,
       icon: 'none',
+      duration: 2000
     })
   }
 }
