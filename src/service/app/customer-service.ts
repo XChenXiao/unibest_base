@@ -8,14 +8,15 @@ import { CustomRequestOptions } from '@/interceptors/request';
  */
 export interface QrcodeDetails {
   exists: boolean
-  id: number
+  path?: string
   url: string
-  collection: string
-  disk: string
-  file_name: string
-  mime_type: string
-  size: number
   storage_type: string
+  id?: number
+  collection?: string
+  disk?: string
+  file_name?: string
+  mime_type?: string
+  size?: number
 }
 
 /**
@@ -25,18 +26,9 @@ export interface CustomerServiceInfo {
   promotion_info: string
   promotion_group_number: string
   promotion_qrcode_url: string | null
-  qrcode_details?: {
-    exists: boolean
-    id: number
-    url: string
-    collection: string
-    disk: string
-    file_name: string
-    mime_type: string
-    size: number
-    storage_type: string
-  }
+  qrcode_details?: QrcodeDetails | null
   is_active: boolean
+  updated_at?: string
 }
 
 /**
@@ -54,5 +46,5 @@ export interface CustomerServiceResponse {
  * @returns 客服信息
  */
 export function getCustomerServiceInfoAPI(options?: CustomRequestOptions) {
-  return httpGet<CustomerServiceResponse>('/api/customer-service', null, options);
+  return httpGet<CustomerServiceInfo>('/api/customer-service', null, options);
 } 

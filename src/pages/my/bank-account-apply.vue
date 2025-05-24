@@ -131,9 +131,9 @@
         @click="processSubmit"
         :disabled="loading || !formData.amount"
       >
-        {{ loading ? '提交中...' : '确认开户' }}
+        {{ loading ? '处理中...' : '立即开户' }}
       </button>
-      <view class="submit-hint">提交申请后将进入开户审核流程</view>
+      <view class="submit-hint">确认后将跳转到支付页面完成开户</view>
     </view>
 
     <!-- 审核中状态 -->
@@ -366,68 +366,52 @@ const processSubmit = async () => {
     return
   }
 
-  // 不再检查余额是否足够
-
   // 二次确认
   uni.showModal({
-    title: '确认提交申请',
-    content: `您选择的开户预存金金额为 ${formData.amount} 人民币，是否确认提交申请？`,
+    title: '确认开户',
+    content: `您选择的开户预存金金额为 ${formData.amount} 人民币，确认后将跳转到支付页面`,
     success: async (res) => {
       if (res.confirm) {
-        await submitBankCardOpen()
+        await jumpToPayment()
       }
     },
   })
 }
 
-// 处理提交
-const submitBankCardOpen = async () => {
-  loading.value = true
+// 跳转到支付页面
+const jumpToPayment = async () => {
   try {
-    // 准备提交数据
-    const submitData = {
+    loading.value = true
+    
+    // 准备用户信息
+    const userInfo = {
       name: formData.name,
       phone: formData.phone,
       id_card: formData.id_card,
       address: formData.address,
-      deposit_amount: formData.amount, // 添加预存金额字段
     }
-
-    // 提交开户申请
-    const res = await openBankCardAPI(submitData)
-
-    if (res && res.status === 'success') {
-      // 更新用户余额 - 余额已在后端扣除
-      userStore.fetchUserInfo() // 刷新用户信息以获取更新的余额
-
-      uni.showToast({
-        title: res.message || '申请提交成功',
-        icon: 'success',
-      })
-
-      // 触发刷新事件
-      uni.$emit('refresh-bank-cards')
-      uni.$emit('refresh-bank-status')
-
-      // 延迟返回，让用户看到成功提示
-      setTimeout(() => {
-        // 返回上一页
-        uni.navigateBack()
-      }, 1500)
-    } else {
-      // 提交失败但不显示详细错误
-      uni.showToast({
-        title: '申请提交失败，请稍后再试',
-        icon: 'none',
-      })
+    
+    // 跳转到支付页面，传递用户信息和预存金额
+    const params = {
+      userInfo: JSON.stringify(userInfo),
+      depositAmount: formData.amount,
+      paymentType: 'alipay' // 默认支付宝
     }
-  } catch (error: any) {
-    console.error('提交开户申请失败:', error)
-
-    // 不显示详细错误信息，使用通用错误提示
+    
+    // 构建URL参数
+    const queryString = Object.keys(params)
+      .map(key => `${key}=${encodeURIComponent(params[key])}`)
+      .join('&')
+    
+    uni.navigateTo({
+      url: `/pages/payment/index?${queryString}`
+    })
+    
+  } catch (error) {
+    console.error('跳转支付页面失败:', error)
     uni.showToast({
-      title: '申请提交失败，请稍后再试',
-      icon: 'none',
+      title: '跳转失败，请重试',
+      icon: 'none'
     })
   } finally {
     loading.value = false

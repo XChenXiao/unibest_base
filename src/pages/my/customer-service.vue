@@ -27,10 +27,6 @@
 
     <!-- 客服信息内容 -->
     <block v-else-if="serviceInfo">
-      <view class="service-header">
-        <view class="service-title">客服中心</view>
-        <view class="service-subtitle">全天候为您提供优质服务</view>
-      </view>
 
       <!-- 调试信息面板 -->
       <view class="debug-panel" v-if="isDebug">
@@ -38,19 +34,37 @@
         <view class="debug-item">推广信息: {{ serviceInfo.promotion_info || '无' }}</view>
         <view class="debug-item">群号: {{ serviceInfo.promotion_group_number || '无' }}</view>
         <view class="debug-item">二维码URL: {{ qrcodeUrl || '无' }}</view>
+        <view class="debug-item">qrcode_details存在: {{ !!serviceInfo.qrcode_details }}</view>
+        <view class="debug-item" v-if="serviceInfo.qrcode_details">
+          二维码文件存在: {{ serviceInfo.qrcode_details.exists }}
+        </view>
       </view>
 
       <!-- 二维码区域 -->
       <view class="qrcode-section">
         <view class="qrcode-container">
+          <!-- 如果有真实的二维码URL就显示真实的二维码 -->
           <image
+            v-if="qrcodeUrl && !imageError"
+            class="qrcode-image"
+            :src="qrcodeUrl"
+            mode="aspectFit"
+            @error="handleImageError"
+          />
+          <!-- 如果没有二维码URL或加载失败，显示默认二维码 -->
+          <image
+            v-else
             class="qrcode-image"
             src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=客服信息"
             mode="aspectFit"
-          ></image>
-          <view class="qrcode-tip">扫码添加客服</view>
+          />
+          <view class="qrcode-tip">
+            {{ qrcodeUrl && !imageError ? '扫描二维码联系客服' : '正在加载二维码...' }}
+          </view>
           <!-- 调试信息 -->
-          <view class="qrcode-url" v-if="isDebug">{{ qrcodeUrl || '使用固定二维码图片' }}</view>
+          <view class="qrcode-url" v-if="isDebug">
+            {{ qrcodeUrl || '无二维码URL' }}
+          </view>
         </view>
       </view>
 
@@ -58,11 +72,11 @@
         <view class="info-card">
           <view class="info-title">客服信息</view>
           <view class="info-content">
-            <text class="info-text">{{ serviceInfo.promotion_info }}</text>
+            <text class="info-text">{{ serviceInfo.promotion_info || '暂无客服信息' }}</text>
           </view>
         </view>
 
-        <view class="info-card">
+        <view class="info-card" v-if="serviceInfo.promotion_group_number">
           <view class="info-title">交流群号</view>
           <view class="info-content group-content">
             <text class="group-number">{{ serviceInfo.promotion_group_number }}</text>
@@ -74,7 +88,7 @@
         </view>
       </view>
 
-      <view class="contact-tips">
+      <!-- <view class="contact-tips">
         <view class="tip-item">
           <wd-icon name="time" size="18" color="#3498db" />
           <text class="tip-text">工作时间: 9:00-22:00</text>
@@ -83,7 +97,7 @@
           <wd-icon name="warning" size="18" color="#e67e22" />
           <text class="tip-text">请勿轻信任何索要账号、密码的要求</text>
         </view>
-      </view>
+      </view> -->
 
       <!-- 调试按钮 -->
       <view class="debug-button" @click="toggleDebug">
@@ -130,33 +144,38 @@ const qrcodeUrl = computed(() => {
     url = serviceInfo.value.promotion_qrcode_url
   }
 
-  // 如果图片加载出错，则返回空字符串
-  if (imageError.value) {
-    return ''
+  // 如果有URL，添加时间戳防止缓存
+  if (url) {
+    const separator = url.includes('?') ? '&' : '?'
+    url = `${url}${separator}t=${Date.now()}`
   }
 
-  // 直接返回后端提供的URL，不做任何处理
   return url
 })
 
 // 本地默认数据（API失败时使用）
 const defaultServiceInfo: CustomerServiceInfo = {
-  promotion_info: '测试推广信息',
-  promotion_group_number: '测试推广群号',
+  promotion_info: '如有任何问题请联系我们的客服团队，我们将竭诚为您服务',
+  promotion_group_number: '',
   promotion_qrcode_url: null,
   is_active: true,
 }
 
 // 处理API返回的不完整数据，填充默认值
 const processApiData = (data: any): CustomerServiceInfo => {
-  return {
+  console.log('processApiData 接收到的数据:', data)
+  
+  const processed = {
     promotion_info: data.promotion_info || defaultServiceInfo.promotion_info,
-    promotion_group_number:
-      data.promotion_group_number || defaultServiceInfo.promotion_group_number,
+    promotion_group_number: data.promotion_group_number || '',
     promotion_qrcode_url: data.promotion_qrcode_url || null,
     qrcode_details: data.qrcode_details || null,
     is_active: data.is_active !== undefined ? data.is_active : true,
+    updated_at: data.updated_at || undefined,
   }
+  
+  console.log('processApiData 处理后的数据:', processed)
+  return processed
 }
 
 // 生命周期
@@ -172,22 +191,26 @@ const loadData = async () => {
 
   try {
     const res = await getCustomerServiceInfoAPI()
-    console.log('API返回数据:', res)
 
-    if (res && res.data && res.data.data) {
+    // 前端HTTP封装已经提取了数据，直接使用res.data
+    if (res && res.data && res.data.promotion_info !== undefined) {
       // 处理API返回的数据
-      serviceInfo.value = processApiData(res.data.data)
-      console.log('处理后的客服信息:', serviceInfo.value)
+      serviceInfo.value = processApiData(res.data)
+      console.log('4. 最终设置的 serviceInfo:', serviceInfo.value)
     } else {
       // 使用默认数据
       serviceInfo.value = defaultServiceInfo
-      console.log('使用默认客服信息')
     }
   } catch (err) {
-    console.error('获取客服信息失败:', err)
-    // 使用默认数据
+    // 网络错误时使用默认数据，而不是显示错误页面
     serviceInfo.value = defaultServiceInfo
-    console.log('API错误，使用默认客服信息')
+    
+    // 显示一个Toast提示而不是错误页面
+    uni.showToast({
+      title: '网络不佳，显示默认信息',
+      icon: 'none',
+      duration: 2000
+    })
   } finally {
     loading.value = false
   }
@@ -195,8 +218,6 @@ const loadData = async () => {
 
 // 处理图片加载错误
 const handleImageError = (e: any) => {
-  console.error('二维码图片加载失败:', e)
-  console.error('尝试加载的URL:', qrcodeUrl.value)
   imageError.value = true
 
   uni.showToast({
@@ -373,8 +394,8 @@ page {
 }
 
 .qrcode-image {
-  width: 400rpx;
-  height: 400rpx;
+  /* width: 460rpx; */
+  height: 560rpx;
   background-color: #f9f9f9;
   border: 1rpx solid #eee;
 }

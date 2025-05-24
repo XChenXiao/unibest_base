@@ -27,6 +27,7 @@ interface NavigateToOptions {
        "/pages/my/wallet" |
        "/pages/my/wechat-payment-setting" |
        "/pages/my/withdraw" |
+       "/pages/payment/index" |
        "/pages/register/captcha" |
        "/pages/register/index" |
        "/pages/team/index" |
@@ -41,6 +42,7 @@ interface NavigateToOptions {
        "/pages/transfer/phone-pay" |
        "/pages/transfer/wechat" |
        "/pages/verification/index" |
+       "/pages/webview/index" |
        "/uni_modules/uni-upgrade-center-app/pages/upgrade-popup";
 }
 interface RedirectToOptions extends NavigateToOptions {}

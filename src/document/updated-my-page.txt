@@ -117,7 +117,7 @@
           <text class="uni-icons uniui-headphone-filled"></text>
         </view>
         <view class="menu-content">
-          <text class="menu-title">客服中心</text>
+          <text class="menu-title"></text>
           <text class="menu-desc">联系客服</text>
         </view>
         <text class="uni-icons uniui-arrow-right menu-arrow"></text>

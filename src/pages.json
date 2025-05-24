@@ -253,6 +253,13 @@
       }
     },
     {
+      "path": "pages/payment/index",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "支付"
+      }
+    },
+    {
       "path": "pages/register/captcha",
       "type": "page",
       "style": {
@@ -353,6 +360,13 @@
       "type": "page",
       "style": {
         "navigationBarTitleText": "实名认证"
+      }
+    },
+    {
+      "path": "pages/webview/index",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "支付"
       }
     },
     {
