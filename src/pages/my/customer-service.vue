@@ -47,19 +47,21 @@
           <image
             v-if="qrcodeUrl && !imageError"
             class="qrcode-image"
+            style="width: 700rpx;"
             :src="qrcodeUrl"
-            mode="aspectFit"
+            mode="widthFix"
             @error="handleImageError"
           />
           <!-- 如果没有二维码URL或加载失败，显示默认二维码 -->
           <image
             v-else
             class="qrcode-image"
+            style="width: 100%;"
             src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=客服信息"
-            mode="aspectFit"
+            mode="widthFix"
           />
           <view class="qrcode-tip">
-            {{ qrcodeUrl && !imageError ? '扫描二维码联系客服' : '正在加载二维码...' }}
+            {{ qrcodeUrl && !imageError ? '' : '正在加载二维码...' }}
           </view>
           <!-- 调试信息 -->
           <view class="qrcode-url" v-if="isDebug">
@@ -72,14 +74,20 @@
         <view class="info-card">
           <view class="info-title">客服信息</view>
           <view class="info-content">
-            <text class="info-text">{{ serviceInfo.promotion_info || '暂无客服信息' }}</text>
+            <view class="info-content-with-copy">
+              <text class="info-text">{{ serviceInfo.promotion_info || '暂无客服信息' }}</text>
+              <view class="copy-button" @click="copyCustomerInfo">
+                <wd-icon name="copy" size="20" color="#3498db" />
+                <text class="copy-text">复制</text>
+              </view>
+            </view>
           </view>
         </view>
 
         <view class="info-card" v-if="serviceInfo.promotion_group_number">
           <view class="info-title">交流群号</view>
           <view class="info-content group-content">
-            <text class="group-number">{{ serviceInfo.promotion_group_number }}</text>
+            <text class="group-number ellipsis">{{ serviceInfo.promotion_group_number }}</text>
             <view class="copy-button" @click="copyGroupNumber">
               <wd-icon name="copy" size="20" color="#3498db" />
               <text class="copy-text">复制</text>
@@ -256,6 +264,27 @@ const copyGroupNumber = () => {
   })
 }
 
+// 复制客服信息
+const copyCustomerInfo = () => {
+  if (!serviceInfo.value?.promotion_info) {
+    uni.showToast({
+      title: '客服信息不可用',
+      icon: 'none',
+    })
+    return
+  }
+
+  uni.setClipboardData({
+    data: serviceInfo.value.promotion_info,
+    success: () => {
+      uni.showToast({
+        title: '复制成功',
+        icon: 'success',
+      })
+    },
+  })
+}
+
 // 切换调试模式
 const toggleDebug = () => {
   isDebug.value = !isDebug.value
@@ -394,8 +423,8 @@ page {
 }
 
 .qrcode-image {
-  /* width: 460rpx; */
-  height: 560rpx;
+  /* width: calc(100% - 60rpx); */
+  /* height: 660rpx; */
   background-color: #f9f9f9;
   border: 1rpx solid #eee;
 }
@@ -443,7 +472,15 @@ page {
   padding: 10rpx;
 }
 
+.info-content-with-copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
 .info-text {
+  flex: 1;
   font-size: 28rpx;
   line-height: 1.5;
   color: #666;
@@ -453,12 +490,20 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20rpx;
 }
 
 .group-number {
+  flex: 1;
   font-size: 32rpx;
   font-weight: 500;
   color: #333;
+}
+
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .copy-button {
@@ -467,6 +512,7 @@ page {
   padding: 10rpx 20rpx;
   background-color: #ecf0f1;
   border-radius: 30rpx;
+  flex-shrink: 0;
 }
 
 .copy-text {

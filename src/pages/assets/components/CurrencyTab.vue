@@ -34,7 +34,8 @@
       <view class="currency-details">
         <text class="currency-price">¥{{ formatAmount(getCurrencyPrice(currency)) }}</text>
         <text class="currency-amount">
-          持有: {{ formatAmount(getCurrencyUserBalance(currency)) }}
+          <!-- 隐藏持有量 -->
+          <!-- 持有: {{ formatAmount(getCurrencyUserBalance(currency)) }} -->
         </text>
       </view>
 
