@@ -166,11 +166,10 @@ export const http = <T>(options: CustomRequestOptions) => {
           url: options.url,
           error: err,
         })
-
-        uni.showToast({
-          icon: 'none',
-          title: '网络错误，请检查网络连接',
-        })
+        // uni.showToast({
+        //   icon: 'none',
+        //   title: '网络请求失败',
+        // })
         reject(err)
       },
     })

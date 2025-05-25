@@ -100,8 +100,8 @@
               <view class="member-time">
                 {{
                   member.is_verified
-                    ? '认证时间: ' + (member.verified_at || '未知')
-                    : '注册时间: ' + member.registered_at
+                    ? '认证时间: ' + formatDateTime(member.verified_at)
+                    : '注册时间: ' + formatDateTime(member.registered_at)
                 }}
               </view>
             </view>
@@ -112,13 +112,13 @@
         </view>
 
         <!-- 加载更多 -->
-        <view
+        <!-- <view
           v-if="invitedUsers.list.length > 0 && invitedUsers.list.length < invitedUsers.total"
           class="load-more"
           @click="loadMore"
         >
           加载更多
-        </view>
+        </view> -->
       </view>
     </view>
   </view>
@@ -178,6 +178,22 @@ const tabs = [
   { name: '未实名列表', type: 'unverified' },
   { name: '已实名列表', type: 'verified' },
 ]
+
+// 格式化时间为中国大陆时间
+const formatDateTime = (dateTimeStr: string | null): string => {
+  if (!dateTimeStr) return '未知'
+  const date = new Date(dateTimeStr)
+  return date.toLocaleString('zh-CN', { 
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+}
 
 // 当前激活的标签索引
 const activeTabIndex = ref(0)

@@ -126,8 +126,17 @@
                         : formatAmount(item.maxAmount)
                     }}
                   </text>
-                  <text class="remaining-text" v-if="item.symbol !== 'USDT'">
-                    剩余: {{ formatAmount(item.totalAmount) }}
+                  <text class="remaining-text" v-if="item.symbol !== 'USDT' && item.symbol !== 'GOLD'">
+                    剩余: {{ formatAmount(item.remainingAmount) }}
+                  </text>
+                </view>
+                <!-- 为黄金货币添加总量和剩余量显示 -->
+                <view class="amount-info" v-if="item.symbol === 'GOLD'">
+                  <text class="total-amount-text">
+                    总量: {{ formatAmount(item.totalAmount) }}克
+                  </text>
+                  <text class="remaining-amount-text">
+                    剩余: {{ formatAmount(item.remainingAmount) }}克
                   </text>
                 </view>
               </view>
@@ -363,8 +372,9 @@ const fetchCurrencyOrders = async () => {
               buyPrice: parseFloat(order.price.toString()),
               sellPrice: parseFloat(order.price.toString()),
               holdAmount: holdAmount, // 直接设置持有量
-              totalAmount: parseFloat(order.amount.toString()),
-              remainingAmount: parseFloat(order.total_amount.toString()), // 使用total_amount作为剩余数量
+              totalAmount: parseFloat(order.amount.toString()), // 订单总数量
+              remainingAmount: parseFloat(order.remaining_amount.toString()), // 订单剩余数量
+              totalValue: parseFloat(order.total_amount.toString()), // 订单总金额
               minAmount: parseFloat(order.min_order_amount.toString()),
               maxAmount: parseFloat(order.amount.toString()),
               fee: parseFloat(order.fee_rate.toString()),
@@ -1315,6 +1325,25 @@ page {
   font-size: 24rpx;
   color: #999;
   margin-right: 20rpx;
+}
+
+/* 黄金货币总量和剩余量显示样式 */
+.amount-info {
+  display: flex;
+  align-items: center;
+  margin-top: 8rpx;
+  flex-wrap: wrap;
+}
+
+.total-amount-text,
+.remaining-amount-text {
+  font-size: 24rpx;
+  color: #f39c12;
+  margin-right: 20rpx;
+  font-weight: 500;
+  background-color: rgba(243, 156, 18, 0.1);
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
 }
 
 .trade-btn {

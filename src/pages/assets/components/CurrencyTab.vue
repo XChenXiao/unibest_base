@@ -35,7 +35,12 @@
         <text class="currency-price">¥{{ formatAmount(getCurrencyPrice(currency)) }}</text>
         <text class="currency-amount">
           <!-- 隐藏持有量 -->
-          <!-- 持有: {{ formatAmount(getCurrencyUserBalance(currency)) }} -->
+          持有:
+          {{
+            getCurrencySymbol(currency) === 'USDT'
+              ? formatAmount(getCurrencyUserBalance(currency))
+              : formatAmount(getCurrencyUserBalance(currency)) + '克'
+          }}
         </text>
       </view>
 
