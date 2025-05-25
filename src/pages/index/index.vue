@@ -148,6 +148,10 @@ onShow(() => {
   } else {
     console.log('从登录页面跳转而来，跳过所有数据刷新避免重复请求')
   }
+
+  // 每次进入首页都检查并显示公告弹窗（无论是否首次进入）
+  console.log('每次进入首页都检查用户实名认证状态并显示相应弹窗')
+  checkVerificationStatusAndShowPopups()
 })
 
 // 页面卸载事件
@@ -269,6 +273,25 @@ const handleCheckIn = async () => {
     return
   }
 
+  // 检查实名认证状态
+  if (!verificationStore.isVerified) {
+    uni.showModal({
+      title: '需要实名认证',
+      content: '打卡功能需要完成实名认证后才能使用，请先完成实名认证。',
+      confirmText: '去认证',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确认，跳转到实名认证页面
+          uni.navigateTo({
+            url: '/pages/my/identity-verify',
+          })
+        }
+      }
+    })
+    return
+  }
+
   isCheckingIn.value = true
 
   try {
@@ -345,17 +368,17 @@ const checkVerificationStatusAndShowPopups = async () => {
   // 获取最新的实名认证状态
   const isVerified = await fetchVerificationStatus()
 
-  // 如果用户未实名认证，显示实名认证指引弹窗
-  if (!isVerified) {
-    console.log('用户未实名认证，显示实名认证指引弹窗')
-    setTimeout(() => {
-      showVerificationGuidePopup.value = true
-    }, 800)
-  } else {
+  // 取消自动显示实名认证弹窗，直接显示公告弹窗
+  // if (!isVerified) {
+  //   console.log('用户未实名认证，显示实名认证指引弹窗')
+  //   setTimeout(() => {
+  //     showVerificationGuidePopup.value = true
+  //   }, 800)
+  // } else {
     // 用户已实名认证，直接显示公告弹窗
-    console.log('用户已实名认证，获取最新公告')
+    console.log('获取最新公告')
     await checkAndShowAnnouncement()
-  }
+  // }
 }
 
 // 防止短时间内多次请求
@@ -369,20 +392,6 @@ let verificationRequestTimer: ReturnType<typeof setTimeout> | null = null
 // 检查并显示公告
 const checkAndShowAnnouncement = async () => {
   try {
-    // 如果正在请求中，直接返回，避免重复请求
-    if (isRequestingAnnouncement) {
-      console.log('正在请求公告数据中，不重复发送请求')
-      return
-    }
-
-    // 设置请求标记
-    isRequestingAnnouncement = true
-
-    // 清除可能存在的定时器
-    if (announcementRequestTimer) {
-      clearTimeout(announcementRequestTimer)
-    }
-
     console.log('首页检查最新公告')
 
     // 检查是否有最新公告
@@ -413,11 +422,6 @@ const checkAndShowAnnouncement = async () => {
   } catch (error) {
     console.error('首页检查公告失败:', error)
     latestAnnouncement.value = null
-  } finally {
-    // 设置一个延迟，在这段时间内不再重复请求
-    announcementRequestTimer = setTimeout(() => {
-      isRequestingAnnouncement = false
-    }, 3000) // 3秒内不重复请求
   }
 }
 

@@ -15,7 +15,7 @@
 
     <!-- 顶部banner图片 -->
     <view class="banner-container">
-      <image class="banner-image" src="/static/images/banner.png" mode="widthFix"></image>
+      <image class="banner-image" src="/static/images/banner.jpg" mode="widthFix"></image>
     </view>
 
     <!-- 主要内容区 -->

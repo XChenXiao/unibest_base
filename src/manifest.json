@@ -2,8 +2,8 @@
   "name": "中银易捷",
   "appid": "__UNI__D27C9EC",
   "description": "",
-  "versionName": "1.0.6",
-  "versionCode": "106",
+  "versionName": "1.0.7",
+  "versionCode": "107",
   "transformPx": false,
   "app-plus": {
     "usingComponents": true,

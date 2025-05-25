@@ -458,7 +458,7 @@ const handleSubmit = async () => {
     }
   } catch (error: any) {
     uni.showToast({
-      title: error.message || '提交失败，请重试',
+      title: error.data.message || '提交失败，请重试',
       icon: 'none',
     })
   } finally {

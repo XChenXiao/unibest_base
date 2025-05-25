@@ -164,8 +164,8 @@ const checkVerificationStatus = async () => {
       url: '/pages/my/identity-verify',
     })
   } catch (error) {
-    console.error('获取认证状态失败', error)
-    // 出错时默认跳转到认证页面
+    console.error('跳转到实名认证页面失败', error)
+    // 出错时也尝试跳转到认证页面
     uni.navigateTo({
       url: '/pages/my/identity-verify',
     })

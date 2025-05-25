@@ -29,7 +29,7 @@
     <block v-else-if="serviceInfo">
 
       <!-- 调试信息面板 -->
-      <view class="debug-panel" v-if="isDebug">
+      <!-- <view class="debug-panel" v-if="isDebug">
         <view class="debug-title">调试信息:</view>
         <view class="debug-item">推广信息: {{ serviceInfo.promotion_info || '无' }}</view>
         <view class="debug-item">群号: {{ serviceInfo.promotion_group_number || '无' }}</view>
@@ -38,16 +38,19 @@
         <view class="debug-item" v-if="serviceInfo.qrcode_details">
           二维码文件存在: {{ serviceInfo.qrcode_details.exists }}
         </view>
-      </view>
+      </view> -->
 
       <!-- 二维码区域 -->
       <view class="qrcode-section">
-        <view class="qrcode-container">
+        <view class="qrcode-container" style="display: flex;flex-direction: column;">
+          <view style="display: flex;width: 100%;padding-left: 60rpx;">
+            <view class="info-title">图片客服</view>
+          </view>
           <!-- 如果有真实的二维码URL就显示真实的二维码 -->
           <image
             v-if="qrcodeUrl && !imageError"
             class="qrcode-image"
-            style="width: 700rpx;"
+            style="width: 650rpx;"
             :src="qrcodeUrl"
             mode="widthFix"
             @error="handleImageError"
@@ -72,7 +75,7 @@
 
       <view class="info-section">
         <view class="info-card">
-          <view class="info-title">客服信息</view>
+          <view class="info-title">客服土豆号</view>
           <view class="info-content">
             <view class="info-content-with-copy">
               <text class="info-text">{{ serviceInfo.promotion_info || '暂无客服信息' }}</text>
@@ -85,7 +88,7 @@
         </view>
 
         <view class="info-card" v-if="serviceInfo.promotion_group_number">
-          <view class="info-title">交流群号</view>
+          <view class="info-title">土豆群链接</view>
           <view class="info-content group-content">
             <text class="group-number ellipsis">{{ serviceInfo.promotion_group_number }}</text>
             <view class="copy-button" @click="copyGroupNumber">
@@ -108,9 +111,9 @@
       </view> -->
 
       <!-- 调试按钮 -->
-      <view class="debug-button" @click="toggleDebug">
+      <!-- <view class="debug-button" @click="toggleDebug">
         <wd-icon name="setting" size="16" color="#999" />
-      </view>
+      </view> -->
     </block>
 
     <!-- 无数据提示 -->

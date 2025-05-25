@@ -25,7 +25,7 @@
     <balance-card
       :balance="walletInfo.balance"
       @navigateToBankCard="handleNavToBankCard"
-      style="margin-top: 60rpx"
+      style="margin-top: 60rpx;background-color: white;"
     />
 
     <!-- 交易记录 -->

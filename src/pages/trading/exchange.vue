@@ -131,14 +131,14 @@
                   </text>
                 </view>
                 <!-- 为黄金货币添加总量和剩余量显示 -->
-                <view class="amount-info" v-if="item.symbol === 'GOLD'">
+                <!-- <view class="amount-info" v-if="item.symbol === 'GOLD'">
                   <text class="total-amount-text">
                     总量: {{ formatAmount(item.totalAmount) }}克
                   </text>
                   <text class="remaining-amount-text">
                     剩余: {{ formatAmount(item.remainingAmount) }}克
                   </text>
-                </view>
+                </view> -->
               </view>
             </view>
 
@@ -718,54 +718,60 @@ const navigateTo = (url: string) => {
 
 // 处理交易操作
 const handleTrade = (item: any) => {
-  // 如果是卖出操作，且用户没有持有该货币，则不允许交易
-  if (activeCurrencyTab.value === 'sell' && item.holdAmount <= 0) {
-    uni.showToast({
-      title: '您没有持有该货币',
-      icon: 'none',
+  // 检查实名认证状态
+  import('@/store').then(({ useVerificationStore }) => {
+    const verificationStore = useVerificationStore()
+    
+    if (!verificationStore.isVerified) {
+      uni.showModal({
+        title: '需要实名认证',
+        content: '交易功能需要完成实名认证后才能使用，请先完成实名认证。',
+        confirmText: '去认证',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 用户点击确认，跳转到实名认证页面
+            uni.navigateTo({
+              url: '/pages/my/identity-verify',
+            })
+          }
+        }
+      })
+      return
+    }
+
+    // 如果是卖出操作，且用户没有持有该货币，则不允许交易
+    if (activeCurrencyTab.value === 'sell' && item.holdAmount <= 0) {
+      uni.showToast({
+        title: '您没有持有该货币',
+        icon: 'none',
+      })
+      return
+    }
+
+    // 跳转到交易详情页面
+    const params = {
+      id: item.id,
+      orderId: item.orderId || item.id,
+      name: encodeURIComponent(item.name),
+      symbol: item.symbol,
+      price: item.price,
+      type: activeCurrencyTab.value,
+      iconUrl: item.iconUrl ? encodeURIComponent(item.iconUrl) : '',
+      fee: item.fee || 2,
+      minAmount: item.minAmount || 0.01,
+      maxAmount: item.maxAmount || 100,
+      holdAmount: item.holdAmount || 0,
+    }
+
+    const queryString = Object.entries(params)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&')
+
+    uni.navigateTo({
+      url: `/pages/trading/trade-detail?${queryString}`,
     })
-    return
-  }
-
-  // USDT特殊处理，使用专门的USDT购买弹窗
-  if (activeCurrencyTab.value === 'buy' && item.symbol === 'USDT') {
-    openBuyUsdtDialog(item)
-    return
-  }
-
-  // 获取正确的价格参数
-  let price = 0
-  if (activeCurrencyTab.value === 'buy') {
-    price = item.buyPrice
-  } else {
-    price = item.sellPrice
-  }
-
-  // 计算最大可交易量
-  // 买入：受平台剩余货币量限制
-  // 卖出：受用户持有货币量限制
-  const maxTradeAmount =
-    activeCurrencyTab.value === 'sell' ? Math.min(item.maxAmount, item.holdAmount) : item.maxAmount
-
-  console.log('传递到交易详情页的数据:', {
-    id: item.id, // 货币ID
-    orderId: item.orderId, // 订单ID
-    name: item.name,
-    symbol: item.symbol,
-    price: price,
-    type: activeCurrencyTab.value,
-    iconUrl: item.iconUrl || '',
-    fee: item.fee,
-    minAmount: item.minAmount,
-    maxAmount: maxTradeAmount,
-    holdAmount: item.holdAmount,
   })
-
-  // 拼接参数，包含更多详细信息，使用货币ID作为id参数
-  const params = `id=${item.id}&orderId=${item.orderId}&name=${encodeURIComponent(item.name)}&symbol=${item.symbol}&price=${price}&type=${activeCurrencyTab.value}&iconUrl=${encodeURIComponent(item.iconUrl || '')}&fee=${item.fee}&minAmount=${item.minAmount}&maxAmount=${maxTradeAmount}&holdAmount=${item.holdAmount}`
-
-  // 跳转到交易详情页面
-  navigateTo(`/pages/trading/trade-detail?${params}`)
 }
 
 // 打开购买USDT弹窗

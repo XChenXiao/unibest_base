@@ -508,6 +508,28 @@ const fetchUserUsdtBalance = async () => {
 
 // 确认交易
 const handleConfirmTrade = async () => {
+  // 检查实名认证状态
+  const { useVerificationStore } = await import('@/store')
+  const verificationStore = useVerificationStore()
+  
+  if (!verificationStore.isVerified) {
+    uni.showModal({
+      title: '需要实名认证',
+      content: '交易功能需要完成实名认证后才能使用，请先完成实名认证。',
+      confirmText: '去认证',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确认，跳转到实名认证页面
+          uni.navigateTo({
+            url: '/pages/my/identity-verify',
+          })
+        }
+      }
+    })
+    return
+  }
+
   // 输入验证
   if (!tradeAmount.value || parseFloat(tradeAmount.value) <= 0) {
     uni.showToast({
@@ -639,25 +661,7 @@ const handleConfirmTrade = async () => {
 
             // 如果是交易成功，等待2秒后返回上一页
             setTimeout(() => {
-              // 返回上一页，依赖各页面的onShow生命周期自动刷新数据
               uni.navigateBack()
-
-              // 尝试直接调用上一页的刷新方法（如果存在）
-              try {
-                const pages = getCurrentPages()
-                const prevPage = pages[pages.length - 2]
-
-                // 检查上一页是否有刷新方法并调用
-                if (prevPage && typeof (prevPage as any).refreshData === 'function') {
-                  console.log('调用上一页的刷新方法')
-                  ;(prevPage as any).refreshData()
-                } else {
-                  console.log('上一页没有刷新方法，依赖onShow生命周期自动刷新')
-                }
-              } catch (e) {
-                console.error('调用上一页刷新方法失败:', e)
-                console.log('将依赖上一页的onShow生命周期自动刷新数据')
-              }
             }, 2000)
           } else {
             // 处理API返回的错误信息

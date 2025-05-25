@@ -396,7 +396,7 @@ const handleSubmit = async () => {
     // 显示错误信息
     uni.showToast({
       icon: 'none',
-      title: error.message || '提交失败，请重试',
+      title: error.data.message || '提交失败，请重试',
     })
   } finally {
     loading.value = false

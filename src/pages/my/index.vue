@@ -39,7 +39,7 @@
       <view class="card-header">
         <view class="bank-logo">
           <image src="/static/images/bank-icon.png" mode="aspectFit"></image>
-          <text>网商银行</text>
+          <text>中国银行</text>
         </view>
         <!-- <view class="check-account">
           <button class="check-btn" @click="navigateTo('/pages/my/wallet')">查看账号</button>
@@ -759,7 +759,7 @@ const handleBankCardClick = () => {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 /* 全局重置 */
 page {
   height: 100%;
