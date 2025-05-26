@@ -18,7 +18,7 @@
           </view>
         </view>
       </view>
-      
+
       <!-- 股权操作按钮 -->
       <view class="equity-actions">
         <button class="action-btn records-btn" @click="goToEquityRecords">股权记录</button>
@@ -26,7 +26,7 @@
         <!-- <button class="action-btn sell-btn" @click="openSellEquity" v-if="equityInfo.holdAmount > 0">出售股权</button> -->
       </view>
     </view>
-    
+
     <!-- 股权奖励组件 -->
     <equity-rewards
       :register-reward="equityInfo.registerReward"
@@ -47,8 +47,8 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, defineEmits, computed } from 'vue';
-import EquityRewards from '@/components/equity/EquityRewards.vue';
+import { defineProps, defineEmits, computed } from 'vue'
+import EquityRewards from '@/components/equity/EquityRewards.vue'
 
 const props = defineProps({
   equityInfo: {
@@ -71,13 +71,13 @@ const props = defineProps({
         id: 0,
         amount: 0,
         description: '',
-        is_active: false
-      }
-    })
-  }
-});
+        is_active: false,
+      },
+    }),
+  },
+})
 
-const emit = defineEmits(['open-sell-equity', 'claim-reward']);
+const emit = defineEmits(['open-sell-equity', 'claim-reward'])
 
 // 计算注册奖励描述
 const registrationRewardDescription = computed(() => {
@@ -85,38 +85,36 @@ const registrationRewardDescription = computed(() => {
   console.log('EquityTab 组件接收到的奖励数据:', {
     'isRegisterRewardClaimed(是否已领取)': props.equityInfo.isRegisterRewardReceived,
     'hasClaimableRegistration(是否可领取)': props.equityInfo.hasClaimableRegistration,
-    'isVerified(是否已实名)': props.equityInfo.isVerified
-  });
-  
-  if (props.equityInfo.invitationRewards && props.equityInfo.invitationRewards.length > 0 && 
-      props.equityInfo.registrationReward) {
-    // 如果存在注册奖励配置，返回它的描述
-    return props.equityInfo.registrationReward.description || '完成注册并实名认证可获得股权奖励';
-  }
-  return '完成注册并实名认证可获得股权奖励';
-});
+    'isVerified(是否已实名)': props.equityInfo.isVerified,
+  })
 
-// 打开出售股权弹窗
-const openSellEquity = () => {
-  emit('open-sell-equity');
-};
+  if (
+    props.equityInfo.invitationRewards &&
+    props.equityInfo.invitationRewards.length > 0 &&
+    props.equityInfo.registrationReward
+  ) {
+    // 如果存在注册奖励配置，返回它的描述
+    return props.equityInfo.registrationReward.description || '完成注册并实名认证可获得股权奖励'
+  }
+  return '完成注册并实名认证可获得股权奖励'
+})
 
 // 领取奖励
 const handleClaimReward = (type: string) => {
-  emit('claim-reward', type);
-};
+  emit('claim-reward', type)
+}
 
 // 跳转到股权记录页面
 const goToEquityRecords = () => {
   uni.navigateTo({
-    url: '/pages/equity-records/index'
-  });
-};
+    url: '/pages/equity-records/index',
+  })
+}
 
 // 格式化金额显示
 const formatAmount = (amount: number) => {
-  return Number(amount).toFixed(2);
-};
+  return Number(amount).toFixed(2)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -190,4 +188,4 @@ const formatAmount = (amount: number) => {
   background: linear-gradient(to right, #3498db, #2980b9);
   color: white;
 }
-</style> 
+</style>

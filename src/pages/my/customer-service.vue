@@ -27,19 +27,6 @@
 
     <!-- 客服信息内容 -->
     <block v-else-if="serviceInfo">
-
-      <!-- 调试信息面板 -->
-      <!-- <view class="debug-panel" v-if="isDebug">
-        <view class="debug-title">调试信息:</view>
-        <view class="debug-item">推广信息: {{ serviceInfo.promotion_info || '无' }}</view>
-        <view class="debug-item">群号: {{ serviceInfo.promotion_group_number || '无' }}</view>
-        <view class="debug-item">二维码URL: {{ qrcodeUrl || '无' }}</view>
-        <view class="debug-item">qrcode_details存在: {{ !!serviceInfo.qrcode_details }}</view>
-        <view class="debug-item" v-if="serviceInfo.qrcode_details">
-          二维码文件存在: {{ serviceInfo.qrcode_details.exists }}
-        </view>
-      </view> -->
-
       <!-- 二维码区域 -->
       <view class="qrcode-section">
         <view class="qrcode-container" style="display: flex;flex-direction: column;">
@@ -175,7 +162,7 @@ const defaultServiceInfo: CustomerServiceInfo = {
 // 处理API返回的不完整数据，填充默认值
 const processApiData = (data: any): CustomerServiceInfo => {
   console.log('processApiData 接收到的数据:', data)
-  
+
   const processed = {
     promotion_info: data.promotion_info || defaultServiceInfo.promotion_info,
     promotion_group_number: data.promotion_group_number || '',
@@ -184,7 +171,7 @@ const processApiData = (data: any): CustomerServiceInfo => {
     is_active: data.is_active !== undefined ? data.is_active : true,
     updated_at: data.updated_at || undefined,
   }
-  
+
   console.log('processApiData 处理后的数据:', processed)
   return processed
 }
@@ -215,7 +202,7 @@ const loadData = async () => {
   } catch (err) {
     // 网络错误时使用默认数据，而不是显示错误页面
     serviceInfo.value = defaultServiceInfo
-    
+
     // 显示一个Toast提示而不是错误页面
     uni.showToast({
       title: '网络不佳，显示默认信息',

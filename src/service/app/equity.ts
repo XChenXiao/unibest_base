@@ -32,22 +32,35 @@ export interface EquityInfo {
 export interface RewardConfig {
   id: number;
   type: 'registration' | 'invitation';
-  level: number;
+  level?: number;
   amount: number;
   is_active: boolean;
   description: string;
   created_at: string;
   updated_at: string;
+  // 优化版本新增字段
+  has_claimed?: boolean;
+  has_claimable?: boolean;
+  claimable_transaction_id?: number;
+  invite_count?: number;
+  current_invites?: number;
+  required_invites?: number;
+  can_claim?: boolean;
+  claim_info?: string;
 }
 
 export interface RewardConfigsData {
-  rewards: RewardConfig[];
-  user_info: {
+  // 支持两种数据格式：原版和优化版
+  rewards?: RewardConfig[];
+  user_info?: {
     has_claimed: boolean;
     has_claimable: boolean;
     invited_count: number;
   };
-  claimable_rewards: any[];
+  claimable_rewards?: any[];
+  // 优化版本格式
+  registration?: RewardConfig[];
+  invitation?: RewardConfig[];
 }
 
 export interface EquityTransaction {

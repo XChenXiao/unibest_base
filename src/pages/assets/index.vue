@@ -44,11 +44,7 @@
 
     <!-- 股权内容 -->
     <view class="tab-content" v-if="activeTab === 'equity'">
-      <equity-tab
-        :equity-info="equityInfo"
-        @open-sell-equity="openSellEquityPopup"
-        @claim-reward="claimReward"
-      />
+      <equity-tab :equity-info="equityInfo" @claim-reward="claimReward" />
     </view>
 
     <!-- 货币内容 -->
@@ -57,18 +53,8 @@
         :currency-list="currencyList"
         :userBalance="userBalance"
         @goto-trading="gotoTradingCenter"
-        @buy-success="handleCurrencyBuySuccess"
       />
     </view>
-
-    <!-- 出售股权弹窗（使用新组件） -->
-    <!-- <sell-equity-popup
-      ref="sellEquityPopup"
-      :equity-info="equityInfo"
-      @close="closeSellEquityPopup"
-      @confirm="confirmSellEquity"
-    /> -->
-
     <!-- 底部版权信息 -->
     <view class="assets-footer">
       <text></text>
@@ -157,10 +143,6 @@ const userStore = useUserStore()
 
 // 初始化货币store
 const currencyStore = useCurrencyStore()
-
-// 自动刷新定时器
-let refreshTimer: ReturnType<typeof setInterval> | null = null
-
 // 刷新数据
 const refreshData = async () => {
   try {
@@ -169,7 +151,6 @@ const refreshData = async () => {
     try {
       await loadEquityInfo()
       await loadUserEquity()
-      console.log('股权数据刷新完成:', equityInfo)
     } catch (error) {
       console.error('刷新股权数据失败:', error)
     }
@@ -195,26 +176,7 @@ const refreshData = async () => {
 // 页面加载完成后的初始化
 onMounted(async () => {
   console.log('资产页面挂载，开始初始化数据')
-  await initializeData()
-
-  // 设置定时刷新，每20秒刷新一次数据
-  // 注释掉定时刷新功能
-  /*
-  refreshTimer = setInterval(() => {
-    console.log('定时刷新数据');
-    refreshData();
-  }, 20000);
-  */
-})
-
-// 清理定时器
-onUnmounted(() => {
-  /*
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-    refreshTimer = null;
-  }
-  */
+  // await initializeData()
 })
 
 // 初始化数据
@@ -236,7 +198,6 @@ const initializeData = async () => {
     try {
       await loadEquityInfo()
       await loadUserEquity()
-      console.log('股权数据加载完成:', equityInfo)
     } catch (error) {
       console.error('加载股权数据失败:', error)
     }
@@ -316,12 +277,6 @@ const loadUserEquity = async () => {
 
         // 更新资产信息
         assetsInfo.equityAssets = equityInfo.totalValue
-
-        console.log('股权数据解析完成:', {
-          持有数量: equityInfo.holdAmount,
-          单价: equityInfo.price,
-          总价值: equityInfo.totalValue,
-        })
       } else if (responseData.equity_info) {
         // 兼容旧版数据结构
         const equityData = responseData.equity_info
@@ -379,8 +334,10 @@ const loadRewardConfigs = async () => {
       // 使用类型断言将返回的数据转换为任意类型
       const apiResponse = res.data as any
 
-      if (apiResponse && apiResponse.data) {
-        const responseData = apiResponse.data
+      // 优化版本API直接返回数据，不需要二级data嵌套
+      const responseData = apiResponse.data ? apiResponse.data : apiResponse
+      
+      if (responseData) {
 
         // 获取注册奖励配置
         if (responseData.registration && responseData.registration.length > 0) {
@@ -610,47 +567,9 @@ const gotoTradingCenter = (currency?: any) => {
   uni.navigateTo({ url })
 }
 
-// 打开出售股权弹窗
-const openSellEquityPopup = () => {
-  // 在打开弹窗前刷新数据
-  refreshData()
-  sellEquityPopup.value.open()
-}
-
 // 关闭出售股权弹窗
 const closeSellEquityPopup = () => {
   // 无需额外处理，组件内部已关闭弹窗
-}
-
-// 确认出售股权
-const confirmSellEquity = async (sellQuantity: number) => {
-  // 显示加载状态
-  uni.showLoading({
-    title: '处理中...',
-  })
-
-  // 调用API出售股权
-  const res = await sellEquity(sellQuantity)
-
-  if (res.status === 'success') {
-    // 刷新所有数据
-    await refreshData()
-
-    // 强制刷新货币store数据
-    await currencyStore.forceRefreshUserCurrencies()
-
-    // 出售成功提示
-    uni.showToast({
-      title: res.message || '出售成功',
-      icon: 'success',
-    })
-  } else {
-    uni.showToast({
-      title: res.message || '出售失败',
-      icon: 'none',
-    })
-  }
-  uni.hideLoading()
 }
 
 // 领取奖励
@@ -871,29 +790,12 @@ const claimReward = async (type: string) => {
   }
 }
 
-// 处理货币购买成功
-const handleCurrencyBuySuccess = async () => {
-  // 刷新所有数据
-  await refreshData()
-}
-
 // 页面显示时刷新数据
 onShow(() => {
-  console.log('资产页面显示，开始刷新数据')
-
   // 异步刷新数据
   const refreshPageData = async () => {
-    // 强制刷新用户货币数据，确保数据最新
-    if (userStore.userInfo.id) {
-      console.log('用户已登录，强制刷新用户货币数据')
-      await currencyStore.fetchUserCurrencies(true)
-      console.log('用户货币数据刷新完成')
-    }
-
     // 刷新页面数据
     await refreshData()
-
-    console.log('资产页面数据刷新完成')
   }
 
   // 执行异步刷新
