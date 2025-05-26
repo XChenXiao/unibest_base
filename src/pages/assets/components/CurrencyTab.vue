@@ -411,28 +411,6 @@ const hasClaimedReward = (item: CurrencyData): boolean => {
 
 // 处理领取货币奖励
 const handleClaimCurrency = async (currency: CurrencyData) => {
-  // 检查实名认证状态
-  const { useVerificationStore } = await import('@/store')
-  const verificationStore = useVerificationStore()
-  
-  if (!verificationStore.isVerified) {
-    uni.showModal({
-      title: '需要实名认证',
-      content: '领取货币奖励需要完成实名认证后才能使用，请先完成实名认证。',
-      confirmText: '去认证',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          // 用户点击确认，跳转到实名认证页面
-          uni.navigateTo({
-            url: '/pages/my/identity-verify',
-          })
-        }
-      }
-    })
-    return
-  }
-
   // 检查是否已领取过奖励
   if (hasClaimedReward(currency)) {
     showToast('您已领取过该奖励')

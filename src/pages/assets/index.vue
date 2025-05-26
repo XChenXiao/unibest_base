@@ -97,7 +97,6 @@ import {
 } from '@/service/app'
 import { useUserStore } from '@/store/user'
 import { useCurrencyStore } from '@/store'
-import { useVerificationStore } from '@/store'
 
 // 获取弹窗组件实例
 const sellEquityPopup = ref(null)
@@ -158,9 +157,6 @@ const userStore = useUserStore()
 
 // 初始化货币store
 const currencyStore = useCurrencyStore()
-
-// 初始化验证store
-const verificationStore = useVerificationStore()
 
 // 自动刷新定时器
 let refreshTimer: ReturnType<typeof setInterval> | null = null
@@ -659,38 +655,18 @@ const confirmSellEquity = async (sellQuantity: number) => {
 
 // 领取奖励
 const claimReward = async (type: string) => {
-  // 检查实名认证状态
-  if (!verificationStore.isVerified) {
-    uni.showModal({
-      title: '需要实名认证',
-      content: '领取奖励需要完成实名认证后才能使用，请先完成实名认证。',
-      confirmText: '去认证',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          // 用户点击确认，跳转到实名认证页面
-          uni.navigateTo({
-            url: '/pages/my/identity-verify',
-          })
-        }
-      }
-    })
-    return
-  }
-
-  console.log('领取奖励类型:', type)
-
+  // 处理注册奖励
   if (type === 'register') {
-    // 检查是否已领取
+    // 已领取过奖励
     if (equityInfo.isRegisterRewardReceived) {
       uni.showToast({
-        title: '您已领取过注册奖励',
+        title: '您已领取过该奖励',
         icon: 'none',
       })
       return
     }
 
-    // 检查是否可领取
+    // 无可领取的奖励
     if (!equityInfo.hasClaimableRegistration) {
       uni.showToast({
         title: '暂无可领取的注册奖励',
@@ -705,10 +681,11 @@ const claimReward = async (type: string) => {
         title: '缺少交易ID，请刷新页面后重试',
         icon: 'none',
       })
-      console.error('领取注册奖励失败: 缺少注册奖励交易ID', equityInfo)
+      console.error('领取奖励失败: 缺少注册奖励交易ID', equityInfo.registrationReward)
       return
     }
 
+    // 调用API领取奖励
     try {
       // 显示加载状态
       uni.showLoading({
@@ -717,6 +694,74 @@ const claimReward = async (type: string) => {
 
       // 调用领取奖励API，传入交易ID
       const res = await claimRewardById(equityInfo.registrationTransactionId)
+
+      if (res.status === 'success') {
+        // 刷新所有数据
+        await refreshData()
+
+        // 强制刷新货币store数据
+        await currencyStore.forceRefreshUserCurrencies()
+
+        // 领取成功提示
+        uni.showToast({
+          title: '领取成功',
+          icon: 'success',
+        })
+      } else {
+        uni.showToast({
+          title: res.message || '领取失败',
+          icon: 'none',
+        })
+      }
+
+      uni.hideLoading()
+    } catch (error) {
+      uni.hideLoading()
+      uni.showToast({
+        title: '领取失败，请重试',
+        icon: 'none',
+      })
+    }
+    return
+  }
+
+  // 处理基本邀请奖励（旧版本兼容性）
+  if (type === 'invite') {
+    if (equityInfo.invitationRewardClaimed) {
+      uni.showToast({
+        title: '您已领取过该奖励',
+        icon: 'none',
+      })
+      return
+    }
+
+    if (!equityInfo.hasClaimableInvitation) {
+      uni.showToast({
+        title: `邀请进度未达标(${equityInfo.inviteProgress}/${equityInfo.inviteTarget})`,
+        icon: 'none',
+      })
+      return
+    }
+
+    // 检查是否有交易ID
+    if (!equityInfo.invitationTransactionId) {
+      uni.showToast({
+        title: '缺少交易ID，请刷新页面后重试',
+        icon: 'none',
+      })
+      console.error('领取奖励失败: 缺少邀请奖励交易ID')
+      return
+    }
+
+    // 调用API领取奖励
+    try {
+      // 显示加载状态
+      uni.showLoading({
+        title: '领取中...',
+      })
+
+      // 调用领取奖励API，传入交易ID
+      const res = await claimRewardById(equityInfo.invitationTransactionId)
 
       if (res.status === 'success') {
         // 刷新所有数据
@@ -744,7 +789,11 @@ const claimReward = async (type: string) => {
         icon: 'none',
       })
     }
-  } else if (type.startsWith('invite_')) {
+    return
+  }
+
+  // 处理特定ID的邀请奖励
+  if (type.startsWith('invite_')) {
     const rewardId = parseInt(type.substring(7))
     if (isNaN(rewardId)) {
       console.error('无效的奖励ID')
