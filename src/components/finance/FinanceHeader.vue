@@ -176,10 +176,19 @@ const checkVerificationStatus = async () => {
 const navigateToInviteFriend = () => {
   // 检查实名认证状态
   if (!verificationStore.isVerified) {
-    uni.showToast({
-      title: '请先完成实名认证',
-      icon: 'none',
-      duration: 2000,
+    uni.showModal({
+      title: '需要实名认证',
+      content: '推广功能需要完成实名认证后才能使用，请先完成实名认证。',
+      confirmText: '去认证',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确认，跳转到实名认证页面
+          uni.navigateTo({
+            url: '/pages/my/identity-verify',
+          })
+        }
+      }
     })
     return
   }
@@ -194,10 +203,19 @@ const navigateToInviteFriend = () => {
 const navigateToTeam = () => {
   // 检查实名认证状态
   if (!verificationStore.isVerified) {
-    uni.showToast({
-      title: '请先完成实名认证',
-      icon: 'none',
-      duration: 2000,
+    uni.showModal({
+      title: '需要实名认证',
+      content: '我的团队功能需要完成实名认证后才能使用，请先完成实名认证。',
+      confirmText: '去认证',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确认，跳转到实名认证页面
+          uni.navigateTo({
+            url: '/pages/my/identity-verify',
+          })
+        }
+      }
     })
     return
   }

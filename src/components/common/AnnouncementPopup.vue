@@ -13,9 +13,10 @@
       <!-- 标题 -->
       <view class="popup-header">
         <text class="popup-title">{{ announcement.title || '平台公告' }}</text>
-        <text class="popup-time" v-if="announcement.created_at">
+        <!-- 隐藏时间显示 -->
+        <!-- <text class="popup-time" v-if="announcement.created_at">
           {{ formatDate(announcement.created_at) }}
-        </text>
+        </text> -->
       </view>
 
       <!-- 内容 -->

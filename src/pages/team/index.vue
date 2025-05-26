@@ -121,14 +121,22 @@
         </view> -->
       </view>
     </view>
+
+    <!-- 实名认证指引弹窗 -->
+    <VerificationGuidePopup
+      v-model="showVerificationGuidePopup"
+      @close="handleVerificationGuideClose"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { getTeamInfoAPI, getTeamStatsAPI, getInvitedUsersAPI } from '@/service/index/team'
 import { IResData } from '@/types/response'
 import { useUserStore, useVerificationStore } from '@/store'
+import VerificationGuidePopup from '@/components/common/VerificationGuidePopup.vue'
 
 defineOptions({
   name: 'TeamPage',
@@ -347,15 +355,62 @@ const showVerifyTip = () => {
   })
 }
 
+// 实名认证指引弹窗状态
+const showVerificationGuidePopup = ref(false)
+
+// 检查实名认证状态
+const checkVerificationStatus = async () => {
+  // 检查用户是否已实名认证
+  if (!verificationStore.isVerified) {
+    // 如果未实名认证，显示指引弹窗
+    showVerificationGuidePopup.value = true
+    return false
+  }
+  return true
+}
+
+// 处理实名认证指引弹窗关闭事件
+const handleVerificationGuideClose = (data: { later: boolean }) => {
+  console.log('实名认证指引弹窗关闭:', data)
+  
+  if (data.later) {
+    // 用户选择了"稍后认证"，返回上一页
+    uni.navigateBack()
+  }
+}
+
 // 页面首次加载
 onMounted(async () => {
-  loading.value = true
-  try {
-    await Promise.all([fetchTeamInfo(), fetchInvitationStats(), fetchInvitedUsers(1)])
-  } catch (error) {
-    console.error('加载团队数据失败:', error)
-  } finally {
-    loading.value = false
+  // 首先检查实名认证状态
+  const isVerified = await checkVerificationStatus()
+  
+  if (isVerified) {
+    // 已实名认证，正常加载团队数据
+    loading.value = true
+    try {
+      await Promise.all([fetchTeamInfo(), fetchInvitationStats(), fetchInvitedUsers(1)])
+    } catch (error) {
+      console.error('加载团队数据失败:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+  // 如果未实名认证，不加载数据，等待用户完成认证或返回
+})
+
+// 监听页面显示（从其他页面返回时）
+onShow(() => {
+  // 如果用户从实名认证页面返回，重新检查认证状态
+  if (verificationStore.isVerified && invitedUsers.value.list.length === 0) {
+    // 用户已完成实名认证且还没有加载数据，现在加载团队数据
+    loading.value = true
+    Promise.all([fetchTeamInfo(), fetchInvitationStats(), fetchInvitedUsers(1)])
+      .catch(error => {
+        console.error('加载团队数据失败:', error)
+      })
+      .finally(() => {
+        loading.value = false
+      })
   }
 })
 </script>
