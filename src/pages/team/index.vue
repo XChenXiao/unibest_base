@@ -187,20 +187,35 @@ const tabs = [
   { name: '已实名列表', type: 'verified' },
 ]
 
-// 格式化时间为中国大陆时间
+// 格式化时间为中国大陆时间 - 兼容App端
 const formatDateTime = (dateTimeStr: string | null): string => {
   if (!dateTimeStr) return '未知'
-  const date = new Date(dateTimeStr)
-  return date.toLocaleString('zh-CN', { 
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  })
+  
+  try {
+    const date = new Date(dateTimeStr)
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      return '未知'
+    }
+    
+    // 转换为北京时间（UTC+8）
+    const utc = date.getTime() + (date.getTimezoneOffset() * 60000)
+    const bjTime = new Date(utc + (8 * 3600000))
+    
+    // 手动格式化，确保跨平台兼容性
+    const year = bjTime.getFullYear()
+    const month = String(bjTime.getMonth() + 1).padStart(2, '0')
+    const day = String(bjTime.getDate()).padStart(2, '0')
+    const hours = String(bjTime.getHours()).padStart(2, '0')
+    const minutes = String(bjTime.getMinutes()).padStart(2, '0')
+    const seconds = String(bjTime.getSeconds()).padStart(2, '0')
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  } catch (error) {
+    console.error('时间格式化错误:', error)
+    return '未知'
+  }
 }
 
 // 当前激活的标签索引

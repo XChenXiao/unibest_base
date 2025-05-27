@@ -696,7 +696,7 @@ const handleLogout = () => {
 
         // 返回登录页
         uni.reLaunch({
-          url: '/pages/login/index',
+          url: '/pages/login/password',
         })
       }
     },
