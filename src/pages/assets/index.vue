@@ -69,6 +69,7 @@
           :loading="currencyLoading"
           @goto-trading="gotoTradingCenter"
           @buy-success="handleCurrencyClaimSuccess"
+          @claim-loading="handleCurrencyClaimLoading"
         />
       </view>
       
@@ -673,6 +674,14 @@ const handleCurrencyClaimSuccess = async () => {
     console.log('货币奖励领取后数据刷新完成')
   } catch (error) {
     console.error('货币奖励领取后刷新数据失败:', error)
+  }
+}
+
+// 处理货币奖励领取加载状态（与股权奖励保持一致的遮罩效果）
+const handleCurrencyClaimLoading = (loadingState: { show: boolean; text?: string }) => {
+  claimingReward.value = loadingState.show
+  if (loadingState.text) {
+    claimLoadingText.value = loadingState.text
   }
 }
 
