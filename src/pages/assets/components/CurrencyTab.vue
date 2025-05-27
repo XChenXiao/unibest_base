@@ -5,7 +5,7 @@
       <view class="loading-spinner"></view>
       <text class="loading-text">加载货币数据中...</text>
     </view>
-    
+
     <!-- 货币内容 -->
     <view v-else>
       <!-- 添加货币记录按钮 -->
@@ -16,79 +16,77 @@
         </button>
       </view>
 
-    <view
-      class="currency-item"
-      v-for="(currency, index) in filteredCurrencyList"
-      :key="getItemId(currency, index)"
-      @click="gotoTrading(currency)"
-    >
-      <!-- 货币图标 -->
-      <view class="currency-icon" v-if="getCurrencyIcon(currency)">
-        <image class="currency-image" :src="getCurrencyIcon(currency)" mode="aspectFit" />
-      </view>
       <view
-        class="currency-icon"
-        v-else
-        :style="{ backgroundColor: getCurrencyBgColor(getCurrencySymbol(currency)) }"
+        class="currency-item"
+        v-for="(currency, index) in filteredCurrencyList"
+        :key="getItemId(currency, index)"
+        @click="gotoTrading(currency)"
       >
-        <text class="currency-icon-text">{{ getCurrencySymbol(currency).charAt(0) }}</text>
-      </view>
+        <!-- 货币图标 -->
+        <view class="currency-icon" v-if="getCurrencyIcon(currency)">
+          <image class="currency-image" :src="getCurrencyIcon(currency)" mode="aspectFit" />
+        </view>
+        <view
+          class="currency-icon"
+          v-else
+          :style="{ backgroundColor: getCurrencyBgColor(getCurrencySymbol(currency)) }"
+        >
+          <text class="currency-icon-text">{{ getCurrencySymbol(currency).charAt(0) }}</text>
+        </view>
 
-      <view class="currency-info">
-        <text class="currency-name">{{ getCurrencyName(currency) }}</text>
-        <text class="currency-symbol">{{ getCurrencySymbol(currency) }}</text>
-      </view>
+        <view class="currency-info">
+          <text class="currency-name">{{ getCurrencyName(currency) }}</text>
+          <text class="currency-symbol">{{ getCurrencySymbol(currency) }}</text>
+        </view>
 
-      <view class="currency-details">
-        <text class="currency-price">¥{{ formatAmount(getCurrencyPrice(currency)) }}</text>
-        <text class="currency-amount">
-          <!-- 隐藏持有量 -->
-          持有:
-          {{
-            getCurrencySymbol(currency) === 'USDT'
-              ? formatAmount(getCurrencyUserBalance(currency))
-              : formatAmount(getCurrencyUserBalance(currency)) + '克'
-          }}
-        </text>
-      </view>
+        <view class="currency-details">
+          <text class="currency-price">¥{{ formatAmount(getCurrencyPrice(currency)) }}</text>
+          <text class="currency-amount">
+            <!-- 隐藏持有量 -->
+            持有:
+            {{
+              getCurrencySymbol(currency) === 'USDT'
+                ? formatAmount(getCurrencyUserBalance(currency))
+                : formatAmount(getCurrencyUserBalance(currency)) + '克'
+            }}
+          </text>
+        </view>
 
-      <!-- USDT购买按钮 -->
-      <view
-        v-if="isUsdt(currency)"
-        class="buy-button-container"
-        @click.stop="openBuyDialog(currency)"
-      >
-        <!-- <button class="buy-button">购买</button> -->
-      </view>
-      <!-- 非USDT货币的领取按钮 - 可领取奖励时显示"领取奖励" -->
-      <view
-        v-else-if="
-          canShowClaimButton(currency) &&
-          hasClaimableReward(currency) &&
-          !hasClaimedReward(currency)
-        "
-        class="claim-button-container"
-        @click.stop="handleClaimCurrency(currency)"
-      >
-        <button class="claim-button">领取奖励</button>
-      </view>
-      <!-- 非USDT货币 - 已领取奖励状态 -->
-      <!-- <view v-else-if="canShowClaimButton(currency) && hasClaimedReward(currency)" class="claimed-button-container">
+        <!-- USDT购买按钮 -->
+        <view
+          v-if="isUsdt(currency)"
+          class="buy-button-container"
+          @click.stop="openBuyDialog(currency)"
+        >
+          <!-- <button class="buy-button">购买</button> -->
+        </view>
+        <!-- 非USDT货币的领取按钮 - 默认展示状态 -->
+        <view
+          v-else-if="canShowClaimButton(currency)"
+          class="claim-button-container"
+          @click.stop="handleClaimCurrency(currency)"
+        >
+          <button class="claim-button" :class="{ 'claimed-button': hasClaimedReward(currency) }">
+            {{ getClaimButtonText(currency) }}
+          </button>
+        </view>
+        <!-- 非USDT货币 - 已领取奖励状态 -->
+        <!-- <view v-else-if="canShowClaimButton(currency) && hasClaimedReward(currency)" class="claimed-button-container">
         <text class="claimed-text">已领取</text>
       </view> -->
-      <!-- 非USDT货币按钮 - 有奖励但不可领取（已领取）时显示"去交易所" -->
-      <!-- 取消去交易所的按钮 -->
-      <!-- <view v-else-if="canShowClaimButton(currency) && !hasClaimableReward(currency)" class="exchange-button-container" @click.stop="gotoExchange(currency)">
+        <!-- 非USDT货币按钮 - 有奖励但不可领取（已领取）时显示"去交易所" -->
+        <!-- 取消去交易所的按钮 -->
+        <!-- <view v-else-if="canShowClaimButton(currency) && !hasClaimableReward(currency)" class="exchange-button-container" @click.stop="gotoExchange(currency)">
         <button class="exchange-button">交易所</button>
       </view> -->
-      <text v-else class="uni-icons uniui-arrow-right currency-arrow"></text>
-    </view>
+        <text v-else class="uni-icons uniui-arrow-right currency-arrow"></text>
+      </view>
 
-    <!-- 空状态 -->
-    <view v-if="currencyList.length === 0" class="empty-state">
-      <text class="empty-text">您暂无持有货币资产</text>
-      <button class="go-trading-btn" @click="gotoExchange()">前往交易所</button>
-    </view>
+      <!-- 空状态 -->
+      <view v-if="currencyList.length === 0" class="empty-state">
+        <text class="empty-text">您暂无持有货币资产</text>
+        <button class="go-trading-btn" @click="gotoExchange()">前往交易所</button>
+      </view>
 
       <!-- 购买USDT弹窗 -->
       <buy-usdt-dialog
@@ -108,6 +106,7 @@ import { Currency, UserCurrency } from '@/service/app/types'
 import { claimCurrency } from '@/service/app/currency'
 import BuyUsdtDialog from '@/components/currency/BuyUsdtDialog.vue'
 import { showToast } from '@/utils/uniapi'
+import { useVerificationStore } from '@/store'
 
 // 兼容旧版数据结构
 interface CurrencyItem {
@@ -182,6 +181,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['goto-trading', 'buy-success'])
+
+// 获取实名认证状态
+const verificationStore = useVerificationStore()
 
 // 购买USDT弹窗引用
 const buyUsdtDialog = ref(null)
@@ -374,26 +376,13 @@ const handleBuySuccess = () => {
   emit('buy-success')
 }
 
-// 判断是否显示领取按钮（非USDT货币且有reward_amount）
+// 判断是否显示领取按钮（非USDT货币默认显示）
 const canShowClaimButton = (item: CurrencyData): boolean => {
+  // USDT不显示领取按钮
   if (isUsdt(item)) return false
 
-  // 检查是否有奖励金额字段
-  if ('reward_amount' in item && item.reward_amount) {
-    return true
-  }
-
-  // 处理嵌套的货币对象
-  if (
-    isUserCurrency(item) &&
-    item.currency &&
-    'reward_amount' in item.currency &&
-    item.currency.reward_amount
-  ) {
-    return true
-  }
-
-  return false
+  // 所有非USDT货币都显示领取按钮（默认展示状态）
+  return true
 }
 
 // 判断是否有可领取的奖励
@@ -424,6 +413,25 @@ const hasClaimedReward = (item: CurrencyData): boolean => {
 
 // 处理领取货币奖励
 const handleClaimCurrency = async (currency: CurrencyData) => {
+  // 检查实名认证状态
+  if (!verificationStore.isVerified) {
+    uni.showModal({
+      title: '需要实名认证',
+      content: '领取奖励功能需要完成实名认证后才能使用，请先完成实名认证。',
+      confirmText: '去认证',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确认，跳转到实名认证页面
+          uni.navigateTo({
+            url: '/pages/my/identity-verify',
+          })
+        }
+      },
+    })
+    return
+  }
+
   // 检查是否已领取过奖励
   if (hasClaimedReward(currency)) {
     showToast('您已领取过该奖励')
@@ -431,7 +439,7 @@ const handleClaimCurrency = async (currency: CurrencyData) => {
   }
 
   // 检查是否有可领取的奖励
-  if (!hasClaimableReward(currency)) {
+  if (!hasClaimedReward(currency) && !hasClaimableReward(currency)) {
     showToast('暂无可领取的奖励')
     return
   }
@@ -494,6 +502,17 @@ const formatRewardAmount = (item: CurrencyData): string => {
   return amount.toString()
 }
 
+// 获取领取按钮文字
+const getClaimButtonText = (item: CurrencyData): string => {
+  if (hasClaimedReward(item)) {
+    return '已领取'
+  } else if (hasClaimableReward(item)) {
+    return '领取奖励'
+  } else {
+    return '领取奖励'
+  }
+}
+
 // 前往货币记录页面
 const gotoCurrencyRecords = () => {
   uni.navigateTo({
@@ -515,9 +534,6 @@ const filteredCurrencyList = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-.currency-list {
-  min-height: 400rpx;
-}
 
 .currency-item {
   display: flex;
@@ -620,6 +636,11 @@ const filteredCurrencyList = computed(() => {
   font-size: 26rpx;
   border-radius: 30rpx;
   border: none;
+}
+
+.claimed-button {
+  background: linear-gradient(to right, #9e9e9e, #616161) !important;
+  opacity: 0.8;
 }
 
 .exchange-button-container {
@@ -732,7 +753,11 @@ const filteredCurrencyList = computed(() => {
 
 /* 旋转动画 */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

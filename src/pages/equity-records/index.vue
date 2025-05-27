@@ -237,7 +237,6 @@ onMounted(() => {
   border-radius: 16rpx;
   padding: 20rpx;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-  min-height: 300rpx;
 }
 
 .record-item {

@@ -12,12 +12,12 @@
   <view class="settings-container">
     <!-- 顶部波浪装饰 -->
     <view class="wave-decoration"></view>
-    
+
     <!-- 返回按钮 -->
     <view class="back-button" @click="goBack">
       <text class="uni-icons uniui-arrow-left"></text>
     </view>
-    
+
     <!-- 设置选项 -->
     <view class="settings-list">
       <!-- 修改登录密码 -->
@@ -27,7 +27,7 @@
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
-      
+
       <!-- 修改提现密码 -->
       <view class="settings-item" @click="navigateTo('/pages/my/reset-withdraw-password')">
         <view class="settings-content">
@@ -35,7 +35,7 @@
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
-      
+
       <!-- 微信收款设置 -->
       <view class="settings-item" @click="navigateTo('/pages/my/wechat-payment-setting')">
         <view class="settings-content">
@@ -43,7 +43,7 @@
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
-      
+
       <!-- 支付宝收款设置 -->
       <view class="settings-item" @click="navigateTo('/pages/my/alipay-payment-setting')">
         <view class="settings-content">
@@ -51,7 +51,7 @@
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
-      
+
       <!-- 清除缓存 -->
       <view class="settings-item" @click="clearCache">
         <view class="settings-content">
@@ -60,7 +60,7 @@
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
-      
+
       <!-- 关于我们 -->
       <view class="settings-item" @click="navigateTo('/pages/my/about')">
         <view class="settings-content">
@@ -68,17 +68,17 @@
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
-      
+
       <!-- 检查更新 -->
       <view class="settings-item" @click="checkAppUpdate">
         <view class="settings-content">
           <text class="settings-title">检查更新</text>
-          <text class="settings-desc">当前版本: v{{ appVersion }}</text>
+          <text class="settings-desc">安装包版本: v{{ appVersion }}</text>
         </view>
         <text class="uni-icons uniui-arrow-right settings-arrow"></text>
       </view>
     </view>
-    
+
     <!-- 底部版权信息 -->
     <view class="settings-footer">
       <text></text>
@@ -87,57 +87,57 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
-import checkUpdate from '@/uni_modules/uni-upgrade-center-app/utils/check-update';
+import { ref, onMounted } from 'vue'
+import checkUpdate from '@/uni_modules/uni-upgrade-center-app/utils/check-update'
 
 // 缓存大小
-const cacheSize = ref('2.5MB');
+const cacheSize = ref('2.5MB')
 // 应用版本号
-const appVersion = ref('1.0.0');
+const appVersion = ref('1.0.0')
 // 是否正在检查更新
-const isCheckingUpdate = ref(false);
+const isCheckingUpdate = ref(false)
 
 // 页面挂载时获取应用信息
 onMounted(() => {
-  getAppInfo();
-  calculateCacheSize();
-});
+  getAppInfo()
+  calculateCacheSize()
+})
 
 // 获取应用信息
 const getAppInfo = () => {
   // #ifdef APP-PLUS
-  const systemInfo = uni.getSystemInfoSync();
-  const appId = systemInfo.appId;
+  const systemInfo = uni.getSystemInfoSync()
+  const appId = systemInfo.appId
   plus.runtime.getProperty(appId, (widgetInfo) => {
     // 热更新版本号
-    const wgtVersion = widgetInfo.version;
+    const wgtVersion = widgetInfo.version
     // 原生应用版本号
-    const nativeVersion = systemInfo.appVersion;
-    appVersion.value = `${nativeVersion}(当前版本:${wgtVersion})`;
-  });
+    const nativeVersion = systemInfo.appVersion
+    appVersion.value = `${nativeVersion}(当前版本:${wgtVersion})`
+  })
   // #endif
-};
+}
 
 // 计算缓存大小
 const calculateCacheSize = () => {
   // #ifdef APP-PLUS
   // @ts-ignore
   plus.cache.calculate((size) => {
-    const sizeInMB = (size / (1024 * 1024)).toFixed(2);
-    cacheSize.value = `${sizeInMB}MB`;
-  });
+    const sizeInMB = (size / (1024 * 1024)).toFixed(2)
+    cacheSize.value = `${sizeInMB}MB`
+  })
   // #endif
-};
+}
 
 // 页面导航
 const navigateTo = (url: string) => {
-  uni.navigateTo({ url });
-};
+  uni.navigateTo({ url })
+}
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack();
-};
+  uni.navigateBack()
+}
 
 // 清除缓存
 const clearCache = () => {
@@ -147,64 +147,64 @@ const clearCache = () => {
     success: (res) => {
       if (res.confirm) {
         uni.showLoading({
-          title: '清除中...'
-        });
-        
+          title: '清除中...',
+        })
+
         // #ifdef APP-PLUS
         // @ts-ignore
         plus.cache.clear(() => {
-          uni.hideLoading();
-          calculateCacheSize();
-          
+          uni.hideLoading()
+          calculateCacheSize()
+
           uni.showToast({
             title: '缓存已清除',
-            icon: 'success'
-          });
-        });
+            icon: 'success',
+          })
+        })
         // #endif
-        
+
         // #ifndef APP-PLUS
         // 模拟清除缓存
         setTimeout(() => {
-          uni.hideLoading();
-          cacheSize.value = '0KB';
-          
+          uni.hideLoading()
+          cacheSize.value = '0KB'
+
           uni.showToast({
             title: '缓存已清除',
-            icon: 'success'
-          });
-        }, 1000);
+            icon: 'success',
+          })
+        }, 1000)
         // #endif
       }
-    }
-  });
-};
+    },
+  })
+}
 
 // 检查更新
 const checkAppUpdate = async () => {
-  if (isCheckingUpdate.value) return;
-  
-  isCheckingUpdate.value = true;
+  if (isCheckingUpdate.value) return
+
+  isCheckingUpdate.value = true
   uni.showLoading({
-    title: '检查更新中...'
-  });
-  
+    title: '检查更新中...',
+  })
+
   try {
     // 调用更新中心的检查更新方法
-    await checkUpdate();
-    uni.hideLoading();
+    await checkUpdate()
+    uni.hideLoading()
   } catch (error) {
-    console.error('检查更新失败:', error);
-    uni.hideLoading();
-    
+    console.error('检查更新失败:', error)
+    uni.hideLoading()
+
     uni.showToast({
       title: '已是最新版本',
-      icon: 'success'
-    });
+      icon: 'success',
+    })
   } finally {
-    isCheckingUpdate.value = false;
+    isCheckingUpdate.value = false
   }
-};
+}
 </script>
 
 <style lang="scss">
@@ -304,4 +304,4 @@ page {
   font-size: 24rpx;
   margin-top: auto;
 }
-</style> 
+</style>

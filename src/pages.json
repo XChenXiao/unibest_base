@@ -78,7 +78,7 @@
       "path": "pages/currency-records/index",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "货币记录"
+        "navigationBarTitleText": "黄金记录"
       }
     },
     {

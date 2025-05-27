@@ -1,7 +1,7 @@
 <route lang="json5">
 {
   style: {
-    navigationBarTitleText: '货币记录',
+    navigationBarTitleText: '黄金记录',
   },
 }
 </route>
@@ -10,30 +10,30 @@
   <view class="records-container">
     <!-- 筛选选项 -->
     <view class="filter-container">
-      <view 
-        class="filter-item" 
-        :class="{ 'active': currentType === 'all' }"
+      <view
+        class="filter-item"
+        :class="{ active: currentType === 'all' }"
         @click="changeType('all')"
       >
         全部
       </view>
-      <view 
-        class="filter-item" 
-        :class="{ 'active': currentType === 'reward' }"
+      <view
+        class="filter-item"
+        :class="{ active: currentType === 'reward' }"
         @click="changeType('reward')"
       >
         奖励
       </view>
-      <view 
-        class="filter-item" 
-        :class="{ 'active': currentType === 'buy' }"
+      <view
+        class="filter-item"
+        :class="{ active: currentType === 'buy' }"
         @click="changeType('buy')"
       >
         买入
       </view>
-      <view 
-        class="filter-item" 
-        :class="{ 'active': currentType === 'sell' }"
+      <view
+        class="filter-item"
+        :class="{ active: currentType === 'sell' }"
         @click="changeType('sell')"
       >
         卖出
@@ -46,31 +46,48 @@
         <text>加载中...</text>
       </view>
       <template v-else-if="records.length > 0">
-        <view 
-          class="record-item" 
-          v-for="record in records" 
-          :key="record.id"
-        >
+        <view class="record-item" v-for="record in records" :key="record.id">
           <view class="record-left">
-            <text class="record-desc">{{ record.type === 'system' && record.description ? record.description : (record.description ? formatDescription(record.description) : getTypeText(record.type)) }}</text>
+            <text class="record-desc">
+              {{
+                record.type === 'system' && record.description
+                  ? record.description
+                  : record.description
+                    ? formatDescription(record.description)
+                    : getTypeText(record.type)
+              }}
+            </text>
             <view class="asset-info">
               <text class="asset-name">{{ record.asset_name }}</text>
               <text class="asset-symbol">({{ record.asset_symbol }})</text>
             </view>
             <view class="record-footer">
-              <view class="record-tag" :class="`tag-${record.type}`">{{ getTypeText(record.type) }}</view>
+              <view class="record-tag" :class="`tag-${record.type}`">
+                {{ getTypeText(record.type) }}
+              </view>
               <text class="record-time">{{ formatDate(record.created_at) }}</text>
             </view>
           </view>
           <view class="record-right">
-            <text class="record-amount" :class="record.symbol === '+' ? 'amount-green' : 'amount-red'">
-              {{ record.type === 'system' ? 
-                `${record.symbol}${formatSystemAmount(record.amount, record.asset_symbol)} ${record.asset_symbol}` : 
-                `${record.symbol}${formatAmount(record.amount)}${record.asset_symbol === 'GOLD' ? '克' : record.asset_symbol === 'USDT' ? '' : ` ${record.asset_symbol}`}` 
+            <text
+              class="record-amount"
+              :class="record.symbol === '+' ? 'amount-green' : 'amount-red'"
+            >
+              {{
+                record.type === 'system'
+                  ? `${record.symbol}${formatSystemAmount(record.amount, record.asset_symbol)} ${record.asset_symbol}`
+                  : `${record.symbol}${formatAmount(record.amount)}${record.asset_symbol === 'GOLD' ? '克' : record.asset_symbol === 'USDT' ? '' : ` ${record.asset_symbol}`}`
               }}
             </text>
-            <text v-if="record.price && record.type !== 'system'" class="record-price">单价: ¥{{ formatAmount(record.price) }}</text>
-            <text v-if="record.total && record.type !== 'reward' && record.type !== 'system'" class="record-total">总额: ¥{{ formatAmount(record.total) }}</text>
+            <text v-if="record.price && record.type !== 'system'" class="record-price">
+              单价: ¥{{ formatAmount(record.price) }}
+            </text>
+            <text
+              v-if="record.total && record.type !== 'reward' && record.type !== 'system'"
+              class="record-total"
+            >
+              总额: ¥{{ formatAmount(record.total) }}
+            </text>
             <text v-if="record.type === 'system'" class="record-fee">手续费</text>
           </view>
         </view>
@@ -82,167 +99,159 @@
 
     <!-- 分页加载 -->
     <view class="pagination" v-if="totalPages > 1">
-      <view class="load-more" @click="loadMore" v-if="currentPage < totalPages">
-        加载更多
-      </view>
-      <view class="no-more" v-else>
-        没有更多数据了
-      </view>
+      <view class="load-more" @click="loadMore" v-if="currentPage < totalPages">加载更多</view>
+      <view class="no-more" v-else>没有更多数据了</view>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
-import { getCurrencyTransactions } from '@/service/app/wallet';
+import { ref, onMounted } from 'vue'
+import { getCurrencyTransactions } from '@/service/app/wallet'
 
 // 定义通用的交易记录类型
 interface TransactionRecord {
-  id: number;
-  transaction_no: string;
-  type: string;
-  type_text: string;
-  amount: string;
-  asset_name: string;
-  asset_symbol: string;
-  price?: string;
-  fee?: string;
-  total?: string;
-  status: string;
-  status_text: string;
-  description: string;
-  created_at: string;
-  completed_at?: string;
-  is_income?: boolean;
-  symbol: string; // 标记正负的符号
+  id: number
+  transaction_no: string
+  type: string
+  type_text: string
+  amount: string
+  asset_name: string
+  asset_symbol: string
+  price?: string
+  fee?: string
+  total?: string
+  status: string
+  status_text: string
+  description: string
+  created_at: string
+  completed_at?: string
+  is_income?: boolean
+  symbol: string // 标记正负的符号
 }
 
 // 当前类型
-const currentType = ref<'all' | 'reward' | 'buy' | 'sell'>('all');
+const currentType = ref<'all' | 'reward' | 'buy' | 'sell'>('all')
 // 当前页码
-const currentPage = ref(1);
+const currentPage = ref(1)
 // 每页数量
-const perPage = ref(10);
+const perPage = ref(10)
 // 总页数
-const totalPages = ref(1);
+const totalPages = ref(1)
 // 加载状态
-const loading = ref(false);
+const loading = ref(false)
 // 记录列表
-const records = ref<TransactionRecord[]>([]);
+const records = ref<TransactionRecord[]>([])
 
 // 切换类型
 const changeType = (type: 'all' | 'reward' | 'buy' | 'sell') => {
-  if (currentType.value === type) return; // 如果点击的是当前类型，不做任何操作
-  
-  currentType.value = type;
-  currentPage.value = 1;
-  records.value = [];
-  loadRecords();
-};
+  if (currentType.value === type) return // 如果点击的是当前类型，不做任何操作
+
+  currentType.value = type
+  currentPage.value = 1
+  records.value = []
+  loadRecords()
+}
 
 // 加载更多
 const loadMore = () => {
   if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-    loadRecords(true);
+    currentPage.value++
+    loadRecords(true)
   }
-};
+}
 
 // 加载记录
 const loadRecords = async (append = false) => {
-  loading.value = true;
+  loading.value = true
   try {
-    const type = currentType.value === 'all' ? undefined : currentType.value;
-    const response = await getCurrencyTransactions(
-      currentPage.value,
-      perPage.value,
-      type
-    );
-    
+    const type = currentType.value === 'all' ? undefined : currentType.value
+    const response = await getCurrencyTransactions(currentPage.value, perPage.value, type)
+
     if (response.status === 'success' && response.data) {
       // 使用类型断言访问数据
-      const responseData = response.data as any;
-      
+      const responseData = response.data as any
+
       if (append && Array.isArray(responseData.data)) {
-        records.value = [...records.value, ...responseData.data];
+        records.value = [...records.value, ...responseData.data]
       } else if (Array.isArray(responseData.data)) {
-        records.value = responseData.data;
+        records.value = responseData.data
       }
-      
+
       // 设置总页数
       if (responseData.pagination && typeof responseData.pagination.total === 'number') {
-        totalPages.value = Math.ceil(responseData.pagination.total / perPage.value);
+        totalPages.value = Math.ceil(responseData.pagination.total / perPage.value)
       }
     } else {
       uni.showToast({
         title: response.message || '获取记录失败',
-        icon: 'none'
-      });
+        icon: 'none',
+      })
     }
   } catch (error) {
-    console.error('获取货币记录失败', error);
+    console.error('获取货币记录失败', error)
     uni.showToast({
       title: '获取记录失败',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 获取类型文本
 const getTypeText = (type: string) => {
   const typeMap: Record<string, string> = {
-    'buy': '买入',
-    'sell': '卖出',
-    'reward': '奖励',
-    'transfer': '转账',
-    'recharge': '充值',
-    'withdraw': '提现',
-    'system': '系统'
-  };
-  return typeMap[type] || '未知';
-};
+    buy: '买入',
+    sell: '卖出',
+    reward: '奖励',
+    transfer: '转账',
+    recharge: '充值',
+    withdraw: '提现',
+    system: '系统',
+  }
+  return typeMap[type] || '未知'
+}
 
 // 格式化日期
 const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-};
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
 
 // 格式化数量，保留两位小数
 const formatAmount = (amount: string | number) => {
-  return Number(amount).toFixed(2);
-};
+  return Number(amount).toFixed(2)
+}
 
 // 格式化系统类型交易记录的金额
 const formatSystemAmount = (amount: string | number, assetSymbol: string) => {
   // 对于USDT手续费，使用6位小数显示
   if (assetSymbol === 'USDT') {
-    return Number(amount).toFixed(6);
+    return Number(amount).toFixed(6)
   }
   // 其他情况使用2位小数
-  return Number(amount).toFixed(2);
-};
+  return Number(amount).toFixed(2)
+}
 
 // 格式化描述，移除括号字段
 const formatDescription = (description: string) => {
-  if (!description) return '';
+  if (!description) return ''
   // 使用正则表达式移除所有括号及其内容
   // 匹配包括中文括号（）、英文括号()、方括号[]、尖括号<>等
-  return description.replace(/[\(\[\（\【\<].*?[\)\]\）\】\>]/g, '').trim();
-};
+  return description.replace(/[\(\[\（\【\<].*?[\)\]\）\】\>]/g, '').trim()
+}
 
 // 页面加载时获取数据
 onMounted(() => {
-  loadRecords();
-});
+  loadRecords()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -290,7 +299,6 @@ onMounted(() => {
   border-radius: 16rpx;
   padding: 20rpx;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-  min-height: 300rpx;
 }
 
 .record-item {
@@ -391,7 +399,8 @@ onMounted(() => {
   color: #666;
 }
 
-.loading-box, .empty-box {
+.loading-box,
+.empty-box {
   padding: 60rpx 0;
   text-align: center;
   color: #999;
@@ -403,7 +412,8 @@ onMounted(() => {
   text-align: center;
 }
 
-.load-more, .no-more {
+.load-more,
+.no-more {
   display: inline-block;
   padding: 20rpx 40rpx;
   font-size: 28rpx;
@@ -449,4 +459,4 @@ onMounted(() => {
 .tag-system {
   background-color: #95a5a6;
 }
-</style> 
+</style>
