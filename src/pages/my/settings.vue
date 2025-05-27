@@ -107,13 +107,21 @@ onMounted(() => {
 const getAppInfo = () => {
   // #ifdef APP-PLUS
   const systemInfo = uni.getSystemInfoSync();
-  appVersion.value = systemInfo.appVersion || '1.0.0';
+  const appId = systemInfo.appId;
+  plus.runtime.getProperty(appId, (widgetInfo) => {
+    // 热更新版本号
+    const wgtVersion = widgetInfo.version;
+    // 原生应用版本号
+    const nativeVersion = systemInfo.appVersion;
+    appVersion.value = `${nativeVersion}(当前版本:${wgtVersion})`;
+  });
   // #endif
 };
 
 // 计算缓存大小
 const calculateCacheSize = () => {
   // #ifdef APP-PLUS
+  // @ts-ignore
   plus.cache.calculate((size) => {
     const sizeInMB = (size / (1024 * 1024)).toFixed(2);
     cacheSize.value = `${sizeInMB}MB`;
@@ -143,6 +151,7 @@ const clearCache = () => {
         });
         
         // #ifdef APP-PLUS
+        // @ts-ignore
         plus.cache.clear(() => {
           uni.hideLoading();
           calculateCacheSize();
