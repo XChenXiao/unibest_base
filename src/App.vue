@@ -84,7 +84,7 @@ onLaunch(async () => {
   saveNoLoginPathsToStorage()
 
   // 初始化tabbar，设置首页索引为0
-  tabbarStore.initTabbar(0)
+  tabbarStore.setCurIdx(0)
 
   // 检查是否有token (通过pinia持久化存储)
   if (userStore.isLogined) {
@@ -354,7 +354,6 @@ swiper,
 scroll-view {
   flex: 1;
   height: 100%;
-  overflow: hidden;
 }
 
 image {

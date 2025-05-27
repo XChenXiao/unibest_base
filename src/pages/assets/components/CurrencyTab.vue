@@ -1,12 +1,20 @@
 <template>
   <view class="currency-list">
-    <!-- 添加货币记录按钮 -->
-    <view class="record-button-container">
-      <button class="record-button" @click="gotoCurrencyRecords">
-        <text class="uni-icons uniui-list"></text>
-        <text class="button-text">黄金记录</text>
-      </button>
+    <!-- 加载状态 -->
+    <view v-if="loading" class="currency-loading">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载货币数据中...</text>
     </view>
+    
+    <!-- 货币内容 -->
+    <view v-else>
+      <!-- 添加货币记录按钮 -->
+      <view class="record-button-container">
+        <button class="record-button" @click="gotoCurrencyRecords">
+          <text class="uni-icons uniui-list"></text>
+          <text class="button-text">黄金记录</text>
+        </button>
+      </view>
 
     <view
       class="currency-item"
@@ -82,14 +90,15 @@
       <button class="go-trading-btn" @click="gotoExchange()">前往交易所</button>
     </view>
 
-    <!-- 购买USDT弹窗 -->
-    <buy-usdt-dialog
-      ref="buyUsdtDialog"
-      :price="usdtPrice"
-      :userBalance="userBalance"
-      :iconUrl="usdtIconUrl"
-      @success="handleBuySuccess"
-    />
+      <!-- 购买USDT弹窗 -->
+      <buy-usdt-dialog
+        ref="buyUsdtDialog"
+        :price="usdtPrice"
+        :userBalance="userBalance"
+        :iconUrl="usdtIconUrl"
+        @success="handleBuySuccess"
+      />
+    </view>
   </view>
 </template>
 
@@ -165,6 +174,10 @@ const props = defineProps({
   userBalance: {
     type: Number,
     default: 0,
+  },
+  loading: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -688,5 +701,38 @@ const filteredCurrencyList = computed(() => {
   background-color: #f5f5f5;
   padding: 8rpx 16rpx;
   border-radius: 4rpx;
+}
+
+/* 加载状态 */
+.currency-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  background-color: #f9f9f9;
+  border-radius: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f3f3f3;
+  border-top: 4rpx solid #f39c12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

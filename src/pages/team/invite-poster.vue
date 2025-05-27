@@ -78,7 +78,7 @@
                   font-size: 31.25rpx;
                   display:block;
                 "
-                :text="teamInfo.realName"
+                :text="teamInfo.name"
               />
 
               <l-painter-view
@@ -130,12 +130,18 @@ defineOptions({
 
 // 用户信息
 const userStore = useUserStore()
-console.log(userStore.userInfo)
+console.log(userStore.userInfo,'用户信息=========')
 
 // 团队信息
 const teamInfo = reactive({
   invite_code: '',
-  realName: userStore.userInfo?.verification.real_name || '用户',
+  realName: '',
+})
+
+onMounted(() => {
+  console.log(userStore.userInfo,'用户信息=========')
+  teamInfo.invite_code = userStore.userInfo?.invite_code
+  teamInfo.realName = userStore.userInfo?.name || '用户'
 })
 
 // 海报路径
@@ -241,20 +247,20 @@ const handleSave = () => {
 }
 
 // 获取团队信息
-const fetchTeamInfo = async () => {
-  try {
-    const res = (await getTeamInfoAPI()) as IResData<any>
-    if (res.status === 'success' && res.data) {
-      teamInfo.invite_code = res.data.invite_code || userStore.userInfo?.invite_code || '123456'
-    }
-  } catch (error) {
-    console.error('获取团队信息失败:', error)
-  }
-}
+// const fetchTeamInfo = async () => {
+//   try {
+//     const res = (await getTeamInfoAPI()) as IResData<any>
+//     if (res.status === 'success' && res.data) {
+//       teamInfo.invite_code = res.data.invite_code || userStore.userInfo?.invite_code || '123456'
+//     }
+//   } catch (error) {
+//     console.error('获取团队信息失败:', error)
+//   }
+// }
 
-onMounted(async () => {
-  await fetchTeamInfo()
-})
+// onMounted(async () => {
+//   await fetchTeamInfo()
+// })
 </script>
 
 <style lang="scss">

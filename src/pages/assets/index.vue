@@ -3,68 +3,93 @@
   layout: 'tabbar',
   style: {
     navigationStyle: 'custom',
+    enablePullDownRefresh: true,
+    onReachBottomDistance: 50,
   },
 }
 </route>
 
 <template>
   <view class="assets-container">
-    <!-- 顶部波浪装饰 -->
-    <view class="wave-decoration"></view>
+    <!-- 使用页面级下拉刷新 -->
+    <view class="page-content">
+      <!-- 顶部波浪装饰 -->
+      <view class="wave-decoration"></view>
 
-    <!-- 页面标题 -->
-    <view class="page-title"></view>
+      <!-- 页面标题 -->
+      <view class="page-title"></view>
 
-    <!-- 资产总览卡片 -->
-    <assets-overview
-      :total-assets="assetsInfo.totalAssets"
-      :currency-assets="assetsInfo.currencyAssets"
-      :equity-assets="assetsInfo.equityAssets"
-      :show-assets="showAssets"
-      @toggle-visibility="toggleAssetsVisibility"
-    />
-
-    <!-- 资产类型 Tab 切换 -->
-    <view class="assets-tabs">
-      <view
-        class="tab-item"
-        :class="{ 'tab-active': activeTab === 'equity' }"
-        @click="switchTab('equity')"
-      >
-        <text>股权</text>
+      <!-- 加载状态指示器 -->
+      <view v-if="loading" class="loading-container">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
       </view>
-      <view
-        class="tab-item"
-        :class="{ 'tab-active': activeTab === 'currency' }"
-        @click="switchTab('currency')"
-      >
-        <text>黄金</text>
-      </view>
-    </view>
 
-    <!-- 股权内容 -->
-    <view class="tab-content" v-if="activeTab === 'equity'">
-      <equity-tab :equity-info="equityInfo" @claim-reward="claimReward" />
-    </view>
-
-    <!-- 货币内容 -->
-    <view class="tab-content" v-if="activeTab === 'currency'">
-      <currency-tab
-        :currency-list="currencyList"
-        :userBalance="userBalance"
-        @goto-trading="gotoTradingCenter"
+      <!-- 资产总览卡片 -->
+      <assets-overview
+        :total-assets="assetsInfo.totalAssets"
+        :currency-assets="assetsInfo.currencyAssets"
+        :equity-assets="assetsInfo.equityAssets"
+        :show-assets="showAssets"
+        @toggle-visibility="toggleAssetsVisibility"
       />
+
+      <!-- 资产类型 Tab 切换 -->
+      <view class="assets-tabs">
+        <view
+          class="tab-item"
+          :class="{ 'tab-active': activeTab === 'equity', 'tab-disabled': loading }"
+          @click="switchTab('equity')"
+        >
+          <text>股权</text>
+        </view>
+        <view
+          class="tab-item"
+          :class="{ 'tab-active': activeTab === 'currency', 'tab-disabled': loading }"
+          @click="switchTab('currency')"
+        >
+          <text>黄金</text>
+        </view>
+      </view>
+
+      <!-- 股权内容 -->
+      <view class="tab-content" v-if="activeTab === 'equity'">
+        <equity-tab 
+          :equity-info="equityInfo" 
+          :loading="equityLoading"
+          @claim-reward="claimReward" 
+        />
+      </view>
+
+      <!-- 货币内容 -->
+      <view class="tab-content" v-if="activeTab === 'currency'">
+        <currency-tab
+          :currency-list="currencyList"
+          :userBalance="userBalance"
+          :loading="currencyLoading"
+          @goto-trading="gotoTradingCenter"
+        />
+      </view>
+      
+      <!-- 底部版权信息 -->
+      <view class="assets-footer">
+        <text></text>
+      </view>
     </view>
-    <!-- 底部版权信息 -->
-    <view class="assets-footer">
-      <text></text>
+
+    <!-- 奖励领取加载遮罩 -->
+    <view v-if="claimingReward" class="claim-loading-overlay">
+      <view class="claim-loading-content">
+        <view class="claim-loading-spinner"></view>
+        <text class="claim-loading-text">{{ claimLoadingText }}</text>
+      </view>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh, onReachBottom, onPageScroll } from '@dcloudio/uni-app'
 import AssetsOverview from '@/components/finance/AssetsOverview.vue'
 import EquityTab from './components/EquityTab.vue'
 import CurrencyTab from './components/CurrencyTab.vue'
@@ -87,11 +112,26 @@ import { useCurrencyStore } from '@/store'
 // 获取弹窗组件实例
 const sellEquityPopup = ref(null)
 
+// 页面滚动状态
+let isPageAtTop = true
+
 // 控制资产显示隐藏
 const showAssets = ref(true)
 
 // 当前激活的标签页
 const activeTab = ref('equity')
+
+// 加载状态
+const loading = ref(false)
+const refreshing = ref(false)
+const equityLoading = ref(false)
+const currencyLoading = ref(false)
+
+// 下拉刷新状态（由页面级API管理）
+
+// 奖励领取状态
+const claimingReward = ref(false)
+const claimLoadingText = ref('领取中...')
 
 // 资产信息
 const assetsInfo = reactive({
@@ -144,22 +184,35 @@ const userStore = useUserStore()
 // 初始化货币store
 const currencyStore = useCurrencyStore()
 // 刷新数据
-const refreshData = async () => {
+const refreshData = async (showLoading = false) => {
   try {
+    if (showLoading) {
+      loading.value = true
+    }
+    
     console.log('刷新资产页面数据')
+    
+    // 设置各模块加载状态
+    equityLoading.value = true
+    currencyLoading.value = true
+    
     // 刷新股权数据
     try {
       await loadEquityInfo()
       await loadUserEquity()
+      equityLoading.value = false
     } catch (error) {
       console.error('刷新股权数据失败:', error)
+      equityLoading.value = false
     }
 
     // 刷新其他数据
     try {
       await Promise.all([loadRewardConfigs(), loadUserCurrencies()])
+      currencyLoading.value = false
     } catch (error) {
       console.error('刷新其他数据失败:', error)
+      currencyLoading.value = false
     }
 
     // 刷新余额信息
@@ -170,50 +223,84 @@ const refreshData = async () => {
     console.log('资产数据刷新完成')
   } catch (error) {
     console.error('刷新数据失败', error)
+    equityLoading.value = false
+    currencyLoading.value = false
+  } finally {
+    if (showLoading) {
+      loading.value = false
+    }
+  }
+}
+
+// 监听页面滚动事件
+const handlePageScroll = (e: any) => {
+  isPageAtTop = e.scrollTop <= 10
+}
+
+// 监听页面到达底部
+const handleReachBottom = () => {
+  console.log('页面到达底部')
+}
+
+// 页面级下拉刷新处理
+const handlePullDownRefresh = async () => {
+  console.log('页面级下拉刷新触发')
+  
+  try {
+    // 刷新所有数据
+    await refreshData()
+    
+    // 强制刷新货币store数据
+    await currencyStore.forceRefreshUserCurrencies()
+
+    // 刷新成功提示
+    uni.showToast({
+      title: '刷新成功',
+      icon: 'success',
+      duration: 1000,
+    })
+    
+    console.log('页面级下拉刷新完成')
+  } catch (error) {
+    console.error('下拉刷新出错:', error)
+    // 出错时显示提示
+    uni.showToast({
+      title: '刷新失败，请重试',
+      icon: 'none',
+      duration: 2000,
+    })
+  } finally {
+    // 停止下拉刷新
+    uni.stopPullDownRefresh()
   }
 }
 
 // 页面加载完成后的初始化
 onMounted(async () => {
   console.log('资产页面挂载，开始初始化数据')
+  
+  // 初始化页面状态
+  isPageAtTop = true
+  
   // await initializeData()
 })
 
 // 初始化数据
 const initializeData = async () => {
-  // 显示加载状态
-  uni.showLoading({
-    title: '加载中...',
-  })
-
   try {
     console.log('开始初始化资产页面数据')
+    
+    // 显示加载状态
+    loading.value = true
 
     // 先确保用户信息已加载
     if (!userStore.userInfo.id) {
       await userStore.fetchUserInfo()
     }
 
-    // 单独加载股权数据，确保不受其他请求影响
-    try {
-      await loadEquityInfo()
-      await loadUserEquity()
-    } catch (error) {
-      console.error('加载股权数据失败:', error)
-    }
-
-    // 加载其他数据
-    try {
-      await Promise.all([loadRewardConfigs(), loadUserCurrencies()])
-    } catch (error) {
-      console.error('加载其他数据失败:', error)
-    }
-
-    // 从用户存储获取余额信息
-    loadUserBalance()
-
-    // 更新总资产数据
-    updateTotalAssets()
+    // 使用优化后的刷新数据函数
+    await refreshData()
+    
     console.log('资产数据初始化完成:', {
       总资产: assetsInfo.totalAssets,
       股权资产: assetsInfo.equityAssets,
@@ -221,9 +308,13 @@ const initializeData = async () => {
     })
   } catch (error) {
     console.error('资产页面初始化失败', error)
+    uni.showToast({
+      title: '加载失败，请重试',
+      icon: 'none',
+    })
   } finally {
     // 隐藏加载状态
-    uni.hideLoading()
+    loading.value = false
   }
 }
 
@@ -607,14 +698,15 @@ const claimReward = async (type: string) => {
     // 调用API领取奖励
     try {
       // 显示加载状态
-      uni.showLoading({
-        title: '领取中...',
-      })
+      claimingReward.value = true
+      claimLoadingText.value = '正在领取注册奖励...'
 
       // 调用领取奖励API，传入交易ID
       const res = await claimRewardById(equityInfo.registrationTransactionId)
 
       if (res.status === 'success') {
+        claimLoadingText.value = '领取成功，正在刷新数据...'
+        
         // 刷新所有数据
         await refreshData()
 
@@ -632,14 +724,13 @@ const claimReward = async (type: string) => {
           icon: 'none',
         })
       }
-
-      uni.hideLoading()
     } catch (error) {
-      uni.hideLoading()
       uni.showToast({
         title: '领取失败，请重试',
         icon: 'none',
       })
+    } finally {
+      claimingReward.value = false
     }
     return
   }
@@ -675,14 +766,15 @@ const claimReward = async (type: string) => {
     // 调用API领取奖励
     try {
       // 显示加载状态
-      uni.showLoading({
-        title: '领取中...',
-      })
+      claimingReward.value = true
+      claimLoadingText.value = '正在领取邀请奖励...'
 
       // 调用领取奖励API，传入交易ID
       const res = await claimRewardById(equityInfo.invitationTransactionId)
 
       if (res.status === 'success') {
+        claimLoadingText.value = '领取成功，正在刷新数据...'
+        
         // 刷新所有数据
         await refreshData()
         // 强制刷新货币store数据
@@ -699,14 +791,13 @@ const claimReward = async (type: string) => {
           icon: 'none',
         })
       }
-
-      uni.hideLoading()
     } catch (error) {
-      uni.hideLoading()
       uni.showToast({
         title: '领取失败，请重试',
         icon: 'none',
       })
+    } finally {
+      claimingReward.value = false
     }
     return
   }
@@ -754,14 +845,15 @@ const claimReward = async (type: string) => {
 
     try {
       // 显示加载状态
-      uni.showLoading({
-        title: '领取中...',
-      })
+      claimingReward.value = true
+      claimLoadingText.value = `正在领取邀请奖励(${reward.inviteCount}人)...`
 
       // 调用领取奖励API，传入交易ID
       const res = await claimRewardById(reward.transaction_id)
 
       if (res.status === 'success') {
+        claimLoadingText.value = '领取成功，正在刷新数据...'
+        
         // 刷新所有数据
         await refreshData()
         // 强制刷新货币store数据
@@ -778,14 +870,13 @@ const claimReward = async (type: string) => {
           icon: 'none',
         })
       }
-
-      uni.hideLoading()
     } catch (error) {
-      uni.hideLoading()
       uni.showToast({
         title: '领取失败，请重试',
         icon: 'none',
       })
+    } finally {
+      claimingReward.value = false
     }
   }
 }
@@ -803,6 +894,11 @@ onShow(() => {
     console.error('资产页面数据刷新失败:', error)
   })
 })
+
+// 注册页面级事件监听
+onPullDownRefresh(handlePullDownRefresh)
+onReachBottom(handleReachBottom)
+onPageScroll(handlePageScroll)
 </script>
 
 <style lang="scss">
@@ -815,15 +911,13 @@ page {
 
 /* 容器样式 */
 .assets-container {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
   position: relative;
 }
 
 /* 顶部波浪装饰 */
 .wave-decoration {
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
   width: 100%;
@@ -897,5 +991,93 @@ page {
   color: #999;
   font-size: 24rpx;
   margin-top: auto;
+}
+
+/* 页面内容 */
+.page-content {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0;
+  background-color: white;
+  margin: 0 30rpx 20rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f3f3f3;
+  border-top: 4rpx solid #f39c12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* Tab禁用状态 */
+.tab-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* 奖励领取加载遮罩 */
+.claim-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.claim-loading-content {
+  background-color: white;
+  border-radius: 20rpx;
+  padding: 60rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 300rpx;
+  box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.2);
+}
+
+.claim-loading-spinner {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #f39c12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 30rpx;
+}
+
+.claim-loading-text {
+  font-size: 32rpx;
+  color: #333;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

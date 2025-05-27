@@ -20,7 +20,7 @@
       </view>
 
       <!-- 内容 -->
-      <scroll-view class="popup-body" scroll-y :scroll-x="false">
+      <view class="popup-body">
         <rich-text
           v-if="announcement.content"
           :nodes="processContent(announcement.content)"
@@ -30,7 +30,7 @@
           <text v-if="loading">加载中...</text>
           <text v-else>{{ error || '暂无公告内容' }}</text>
         </view>
-      </scroll-view>
+      </view>
 
       <!-- 底部按钮 -->
       <view class="popup-footer">
@@ -245,6 +245,12 @@ watch(
   z-index: 9000 !important; /* 降低公告弹窗层级 */
 }
 
+/* 确保弹窗内容不会超出屏幕 */
+:deep(.wd-popup__content) {
+  max-height: 80vh !important;
+  overflow: hidden !important;
+}
+
 :deep(.wd-popup),
 :deep(.wd-popup__content) {
   z-index: 9000 !important;
@@ -263,6 +269,7 @@ watch(
   border-bottom: 1px solid #f0f0f0;
   width: 100%;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .popup-title {
@@ -281,11 +288,13 @@ watch(
 
 .popup-body {
   padding: 30rpx;
-  max-height: 60vh;
   flex: 1;
   width: 100%;
-  box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  /* 计算可用高度：80vh - 头部高度 - 底部按钮高度 */
+  max-height: calc(80vh - 120rpx - 140rpx);
 }
 
 .announcement-text {
@@ -296,6 +305,8 @@ watch(
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-all;
+  /* 添加适当的底部间距，确保内容不会紧贴按钮 */
+  margin-bottom: 20rpx;
 }
 
 :deep(.announcement-text) {
@@ -318,9 +329,10 @@ watch(
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 200rpx;
+  min-height: 200rpx;
   color: #999;
   font-size: 28rpx;
+  padding: 40rpx 0;
 }
 
 .popup-footer {
@@ -330,6 +342,9 @@ watch(
   border-top: 1px solid #f0f0f0;
   width: 100%;
   box-sizing: border-box;
+  flex-shrink: 0;
+  background-color: #fff;
+  /* 确保按钮区域固定在底部 */
 }
 
 .checkbox-container {

@@ -1,48 +1,57 @@
 <template>
   <view>
-    <!-- 股权卡片 -->
-    <view class="equity-card">
-      <view class="equity-summary">
-        <view class="equity-info">
-          <text class="equity-label">持有股权</text>
-          <view class="equity-amount">
-            <text class="equity-value">{{ formatAmount(equityInfo.holdAmount) }}</text>
-            <text class="equity-unit">股</text>
-          </view>
-        </view>
-        <view class="equity-info">
-          <text class="equity-label">股权价格</text>
-          <view class="equity-amount">
-            <text class="equity-value">{{ formatAmount(equityInfo.price) }}</text>
-            <text class="equity-unit">元/股</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 股权操作按钮 -->
-      <view class="equity-actions">
-        <button class="action-btn records-btn" @click="goToEquityRecords">股权记录</button>
-        <!-- 注释：出售股权按钮 -->
-        <!-- <button class="action-btn sell-btn" @click="openSellEquity" v-if="equityInfo.holdAmount > 0">出售股权</button> -->
-      </view>
+    <!-- 加载状态 -->
+    <view v-if="loading" class="equity-loading">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载股权数据中...</text>
     </view>
+    
+    <!-- 股权内容 -->
+    <view v-else>
+      <!-- 股权卡片 -->
+      <view class="equity-card">
+        <view class="equity-summary">
+          <view class="equity-info">
+            <text class="equity-label">持有股权</text>
+            <view class="equity-amount">
+              <text class="equity-value">{{ formatAmount(equityInfo.holdAmount) }}</text>
+              <text class="equity-unit">股</text>
+            </view>
+          </view>
+          <view class="equity-info">
+            <text class="equity-label">股权价格</text>
+            <view class="equity-amount">
+              <text class="equity-value">{{ formatAmount(equityInfo.price) }}</text>
+              <text class="equity-unit">元/股</text>
+            </view>
+          </view>
+        </view>
 
-    <!-- 股权奖励组件 -->
-    <equity-rewards
-      :register-reward="equityInfo.registerReward"
-      :invite-reward="equityInfo.inviteReward"
-      :is-register-reward-claimed="equityInfo.isRegisterRewardReceived"
-      :has-claimable-registration="equityInfo.hasClaimableRegistration"
-      :is-verified="equityInfo.isVerified"
-      :invite-progress="equityInfo.inviteProgress"
-      :invite-target="equityInfo.inviteTarget"
-      :invitation-reward-claimed="equityInfo.invitationRewardClaimed"
-      :has-claimable-invitation="equityInfo.hasClaimableInvitation"
-      :invitation-rewards="equityInfo.invitationRewards"
-      :registration-description="registrationRewardDescription"
-      :is-register-reward-active="equityInfo.registrationReward?.is_active || false"
-      @claim-reward="handleClaimReward"
-    />
+        <!-- 股权操作按钮 -->
+        <view class="equity-actions">
+          <button class="action-btn records-btn" @click="goToEquityRecords">股权记录</button>
+          <!-- 注释：出售股权按钮 -->
+          <!-- <button class="action-btn sell-btn" @click="openSellEquity" v-if="equityInfo.holdAmount > 0">出售股权</button> -->
+        </view>
+      </view>
+
+      <!-- 股权奖励组件 -->
+      <equity-rewards
+        :register-reward="equityInfo.registerReward"
+        :invite-reward="equityInfo.inviteReward"
+        :is-register-reward-claimed="equityInfo.isRegisterRewardReceived"
+        :has-claimable-registration="equityInfo.hasClaimableRegistration"
+        :is-verified="equityInfo.isVerified"
+        :invite-progress="equityInfo.inviteProgress"
+        :invite-target="equityInfo.inviteTarget"
+        :invitation-reward-claimed="equityInfo.invitationRewardClaimed"
+        :has-claimable-invitation="equityInfo.hasClaimableInvitation"
+        :invitation-rewards="equityInfo.invitationRewards"
+        :registration-description="registrationRewardDescription"
+        :is-register-reward-active="equityInfo.registrationReward?.is_active || false"
+        @claim-reward="handleClaimReward"
+      />
+    </view>
   </view>
 </template>
 
@@ -74,6 +83,10 @@ const props = defineProps({
         is_active: false,
       },
     }),
+  },
+  loading: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -187,5 +200,38 @@ const formatAmount = (amount: number) => {
 .records-btn {
   background: linear-gradient(to right, #3498db, #2980b9);
   color: white;
+}
+
+/* 加载状态 */
+.equity-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  background-color: #f9f9f9;
+  border-radius: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f3f3f3;
+  border-top: 4rpx solid #f39c12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

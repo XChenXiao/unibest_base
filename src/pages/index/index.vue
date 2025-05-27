@@ -62,6 +62,7 @@ import { getCheckInStatsAPI, getCheckInDailyStatusAPI, checkInAPI } from '@/serv
 import { useUserStore, useVerificationStore, useUserManagerStore } from '@/store'
 import { API_URL } from '@/config/api'
 import checkUpdate from '@/uni_modules/uni-upgrade-center-app/utils/check-update'
+import { tabbarStore } from '@/components/fg-tabbar/tabbar'
 
 defineOptions({
   name: 'FinanceHome',
@@ -117,6 +118,7 @@ onMounted(() => {
   // 获取签到数据（首次加载需要包含日历状态）
   fetchCheckInData(true)
 
+  tabbarStore.setCurIdx(0)
   // 检查用户实名认证状态并显示相应弹窗
   checkVerificationStatusAndShowPopups()
 
