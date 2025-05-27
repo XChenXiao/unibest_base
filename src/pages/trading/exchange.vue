@@ -755,7 +755,7 @@ const handleTrade = (item: any) => {
       orderId: item.orderId || item.id,
       name: encodeURIComponent(item.name),
       symbol: item.symbol,
-      price: item.price,
+      price: item.sellPrice,
       type: activeCurrencyTab.value,
       iconUrl: item.iconUrl ? encodeURIComponent(item.iconUrl) : '',
       fee: item.fee || 2,
@@ -763,7 +763,7 @@ const handleTrade = (item: any) => {
       maxAmount: item.maxAmount || 100,
       holdAmount: item.holdAmount || 0,
     }
-
+    console.log(item,'============')
     const queryString = Object.entries(params)
       .map(([key, value]) => `${key}=${value}`)
       .join('&')
