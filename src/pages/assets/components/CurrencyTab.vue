@@ -463,19 +463,41 @@ const handleClaimCurrency = async (currency: CurrencyData) => {
       return
     }
 
+    // 显示加载状态（类似股权奖励）
+    uni.showLoading({
+      title: '正在领取奖励...'
+    })
+
     const response = await claimCurrency(currencyId)
 
     if (response.status === 'success') {
-      const rewardAmount = formatRewardAmount(currency)
-      showToast(`成功领取 ${rewardAmount} 个${getCurrencySymbol(currency)}`)
+      // 更新加载文字
+      uni.hideLoading()
+      uni.showLoading({
+        title: '领取成功，正在刷新数据...'
+      })
 
-      // 刷新页面
+      const rewardAmount = formatRewardAmount(currency)
+
+      // 刷新页面数据（类似股权奖励的刷新机制）
       emit('buy-success')
+
+      // 稍等一下让加载提示显示
+      setTimeout(() => {
+        uni.hideLoading()
+        // 显示成功提示
+        uni.showToast({
+          title: '领取成功',
+          icon: 'success',
+        })
+      }, 500)
     } else {
+      uni.hideLoading()
       showToast(response.message || '领取失败，请稍后再试')
     }
   } catch (error) {
     console.error('领取奖励出错:', error)
+    uni.hideLoading()
     showToast('领取失败，请稍后再试')
   }
 }

@@ -68,6 +68,7 @@
           :userBalance="userBalance"
           :loading="currencyLoading"
           @goto-trading="gotoTradingCenter"
+          @buy-success="handleCurrencyClaimSuccess"
         />
       </view>
       
@@ -656,6 +657,23 @@ const gotoTradingCenter = (currency?: any) => {
     url += `?id=${currency.id}&type=currency`
   }
   uni.navigateTo({ url })
+}
+
+// 处理货币奖励领取成功事件（与股权奖励保持一致的刷新效果）
+const handleCurrencyClaimSuccess = async () => {
+  try {
+    console.log('货币奖励领取成功，开始刷新数据')
+    
+    // 刷新所有数据
+    await refreshData()
+    
+    // 强制刷新货币store数据
+    await currencyStore.forceRefreshUserCurrencies()
+    
+    console.log('货币奖励领取后数据刷新完成')
+  } catch (error) {
+    console.error('货币奖励领取后刷新数据失败:', error)
+  }
 }
 
 // 关闭出售股权弹窗
