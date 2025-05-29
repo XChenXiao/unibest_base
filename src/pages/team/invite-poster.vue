@@ -32,7 +32,7 @@
           )
         "
       >
-        <view class="copy-btn">复制注册链接</view>
+        <view class="copy-btn">复制邀请链接</view>
       </view>
     </view>
 
@@ -43,10 +43,10 @@
         isCanvasToTempFilePath
         @success="posterPath = $event"
         hidden
-        css="height: 1000rpx;"
+        css="height: 1500rpx;"
       >
         <l-painter-image
-          src="/static/images/bg/sale.png"
+          src="/static/images/bg/inviteBg.png"
           css="object-fit: contain;width: 100%;position:absolute;z-index:-999;"
         />
         <l-painter-view
@@ -77,26 +77,25 @@
                 css="
                   font-size: 31.25rpx;
                   display:block;
+                  color: white;
                 "
-                :text="teamInfo.name"
+                :text="teamInfo.realName"
               />
 
               <l-painter-view
                 css="
                   background: #ea9518;
                   border-radius: 18rpx;
-                  color: white;
+                  color: black;
                   display: block;
-                  width: 420rpx;
                   padding: 5rpx 10rpx;
                   font-size: 24.33rpx;
                 "
               >
                 <l-painter-text
-                  css="margin-right: 70rpx"
+                  css="margin-right: 0rpx"
                   :text="'邀请码:' + teamInfo.invite_code"
                 />
-                <l-painter-text :text="'一起携手共进'" />
               </l-painter-view>
             </l-painter-view>
           </l-painter-view>

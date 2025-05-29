@@ -213,6 +213,7 @@ const isFormValid = computed(() => {
     formData.password.trim() !== '' &&
     formData.password_confirmation.trim() !== '' &&
     formData.withdraw_password.trim() !== '' &&
+    formData.referrer_invite_code.trim() !== '' &&
     agreedToTerms.value
   )
 })
@@ -313,6 +314,14 @@ const handleRegister = async () => {
   if (formData.withdraw_password.length < 6) {
     uni.showToast({
       title: '提现密码不能少于6个字符',
+      icon: 'none',
+    })
+    return
+  }
+
+  if (!formData.referrer_invite_code.trim()) {
+    uni.showToast({
+      title: '请输入邀请码',
       icon: 'none',
     })
     return
