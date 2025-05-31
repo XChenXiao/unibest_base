@@ -24,7 +24,11 @@
         </view>
       </view>
       <view class="user-info">
-        <text class="user-name">{{ getUserDisplayName() }}</text>
+        <!-- 添加姓名显示，仅在已实名时显示 -->
+        <text v-if="verificationStore.isVerified && userStore.userInfo.name" class="user-real-name">
+          {{ userStore.userInfo.name }}
+        </text>
+        <text class="user-name">{{ getUserPhoneDisplay() }}</text>
         <view class="user-detail">
           <!-- <text class="user-id">ID: {{ userStore.userInfo.id || '-' }}</text> -->
           <!-- <text class="divider">|</text> -->
@@ -347,7 +351,7 @@ const checkUserInfo = async () => {
         userStore.setUserInfo({
           ...userStore.userInfo,
           balance: userBalanceData.balance,
-          frozen_balance: userBalanceData.frozen_balance || 0
+          frozen_balance: userBalanceData.frozen_balance || 0,
         })
         console.log('余额已更新:', userBalanceData.balance)
       }
@@ -366,13 +370,8 @@ const getUserInitial = () => {
   return '用'
 }
 
-// 获取用户显示名称
-const getUserDisplayName = () => {
-  // 已认证用户优先显示姓名（通过API已处理为实名信息中的真实姓名）
-  if (verificationStore.isVerified && userStore.userInfo.name) {
-    return userStore.userInfo.name
-  }
-  // 未认证用户或姓名为空时显示手机号
+// 获取用户手机号显示
+const getUserPhoneDisplay = () => {
   return userStore.userInfo.phone || '未登录'
 }
 
@@ -623,7 +622,7 @@ const confirmRecharge = async () => {
     // 调用充值API，默认使用支付宝
     const res = await rechargeAPI({
       amount: parseFloat(rechargeAmount.value),
-      payment_type: 'alipay'
+      payment_type: 'alipay',
     })
 
     uni.hideLoading()
@@ -636,12 +635,12 @@ const confirmRecharge = async () => {
       uni.showToast({
         title: '充值订单创建成功',
         icon: 'success',
-        duration: 2000
+        duration: 2000,
       })
 
       // 可以根据返回的支付信息进行后续处理
       console.log('充值订单信息:', res.data)
-      
+
       // 如果有支付信息，可以进行支付跳转
       const rechargeData = res.data as any
       if (rechargeData.pay_info) {
@@ -654,18 +653,17 @@ const confirmRecharge = async () => {
       setTimeout(() => {
         userStore.fetchUserInfo()
       }, 1000)
-
     } else {
       uni.showToast({
         title: res.message || '充值失败，请重试',
         icon: 'none',
-        duration: 2000
+        duration: 2000,
       })
     }
   } catch (error) {
     uni.hideLoading()
     console.error('充值失败:', error)
-    
+
     // 处理错误信息
     let errorMessage = '充值失败，请重试'
     if (error && typeof error === 'object') {
@@ -675,11 +673,11 @@ const confirmRecharge = async () => {
         errorMessage = error.data.message
       }
     }
-    
+
     uni.showToast({
       title: errorMessage,
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     })
   }
 }
@@ -829,12 +827,21 @@ page {
   flex: 1;
 }
 
+.user-real-name {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+}
+
 .user-name {
   display: block;
   margin-bottom: 15rpx;
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
   text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
 }
 
@@ -1113,7 +1120,6 @@ page {
   border-radius: 45rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
-
 /* 下载APP按钮 */
 .download-app-btn {
   display: flex;
@@ -1130,7 +1136,6 @@ page {
   border-radius: 45rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
-
 /* 充值弹窗 */
 .popup-content {
   width: 600rpx;
