@@ -831,7 +831,7 @@ const handleSellEquity = async () => {
       if (!userInfoStore.userInfo.has_bank_card) {
         uni.showModal({
           title: '提示',
-          content: '出售股权需要先开通银行卡，是否立即前往开通？',
+          content: '出售股权需要先转入开通银行卡收款，是否立即前往开通？',
           confirmText: '去开通',
           cancelText: '取消',
           success: (res) => {
@@ -852,7 +852,7 @@ const handleSellEquity = async () => {
       // 发生错误时显示提示
       uni.showModal({
         title: '提示',
-        content: '出售股权需要先开通银行卡，是否立即前往开通？',
+        content: '出售股权需要先转入开通银行卡收款，是否立即前往开通？',
         confirmText: '去开通',
         cancelText: '取消',
         success: (res) => {
