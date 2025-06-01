@@ -29,15 +29,15 @@
     <block v-else-if="serviceInfo">
       <!-- 二维码区域 -->
       <view class="qrcode-section">
-        <view class="qrcode-container" style="display: flex;flex-direction: column;">
-          <view style="display: flex;width: 100%;padding-left: 60rpx;">
-            <view class="info-title">图片客服</view>
+        <view class="qrcode-container" style="display: flex; flex-direction: column">
+          <view style="display: flex; width: 100%; padding-left: 60rpx">
+            <view class="info-title">群码</view>
           </view>
           <!-- 如果有真实的二维码URL就显示真实的二维码 -->
           <image
             v-if="qrcodeUrl && !imageError"
             class="qrcode-image"
-            style="width: 650rpx;"
+            style="width: 650rpx"
             :src="qrcodeUrl"
             mode="widthFix"
             @error="handleImageError"
@@ -46,7 +46,7 @@
           <image
             v-else
             class="qrcode-image"
-            style="width: 100%;"
+            style="width: 100%"
             src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=客服信息"
             mode="widthFix"
           />
@@ -207,7 +207,7 @@ const loadData = async () => {
     uni.showToast({
       title: '网络不佳，显示默认信息',
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     })
   } finally {
     loading.value = false
@@ -464,9 +464,9 @@ page {
 
 .info-content-with-copy {
   display: flex;
+  gap: 20rpx;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20rpx;
 }
 
 .info-text {
@@ -478,9 +478,9 @@ page {
 
 .group-content {
   display: flex;
+  gap: 20rpx;
   align-items: center;
   justify-content: space-between;
-  gap: 20rpx;
 }
 
 .group-number {
@@ -492,17 +492,17 @@ page {
 
 .ellipsis {
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .copy-button {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   padding: 10rpx 20rpx;
   background-color: #ecf0f1;
   border-radius: 30rpx;
-  flex-shrink: 0;
 }
 
 .copy-text {

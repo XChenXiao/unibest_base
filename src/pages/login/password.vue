@@ -156,10 +156,12 @@ const handleLogin = async () => {
         const { usePlatformStore } = await import('@/store/platform')
         const { useAppStore } = await import('@/store/app')
         const { useCurrencyStore } = await import('@/store')
+        const { useUserManagerStore } = await import('@/store/user-manager')
 
         const platformStore = usePlatformStore()
         const appStore = useAppStore()
         const currencyStore = useCurrencyStore()
+        const userManagerStore = useUserManagerStore()
 
         // 登录成功后只获取必要的数据，避免与首页重复请求
         await Promise.all([
@@ -169,6 +171,8 @@ const handleLogin = async () => {
           appStore.fetchBankCardOpenFee(),
           // 获取用户货币数据
           currencyStore.fetchUserCurrencies(true),
+          // 获取完整用户信息，包括实名认证信息
+          userManagerStore.refreshAllUserData(),
         ])
 
         console.log('登录成功后必要数据加载完成')

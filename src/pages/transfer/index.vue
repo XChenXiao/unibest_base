@@ -12,7 +12,7 @@
     <view class="header">
       <text class="header-title">转账 安全免费·到账快</text>
     </view>
-    
+
     <!-- 主要转账选项 -->
     <view class="main-options-card">
       <view class="main-options">
@@ -22,7 +22,7 @@
           </view>
           <text class="option-text">转到银行账户</text>
         </view>
-        
+
         <view class="option-item" @click="navigateTo('/pages/transfer/alipay')">
           <view class="option-icon">
             <image class="icon-image" src="@/static/images/tran1-2.png" mode="aspectFit"></image>
@@ -38,33 +38,45 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 底部其他选项 -->
     <view class="bottom-card">
       <view class="bottom-options">
         <view class="option-small" @click="showComingSoon">
           <view class="option-small-icon">
-            <image class="small-icon-image" src="@/static/images/tran2-1.png" mode="aspectFit"></image>
+            <image
+              class="small-icon-image"
+              src="@/static/images/tran2-1.png"
+              mode="aspectFit"
+            ></image>
           </view>
           <text class="option-small-text">还信用卡</text>
         </view>
-        
+
         <view class="option-small" @click="handleRecharge">
           <view class="option-small-icon">
-            <image class="small-icon-image" src="@/static/images/tran2-2.png" mode="aspectFit"></image>
+            <image
+              class="small-icon-image"
+              src="@/static/images/tran2-2.png"
+              mode="aspectFit"
+            ></image>
           </view>
           <text class="option-small-text">转入资金</text>
         </view>
-        
+
         <view class="option-small" @click="showComingSoon">
           <view class="option-small-icon">
-            <image class="small-icon-image" src="@/static/images/tran2-3.png" mode="aspectFit"></image>
+            <image
+              class="small-icon-image"
+              src="@/static/images/tran2-3.png"
+              mode="aspectFit"
+            ></image>
           </view>
           <text class="option-small-text">手机号收款</text>
         </view>
       </view>
     </view>
-    
+
     <!-- 充值弹窗 -->
     <wd-popup v-model="showRechargePopup" round position="center">
       <view class="popup-content">
@@ -77,19 +89,19 @@
             <text class="amount-label">预存金额</text>
             <view class="amount-input-wrapper">
               <text class="amount-prefix">¥</text>
-              <input 
-                class="amount-input" 
-                type="digit" 
-                v-model="rechargeAmount" 
+              <input
+                class="amount-input"
+                type="digit"
+                v-model="rechargeAmount"
                 placeholder="请输入预存金额"
               />
             </view>
           </view>
-          
+
           <!-- 银行卡开户预存金提示 -->
           <view class="open-fee-tip">
             <text class="tip-title">温馨提示</text>
-            
+
             <!-- 预存服务提示列表 -->
             <view class="deposit-tips-list" v-if="depositTips.length > 0">
               <view class="deposit-tip-item" v-for="(tip, index) in depositTips" :key="index">
@@ -98,12 +110,12 @@
               </view>
             </view>
           </view>
-          
+
           <view class="amount-buttons">
-            <view 
-              v-for="(amount, index) in quickAmounts" 
-              :key="index" 
-              class="amount-btn" 
+            <view
+              v-for="(amount, index) in quickAmounts"
+              :key="index"
+              class="amount-btn"
               :class="{ 'amount-btn-active': rechargeAmount === amount }"
               @click="selectAmount(amount)"
             >
@@ -118,85 +130,85 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/store/user';
-import { useAppStore } from '@/store/app';
-import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard';
+import { ref, onMounted } from 'vue'
+import { useUserStore } from '@/store/user'
+import { useAppStore } from '@/store/app'
+import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
 
-const userStore = useUserStore();
-const appStore = useAppStore();
+const userStore = useUserStore()
+const appStore = useAppStore()
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack();
-};
+  uni.navigateBack()
+}
 
 // 充值相关
-const rechargeAmount = ref('');
-const showRechargePopup = ref(false);
-const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000'];
+const rechargeAmount = ref('')
+const showRechargePopup = ref(false)
+const quickAmounts = ['100', '500', '1000', '5000', '10000', '20000']
 
 // 预存服务提示列表
-const depositTips = ref<IDepositTip[]>([]);
+const depositTips = ref<IDepositTip[]>([])
 
 // 处理充值/转入
 const handleRecharge = () => {
-  rechargeAmount.value = '';
-  showRechargePopup.value = true;
-  
+  rechargeAmount.value = ''
+  showRechargePopup.value = true
+
   // 如果用户没有开通银行卡且没有获取预存金金额，则获取预存金金额
   if (!userStore.userInfo.has_bank_card && !appStore.hasFetchedBankCardOpenFee) {
-    appStore.fetchBankCardOpenFee();
+    appStore.fetchBankCardOpenFee()
   }
-};
+}
 
 // 关闭充值弹窗
 const closeRechargePopup = () => {
-  showRechargePopup.value = false;
-};
+  showRechargePopup.value = false
+}
 
 // 选择快捷金额
 const selectAmount = (amount: string) => {
-  rechargeAmount.value = amount;
-};
+  rechargeAmount.value = amount
+}
 
 // 确认充值
 const confirmRecharge = async () => {
   if (!rechargeAmount.value || parseFloat(rechargeAmount.value) <= 0) {
     uni.showToast({
       title: '请输入有效的充值金额',
-      icon: 'none'
-    });
-    return;
+      icon: 'none',
+    })
+    return
   }
-  
+
   try {
     // 显示加载状态
     uni.showLoading({
-      title: '处理中...'
-    });
-    
+      title: '处理中...',
+    })
+
     // 这里替换为实际的充值API调用
     // const res = await api.recharge({ amount: parseFloat(rechargeAmount.value) });
-    
+
     // 模拟第三方支付跳转
     setTimeout(() => {
-      uni.hideLoading();
-      closeRechargePopup();
-      
+      uni.hideLoading()
+      closeRechargePopup()
+
       // 模拟跳转到第三方支付
       uni.navigateTo({
-        url: `/pages/payment/third-party?amount=${rechargeAmount.value}`
-      });
-    }, 1000);
+        url: `/pages/payment/third-party?amount=${rechargeAmount.value}`,
+      })
+    }, 1000)
   } catch (error) {
-    uni.hideLoading();
+    uni.hideLoading()
     uni.showToast({
       title: '充值失败，请重试',
-      icon: 'none'
-    });
+      icon: 'none',
+    })
   }
-};
+}
 
 // 页面跳转
 const navigateTo = async (url: string) => {
@@ -204,28 +216,28 @@ const navigateTo = async (url: string) => {
   if (url === '/pages/transfer/bank') {
     // 显示加载状态
     uni.showLoading({
-      title: '正在检查...'
-    });
-    
+      title: '正在检查...',
+    })
+
     try {
       // 从API获取最新的银行卡状态
-      const res = await checkBankCardStatusAPI();
-      uni.hideLoading();
-      
+      const res = await checkBankCardStatusAPI()
+      uni.hideLoading()
+
       // 如果成功获取到银行卡状态
       if (res.status === 'success' && res.data) {
         // 使用类型断言处理响应数据
-        const statusData = res.data as any;
+        const statusData = res.data as any
         // 更新用户的银行卡状态
-        const hasBankCard = statusData.has_bank_card;
-        
+        const hasBankCard = statusData.has_bank_card
+
         // 更新本地存储的用户银行卡状态
         userStore.setUserInfo({
           ...userStore.userInfo,
-          has_bank_card: hasBankCard
-        });
-        
-                    // 如果用户没有开通银行卡，则提示用户先开通
+          has_bank_card: hasBankCard,
+        })
+
+        // 如果用户没有开通银行卡，则提示用户先开通
         if (!hasBankCard) {
           // 显示提示对话框
           uni.showModal({
@@ -236,113 +248,112 @@ const navigateTo = async (url: string) => {
               if (res.confirm) {
                 // 直接跳转到银行卡开户申请页面
                 uni.navigateTo({
-                  url: '/pages/my/bank-account-apply'
-                });
+                  url: '/pages/my/bank-account-apply',
+                })
               }
-            }
-          });
-          return;
+            },
+          })
+          return
         }
       } else {
         // 如果获取失败，降级到使用本地存储的状态
         if (!userStore.userInfo.has_bank_card) {
           uni.showModal({
             title: '提示',
-            content: '转到银行账户需要先开通银行卡，是否立即前往开通？',
+            content: '转入并开通银行卡，是否立即前往开通？',
             confirmText: '去开通',
             success: (res) => {
               if (res.confirm) {
                 // 直接跳转到银行卡开户申请页面
                 uni.navigateTo({
-                  url: '/pages/my/bank-account-apply'
-                });
+                  url: '/pages/my/bank-account-apply',
+                })
               }
-            }
-          });
-          return;
+            },
+          })
+          return
         }
       }
     } catch (error) {
-      uni.hideLoading();
-      console.error('获取银行卡状态失败:', error);
-      
+      uni.hideLoading()
+      console.error('获取银行卡状态失败:', error)
       // 发生错误时也降级使用本地状态
       if (!userStore.userInfo.has_bank_card) {
         uni.showModal({
           title: '提示',
-          content: '转到银行账户需要先开通银行卡，是否立即前往开通？',
+          content: '转入并开通银行卡，是否立即前往开通？',
           confirmText: '去开通',
           success: (res) => {
             if (res.confirm) {
               // 直接跳转到银行卡开户申请页面
               uni.navigateTo({
-                url: '/pages/my/bank-account-apply'
-              });
+                url: '/pages/my/bank-account-apply',
+              })
             }
-          }
-        });
-        return;
+          },
+        })
+        return
       }
     }
   }
-  
+
   // 其他页面正常跳转或银行卡已开通的情况
-  uni.navigateTo({ url });
-};
+  uni.navigateTo({ url })
+}
 
 // 显示"敬请期待"提示
 const showComingSoon = () => {
   uni.showToast({
     title: '敬请期待',
     icon: 'none',
-    duration: 2000
-  });
-};
+    duration: 2000,
+  })
+}
 
 // 初始化
 onMounted(async () => {
   // 获取预存金额提示
-  await fetchDepositTips();
-  
+  await fetchDepositTips()
+
   // 获取银行卡开户费用
-  await appStore.fetchBankCardOpenFee();
-});
+  await appStore.fetchBankCardOpenFee()
+})
 
 // 获取预存服务提示
 const fetchDepositTips = async () => {
   try {
-    const res = await getDepositTipsAPI();
-    console.log('预存服务提示响应:', res);
-    
+    const res = await getDepositTipsAPI()
+    console.log('预存服务提示响应:', res)
+
     // 使用安全的方式访问数据
     if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
       // 安全地访问data字段
-      const data = res.data;
+      const data = res.data
       if (data && typeof data === 'object' && 'deposit_tips' in data) {
-        depositTips.value = data.deposit_tips;
-        console.log('获取预存服务提示成功:', depositTips.value);
+        depositTips.value = data.deposit_tips
+        console.log('获取预存服务提示成功:', depositTips.value)
       }
     }
   } catch (error) {
-    console.error('获取预存服务提示失败:', error);
+    console.error('获取预存服务提示失败:', error)
   }
-};
+}
 </script>
 
 <style lang="scss">
 page {
-  background-color: #f5f5f5;
-  min-height: 100%;
   width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
+  background-color: #f5f5f5;
 }
 
 .container {
-  min-height: 100vh;
-  background: linear-gradient(to bottom, #1296db 0%, #1296db 50%, #ffffff 100%);
-  padding: 40rpx;
   box-sizing: border-box;
   width: 100%;
+  min-height: 100vh;
+  padding: 40rpx;
+  background: linear-gradient(to bottom, #1296db 0%, #1296db 50%, #ffffff 100%);
 }
 
 .header {
@@ -351,17 +362,17 @@ page {
 
 .header-title {
   font-size: 42rpx;
-  color: #ffffff;
   font-weight: bold;
+  color: #ffffff;
 }
 
 .main-options-card {
-  background-color: #ffffff;
-  border-radius: 16rpx;
+  box-sizing: border-box;
   width: 100%;
   padding: 20rpx;
   margin-bottom: 40rpx;
-  box-sizing: border-box;
+  background-color: #ffffff;
+  border-radius: 16rpx;
 }
 
 .main-options {
@@ -374,20 +385,20 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20rpx 0;
   width: 45%;
+  padding: 20rpx 0;
 }
 
 .option-icon {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 120rpx;
+  height: 120rpx;
   margin-bottom: 30rpx;
-  background-color: #ffffff;
   overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 50%;
 }
 
 .icon-image {
@@ -397,16 +408,16 @@ page {
 
 .option-text {
   font-size: 32rpx;
-  color: #333333;
   font-weight: bold;
+  color: #333333;
 }
 
 .bottom-card {
+  box-sizing: border-box;
   width: 100%;
+  padding: 30rpx 20rpx;
   background: #ffffff;
   border-radius: 16rpx;
-  padding: 30rpx 20rpx;
-  box-sizing: border-box;
 }
 
 .bottom-options {
@@ -416,22 +427,22 @@ page {
 }
 
 .option-small {
-  width: 30%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 30%;
 }
 
 .option-small-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 10rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
   margin-bottom: 20rpx;
-  background-color: #ffffff;
   overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 10rpx;
 }
 
 .small-icon-image {
@@ -443,19 +454,18 @@ page {
   font-size: 28rpx;
   color: #333333;
 }
-
 /* 充值弹窗样式 */
 .popup-content {
   width: 600rpx;
+  overflow: hidden;
   background-color: #ffffff;
   border-radius: 20rpx;
-  overflow: hidden;
 }
 
 .popup-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 30rpx;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -468,37 +478,36 @@ page {
 
 .popup-close {
   font-size: 40rpx;
-  color: #999;
   line-height: 1;
+  color: #999;
 }
 
 .popup-body {
   padding: 30rpx;
 }
-
 /* 金额输入 */
 .amount-input-container {
   margin-bottom: 30rpx;
 }
 
 .amount-label {
+  display: block;
+  margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 20rpx;
-  display: block;
 }
 
 .amount-input-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
   padding-bottom: 10rpx;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .amount-prefix {
+  margin-right: 10rpx;
   font-size: 40rpx;
   color: #333;
-  margin-right: 10rpx;
 }
 
 .amount-input {
@@ -506,7 +515,6 @@ page {
   height: 80rpx;
   font-size: 36rpx;
 }
-
 /* 快捷金额选择 */
 .amount-buttons {
   display: flex;
@@ -516,45 +524,44 @@ page {
 }
 
 .amount-btn {
-  width: 170rpx;
-  height: 80rpx;
-  background-color: #f5f5f5;
-  border-radius: 8rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 170rpx;
+  height: 80rpx;
   margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
 }
 
 .amount-btn-active {
-  background-color: rgba(18, 150, 219, 0.2);
-  color: #1296db;
   font-weight: 500;
+  color: #1296db;
+  background-color: rgba(18, 150, 219, 0.2);
 }
-
 /* 开户预存金提示 */
 .open-fee-tip {
-  margin-top: 16rpx;
   padding: 16rpx;
+  margin-top: 16rpx;
   background-color: #fff9f0;
   border-radius: 8rpx;
 }
 
 .tip-title {
+  display: block;
+  margin-bottom: 8rpx;
   font-size: 28rpx;
   font-weight: bold;
   color: #ff9800;
-  margin-bottom: 8rpx;
-  display: block;
 }
 
 .tip-content {
-  font-size: 26rpx;
-  color: #333;
-  line-height: 1.5;
   display: block;
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: #333;
 }
 
 .deposit-tips-list {
@@ -563,33 +570,32 @@ page {
 
 .deposit-tip-item {
   display: flex;
-  margin-bottom: 8rpx;
   align-items: flex-start;
+  margin-bottom: 8rpx;
 }
 
 .tip-dot {
-  font-size: 28rpx;
-  color: #ff9800;
   margin-right: 8rpx;
+  font-size: 28rpx;
   line-height: 1.3;
+  color: #ff9800;
 }
 
 .tip-desc {
-  font-size: 24rpx;
-  color: #666;
   flex: 1;
+  font-size: 24rpx;
   line-height: 1.5;
+  color: #666;
 }
-
 /* 确认按钮 */
 .confirm-recharge-btn {
   width: 100%;
   height: 90rpx;
-  border: none;
-  border-radius: 45rpx;
-  background: linear-gradient(to right, #1296db, #0e85c3);
-  color: white;
   font-size: 32rpx;
   font-weight: 500;
+  color: white;
+  background: linear-gradient(to right, #1296db, #0e85c3);
+  border: none;
+  border-radius: 45rpx;
 }
-</style> 
+</style>

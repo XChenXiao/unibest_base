@@ -2,8 +2,8 @@
   "name": "中银易捷",
   "appid": "__UNI__D27C9EC",
   "description": "",
-  "versionName": "1.0.7",
-  "versionCode": "107",
+  "versionName": "1.0.22",
+  "versionCode": "122",
   "transformPx": false,
   "app-plus": {
     "usingComponents": true,
@@ -15,7 +15,9 @@
       "autoclose": false,
       "delay": 0
     },
-    "modules": {},
+    "modules": {
+      "Camera": {}
+    },
     "distribute": {
       "android": {
         "permissions": [

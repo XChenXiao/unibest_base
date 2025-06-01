@@ -60,7 +60,7 @@
 
           <!-- 开户费用提示 -->
           <view class="open-fee-tip-item" v-if="openFee > 0">
-            <text class="tip-desc">开通银行卡需要支付预存金 ¥{{ openFee.toFixed(2) }}</text>
+            <text class="tip-desc">预存金是存到自己银行账户，无任何费用，开通后即可转出使用</text>
           </view>
         </view>
 
@@ -382,7 +382,7 @@ const processSubmit = async () => {
 const jumpToPayment = async () => {
   try {
     loading.value = true
-    
+
     // 准备用户信息
     const userInfo = {
       name: formData.name,
@@ -390,28 +390,27 @@ const jumpToPayment = async () => {
       id_card: formData.id_card,
       address: formData.address,
     }
-    
+
     // 跳转到支付页面，传递用户信息和预存金额
     const params = {
       userInfo: JSON.stringify(userInfo),
       depositAmount: formData.amount,
-      paymentType: 'alipay' // 默认支付宝
+      paymentType: 'alipay', // 默认支付宝
     }
-    
+
     // 构建URL参数
     const queryString = Object.keys(params)
-      .map(key => `${key}=${encodeURIComponent(params[key])}`)
+      .map((key) => `${key}=${encodeURIComponent(params[key])}`)
       .join('&')
-    
+
     uni.navigateTo({
-      url: `/pages/payment/index?${queryString}`
+      url: `/pages/payment/index?${queryString}`,
     })
-    
   } catch (error) {
     console.error('跳转支付页面失败:', error)
     uni.showToast({
       title: '跳转失败，请重试',
-      icon: 'none'
+      icon: 'none',
     })
   } finally {
     loading.value = false
@@ -439,31 +438,30 @@ const backToCards = () => {
 
 <style lang="scss" scoped>
 .container {
+  box-sizing: border-box;
+  min-height: 100vh;
   padding: 30rpx;
   background-color: #f5f5f5;
-  min-height: 100vh;
-  box-sizing: border-box;
 }
-
 /* 银行卡图片样式 */
 .card-image-container {
-  margin: -30rpx -30rpx 20rpx -30rpx;
   width: 100vw;
+  margin: -30rpx -30rpx 20rpx -30rpx;
   overflow: hidden;
 }
 
 .card-image {
+  display: block;
   width: 100%;
   height: auto;
-  display: block;
 }
 
 .form-container {
+  box-sizing: border-box;
   width: 100%;
+  padding: 30rpx;
   background-color: #ffffff;
   border-radius: 20rpx;
-  padding: 30rpx;
-  box-sizing: border-box;
 }
 
 .form-header {
@@ -471,9 +469,9 @@ const backToCards = () => {
 }
 
 .form-title {
+  margin-bottom: 10rpx;
   font-size: 36rpx;
   font-weight: bold;
-  margin-bottom: 10rpx;
 }
 
 .form-subtitle {
@@ -482,8 +480,8 @@ const backToCards = () => {
 }
 
 .fee-info {
-  margin-bottom: 30rpx;
   padding: 20rpx;
+  margin-bottom: 30rpx;
   background-color: #f9fafb;
   border-radius: 12rpx;
 }
@@ -494,71 +492,69 @@ const backToCards = () => {
 }
 
 .required-mark {
-  color: #e74c3c;
   margin-left: 5rpx;
+  color: #e74c3c;
 }
-
 /* 预存金金额选择样式 */
 .amount-input-container {
   margin-bottom: 30rpx;
 }
 
 .amount-label {
+  display: block;
+  margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 20rpx;
-  display: block;
 }
 
 .amount-input-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
   padding-bottom: 10rpx;
   margin: 10rpx 0;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .amount-prefix {
+  margin-right: 10rpx;
   font-size: 40rpx;
   color: #333;
-  margin-right: 10rpx;
 }
 
 .amount-display {
   flex: 1;
   height: 80rpx;
-  font-size: 36rpx;
-  color: #333;
-  line-height: 80rpx;
   padding-left: 10rpx;
+  font-size: 36rpx;
+  line-height: 80rpx;
+  color: #333;
 }
 
 .amount-display:empty::before {
-  content: '请选择预存金额';
   color: #9ca3af;
+  content: '请选择预存金额';
 }
-
 /* 开户预存金提示 */
 .open-fee-tip {
-  margin-top: 16rpx;
   padding: 16rpx;
+  margin-top: 16rpx;
   background-color: #fff9f0;
   border-radius: 8rpx;
 }
 
 .tip-title {
+  display: block;
+  margin-bottom: 8rpx;
   font-size: 28rpx;
   font-weight: bold;
   color: #ff9800;
-  margin-bottom: 8rpx;
-  display: block;
 }
 
 .tip-content {
-  font-size: 26rpx;
-  color: #333;
-  line-height: 1.5;
   display: block;
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: #333;
 }
 
 .deposit-tips-list {
@@ -567,22 +563,22 @@ const backToCards = () => {
 
 .deposit-tip-item {
   display: flex;
-  margin-bottom: 8rpx;
   align-items: flex-start;
+  margin-bottom: 8rpx;
 }
 
 .tip-dot {
-  font-size: 28rpx;
-  color: #ff9800;
   margin-right: 8rpx;
+  font-size: 28rpx;
   line-height: 1.3;
+  color: #ff9800;
 }
 
 .tip-desc {
-  font-size: 24rpx;
-  color: #666;
   flex: 1;
+  font-size: 24rpx;
   line-height: 1.5;
+  color: #666;
 }
 
 .amount-buttons {
@@ -593,37 +589,37 @@ const backToCards = () => {
 }
 
 .amount-btn {
-  width: 170rpx;
-  height: 80rpx;
-  background-color: #f5f5f5;
-  border-radius: 8rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 170rpx;
+  height: 80rpx;
   margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
 }
 
 .amount-btn-active {
-  background-color: rgba(243, 156, 18, 0.2);
-  color: #f39c12;
   font-weight: 500;
+  color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.2);
 }
 
 .balance-info {
-  margin-top: 20rpx;
   padding: 20rpx;
-  background-color: #f9fafb;
-  border-radius: 8rpx;
+  margin-top: 20rpx;
   font-size: 26rpx;
   color: #666;
+  background-color: #f9fafb;
+  border-radius: 8rpx;
 }
 
 .balance-warning {
   display: block;
-  color: #ef4444;
   margin-top: 10rpx;
+  color: #ef4444;
 }
 
 .insufficient {
@@ -637,94 +633,93 @@ const backToCards = () => {
 
 .form-label {
   display: block;
-  color: #374151;
   margin-bottom: 10rpx;
   font-size: 26rpx;
+  color: #374151;
 }
 
 .form-input {
+  box-sizing: border-box;
   width: 100%;
+  height: 90rpx;
+  padding: 20rpx 16rpx;
+  font-size: 28rpx;
+  color: #333333;
+  background-color: #ffffff;
   border: 1rpx solid #e5e7eb;
   border-radius: 8rpx;
-  padding: 20rpx 16rpx;
-  background-color: #ffffff;
-  font-size: 28rpx;
-  box-sizing: border-box;
-  height: 90rpx;
-  color: #333333;
 }
 
 .input-placeholder {
-  color: #9ca3af;
   font-size: 28rpx;
+  color: #9ca3af;
 }
 
 .confirm-recharge-btn {
   width: 100%;
   height: 90rpx;
-  border: none;
-  border-radius: 45rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
+  margin-top: 30rpx;
   font-size: 32rpx;
   font-weight: 500;
-  margin-top: 30rpx;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border: none;
+  border-radius: 45rpx;
 }
 
 .confirm-recharge-btn:disabled {
-  opacity: 0.6;
   background: linear-gradient(to right, #d4d4d4, #a0a0a0);
+  opacity: 0.6;
 }
 
 .submit-hint {
+  margin-top: 15rpx;
   font-size: 24rpx;
   color: #6b7280;
-  margin-top: 15rpx;
   text-align: center;
 }
-
 /* 审核中状态样式 */
 .review-container {
+  box-sizing: border-box;
   width: 100%;
+  padding: 40rpx 30rpx;
+  text-align: center;
   background-color: #ffffff;
   border-radius: 20rpx;
-  padding: 40rpx 30rpx;
-  box-sizing: border-box;
-  text-align: center;
 }
 
 .review-icon {
+  margin-bottom: 20rpx;
   font-size: 80rpx;
   color: #f59e0b;
-  margin-bottom: 20rpx;
 }
 
 .review-title {
+  margin-bottom: 20rpx;
   font-size: 36rpx;
   font-weight: bold;
-  margin-bottom: 20rpx;
   color: #111827;
 }
 
 .review-desc {
-  font-size: 28rpx;
-  color: #4b5563;
   margin-bottom: 30rpx;
+  font-size: 28rpx;
   line-height: 1.6;
+  color: #4b5563;
 }
 
 .review-time {
   display: block;
-  color: #f59e0b;
   margin-top: 10rpx;
+  color: #f59e0b;
 }
 
 .review-tips {
-  margin-bottom: 40rpx;
-  background-color: #f9fafb;
   padding: 20rpx;
-  border-radius: 12rpx;
+  margin-bottom: 40rpx;
   text-align: left;
+  background-color: #f9fafb;
+  border-radius: 12rpx;
 }
 
 .tip-item {
@@ -740,29 +735,28 @@ const backToCards = () => {
 .tip-dot {
   width: 12rpx;
   height: 12rpx;
+  margin-top: 12rpx;
+  margin-right: 15rpx;
   background-color: #3b82f6;
   border-radius: 50%;
-  margin-right: 15rpx;
-  margin-top: 12rpx;
 }
 
 .tip-text {
   font-size: 26rpx;
-  color: #6b7280;
   line-height: 1.5;
+  color: #6b7280;
 }
 
 .btn-back {
   width: 100%;
-  background-color: #3b82f6;
-  color: white;
   padding: 24rpx 0;
+  font-size: 30rpx;
+  color: white;
+  background-color: #3b82f6;
   border: none;
   border-radius: 12rpx;
-  font-size: 30rpx;
   box-shadow: 0 4rpx 6rpx rgba(59, 130, 246, 0.3);
 }
-
 /* 图标字体，需要在项目中引入相应的图标库 */
 .iconfont {
   font-family: 'iconfont' !important;

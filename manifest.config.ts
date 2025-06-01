@@ -17,8 +17,8 @@ export default defineManifestConfig({
   name: VITE_APP_TITLE,
   appid: VITE_UNI_APPID,
   description: '',
-  versionName: '1.0.7',
-  versionCode: '107',
+  versionName: '1.0.22',
+  versionCode: '122',
   transformPx: false,
   locale: VITE_FALLBACK_LOCALE, // 'zh-Hans'
   h5: {
@@ -42,7 +42,9 @@ export default defineManifestConfig({
       delay: 0,
     },
     /* 模块配置 */
-    modules: {},
+    modules: {
+      Camera: {},
+    },
     /* 应用发布信息 */
     distribute: {
       /* android打包配置 */

@@ -254,11 +254,6 @@ const fetchCheckInData = async (includeDailyStatus = false) => {
     if (error.data) {
       console.error('错误数据:', error.data)
     }
-
-    uni.showToast({
-      title: error.data?.message || '获取数据失败，请稍后重试',
-      icon: 'none',
-    })
   }
 }
 
@@ -289,7 +284,7 @@ const handleCheckIn = async () => {
             url: '/pages/my/identity-verify',
           })
         }
-      }
+      },
     })
     return
   }
@@ -377,15 +372,15 @@ const checkVerificationStatusAndShowPopups = async () => {
   //     showVerificationGuidePopup.value = true
   //   }, 800)
   // } else {
-    // 用户已实名认证，直接显示公告弹窗
-    console.log('获取最新公告')
-    await checkAndShowAnnouncement()
+  // 用户已实名认证，直接显示公告弹窗
+  console.log('获取最新公告')
+  await checkAndShowAnnouncement()
   // }
 }
 
 // 防止短时间内多次请求
-let isRequestingAnnouncement = false
-let announcementRequestTimer: ReturnType<typeof setTimeout> | null = null
+const isRequestingAnnouncement = false
+const announcementRequestTimer: ReturnType<typeof setTimeout> | null = null
 
 // 防止短时间内多次请求实名认证状态
 let isRequestingVerification = false
@@ -469,21 +464,20 @@ const refreshBasicUserDataOnly = async () => {
 
 <style lang="scss" scoped>
 page {
-  background-color: #f5f5f5;
-  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   padding-bottom: 50rpx;
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f5f5;
 }
 
 .wave-decoration {
   position: relative;
+  z-index: 2;
   // top: 0;
   // left: 0;
   width: 100%;
   height: 16rpx;
   background: linear-gradient(to right, #f39c12, #e74c3c);
-  z-index: 2;
 }
-
 /* 页面容器 */
 .page-container {
   min-height: 100vh;

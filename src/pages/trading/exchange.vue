@@ -126,7 +126,10 @@
                         : formatAmount(item.maxAmount)
                     }}
                   </text>
-                  <text class="remaining-text" v-if="item.symbol !== 'USDT' && item.symbol !== 'GOLD'">
+                  <text
+                    class="remaining-text"
+                    v-if="item.symbol !== 'USDT' && item.symbol !== 'GOLD'"
+                  >
                     剩余: {{ formatAmount(item.remainingAmount) }}
                   </text>
                 </view>
@@ -371,7 +374,7 @@ const fetchCurrencyOrders = async () => {
               iconUrl: getCurrencyIconUrl(order.currency_icon),
               buyPrice: parseFloat(order.price.toString()),
               sellPrice: parseFloat(order.price.toString()),
-              holdAmount: holdAmount, // 直接设置持有量
+              holdAmount, // 直接设置持有量
               totalAmount: parseFloat(order.amount.toString()), // 订单总数量
               remainingAmount: parseFloat(order.remaining_amount.toString()), // 订单剩余数量
               totalValue: parseFloat(order.total_amount.toString()), // 订单总金额
@@ -721,7 +724,7 @@ const handleTrade = (item: any) => {
   // 检查实名认证状态
   import('@/store').then(({ useVerificationStore }) => {
     const verificationStore = useVerificationStore()
-    
+
     if (!verificationStore.isVerified) {
       uni.showModal({
         title: '需要实名认证',
@@ -735,7 +738,7 @@ const handleTrade = (item: any) => {
               url: '/pages/my/identity-verify',
             })
           }
-        }
+        },
       })
       return
     }
@@ -763,7 +766,7 @@ const handleTrade = (item: any) => {
       maxAmount: item.maxAmount || 100,
       holdAmount: item.holdAmount || 0,
     }
-    console.log(item,'============')
+    console.log(item, '============')
     const queryString = Object.entries(params)
       .map(([key, value]) => `${key}=${value}`)
       .join('&')
@@ -800,7 +803,7 @@ const handleBuyUsdtSuccess = () => {
 }
 
 // 处理出售股权操作
-const handleSellEquity = () => {
+const handleSellEquity = async () => {
   if (myEquity.value <= 0) {
     uni.showToast({
       title: '您没有可出售的股权',
@@ -808,6 +811,64 @@ const handleSellEquity = () => {
     })
     return
   }
+
+  // 从 userInfoStore 中获取银行卡状态
+  const hasBankCard = userInfoStore.userInfo.has_bank_card
+
+  // 如果 store 中的银行卡状态为 false，则获取最新的银行卡状态
+  if (!hasBankCard) {
+    try {
+      // 显示加载状态
+      uni.showLoading({
+        title: '检查中...',
+      })
+
+      // 调用 userInfoStore 中的方法获取最新的银行卡状态
+      await userInfoStore.fetchBankCardStatus()
+      uni.hideLoading()
+
+      // 再次检查更新后的银行卡状态
+      if (!userInfoStore.userInfo.has_bank_card) {
+        uni.showModal({
+          title: '提示',
+          content: '出售股权需要先开通银行卡，是否立即前往开通？',
+          confirmText: '去开通',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) {
+              // 跳转到银行卡开户申请页面
+              uni.navigateTo({
+                url: '/pages/my/bank-account-apply',
+              })
+            }
+          },
+        })
+        return
+      }
+    } catch (error) {
+      uni.hideLoading()
+      console.error('获取银行卡状态失败:', error)
+
+      // 发生错误时显示提示
+      uni.showModal({
+        title: '提示',
+        content: '出售股权需要先开通银行卡，是否立即前往开通？',
+        confirmText: '去开通',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 跳转到银行卡开户申请页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply',
+            })
+          }
+        },
+      })
+      return
+    }
+  }
+
+  // 如果已开通银行卡，打开出售股权弹窗
   sellEquityPopup.value.open()
 }
 
@@ -1007,35 +1068,32 @@ defineExpose({
 <style lang="scss">
 /* 全局重置 */
 page {
-  background-color: #f5f5f5;
   height: 100%;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f5f5;
 }
-
 /* 容器样式 */
 .trading-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
 }
-
 /* 顶部波浪装饰 */
 .wave-decoration {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 2;
   width: 100%;
   height: 16rpx;
   background: linear-gradient(to right, #f39c12, #e74c3c);
-  z-index: 2;
 }
-
 /* 顶部横幅 */
 .header-banner {
+  position: relative;
   width: 100%;
   height: 120rpx;
-  position: relative;
   overflow: hidden;
 }
 
@@ -1043,53 +1101,51 @@ page {
   width: 100%;
   height: 100%;
 }
-
 /* 交易记录按钮 */
 .transaction-record-btn {
   position: absolute;
   top: 60rpx;
   right: 20rpx;
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 30rpx;
-  padding: 8rpx 20rpx;
+  z-index: 10;
   display: flex;
   align-items: center;
-  z-index: 10;
+  padding: 8rpx 20rpx;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 30rpx;
   box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .transaction-record-btn .uni-icons {
+  margin-right: 6rpx;
   font-size: 28rpx;
   color: #555;
-  margin-right: 6rpx;
 }
 
 .btn-text {
   font-size: 24rpx;
   color: #555;
 }
-
 /* 资产卡片 */
 .asset-card {
-  background-color: white;
-  border-radius: 20rpx;
-  margin: -40rpx 30rpx 30rpx;
-  padding: 30rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
   position: relative;
   z-index: 1;
+  padding: 30rpx;
+  margin: -40rpx 30rpx 30rpx;
+  background-color: white;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 20rpx;
 }
 
 .card-title {
-  color: #666;
   font-size: 28rpx;
+  color: #666;
 }
 
 .visibility-toggle {
@@ -1117,13 +1173,12 @@ page {
   color: #333;
   letter-spacing: 5rpx;
 }
-
 /* 资产明细 */
 .assets-breakdown {
   display: flex;
   justify-content: space-around;
-  border-top: 1px solid #f0f0f0;
   padding-top: 20rpx;
+  border-top: 1px solid #f0f0f0;
 }
 
 .breakdown-item {
@@ -1133,9 +1188,9 @@ page {
 }
 
 .breakdown-label {
+  margin-bottom: 10rpx;
   font-size: 26rpx;
   color: #666;
-  margin-bottom: 10rpx;
 }
 
 .breakdown-value {
@@ -1143,102 +1198,97 @@ page {
   font-weight: 500;
   color: #333;
 }
-
 /* 交易所标题 */
 .section-title {
   padding: 20rpx 30rpx;
 }
 
 .section-title text {
+  position: relative;
+  padding-left: 20rpx;
   font-size: 34rpx;
   font-weight: 600;
   color: #333;
-  position: relative;
-  padding-left: 20rpx;
 }
 
 .section-title text::before {
-  content: '';
   position: absolute;
-  left: 0;
   top: 50%;
-  transform: translateY(-50%);
+  left: 0;
   width: 8rpx;
   height: 30rpx;
+  content: '';
   background: linear-gradient(to bottom, #f39c12, #e74c3c);
   border-radius: 4rpx;
+  transform: translateY(-50%);
 }
-
 /* 资产类型切换 */
 .asset-tabs {
   display: flex;
-  background-color: white;
   margin: 0 30rpx 30rpx;
-  border-radius: 20rpx;
   overflow: hidden;
+  background-color: white;
+  border-radius: 20rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 }
 
 .tab-item {
-  flex: 1;
-  height: 100rpx;
+  position: relative;
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
+  height: 100rpx;
   font-size: 32rpx;
   color: #666;
-  position: relative;
 }
 
 .tab-active {
-  color: #f39c12;
   font-weight: 500;
+  color: #f39c12;
 }
 
 .tab-active::after {
-  content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
   height: 6rpx;
+  content: '';
   background: linear-gradient(to right, #f39c12, #e74c3c);
 }
-
 /* 内容区域 */
 .tab-content {
+  padding: 30rpx;
+  margin: 0 30rpx 30rpx;
   background-color: white;
   border-radius: 20rpx;
-  margin: 0 30rpx 30rpx;
-  padding: 30rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 }
-
 /* 货币交易子标签 */
 .currency-tabs {
   display: flex;
-  border-radius: 10rpx;
+  margin-bottom: 30rpx;
   overflow: hidden;
   background-color: #f0f0f0;
-  margin-bottom: 30rpx;
+  border-radius: 10rpx;
 }
 
 .currency-tab-item {
-  flex: 1;
-  height: 80rpx;
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
+  height: 80rpx;
   font-size: 30rpx;
   color: #666;
 }
 
 .currency-tab-active {
-  background: linear-gradient(135deg, #f39c12, #e74c3c);
-  color: white;
   font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #f39c12, #e74c3c);
 }
-
 /* 货币列表 */
 .currency-list {
   margin-top: 20rpx;
@@ -1258,24 +1308,24 @@ page {
 
 .currency-info-container {
   display: flex;
-  align-items: center;
   flex: 1;
+  align-items: center;
 }
 
 .currency-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
   margin-right: 20rpx;
+  border-radius: 50%;
 }
 
 .currency-icon-text {
   font-size: 36rpx;
-  color: #333;
   font-weight: bold;
+  color: #333;
 }
 
 .currency-info {
@@ -1283,24 +1333,24 @@ page {
 }
 
 .currency-name {
-  font-size: 30rpx;
-  color: #333;
-  margin-bottom: 8rpx;
   display: block;
+  margin-bottom: 8rpx;
+  font-size: 30rpx;
   font-weight: 500;
+  color: #333;
 }
 
 .currency-symbol {
   font-size: 24rpx;
-  color: #999;
   font-weight: normal;
+  color: #999;
 }
 
 .currency-price {
+  display: block;
+  margin-bottom: 8rpx;
   font-size: 28rpx;
   color: #e74c3c;
-  margin-bottom: 8rpx;
-  display: block;
 }
 
 .holding-info {
@@ -1310,9 +1360,9 @@ page {
 }
 
 .holding-amount {
+  margin-right: 20rpx;
   font-size: 24rpx;
   color: #666;
-  margin-right: 20rpx;
 }
 
 .fee-info {
@@ -1322,46 +1372,45 @@ page {
 
 .limit-info {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .limit-text,
 .remaining-text {
+  margin-right: 20rpx;
   font-size: 24rpx;
   color: #999;
-  margin-right: 20rpx;
 }
-
 /* 黄金货币总量和剩余量显示样式 */
 .amount-info {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   margin-top: 8rpx;
-  flex-wrap: wrap;
 }
 
 .total-amount-text,
 .remaining-amount-text {
-  font-size: 24rpx;
-  color: #f39c12;
-  margin-right: 20rpx;
-  font-weight: 500;
-  background-color: rgba(243, 156, 18, 0.1);
   padding: 4rpx 8rpx;
+  margin-right: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.1);
   border-radius: 8rpx;
 }
 
 .trade-btn {
   min-width: 120rpx;
   height: 70rpx;
-  border: none;
-  border-radius: 35rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
+  margin-left: 20rpx;
   font-size: 28rpx;
   line-height: 70rpx;
-  margin-left: 20rpx;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border: none;
+  border-radius: 35rpx;
 }
 
 .sell-btn {
@@ -1369,31 +1418,29 @@ page {
 }
 
 .disabled-btn {
+  cursor: not-allowed;
   background: #cccccc !important;
   opacity: 0.6;
-  cursor: not-allowed;
 }
-
 /* 空状态 */
 .empty-state {
-  padding: 60rpx 0;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
 }
 
 .empty-text {
-  color: #999;
   font-size: 28rpx;
+  color: #999;
 }
-
 /* 股权卡片 */
 .equity-card {
-  background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
-  border-radius: 16rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
   border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -1415,9 +1462,9 @@ page {
 }
 
 .equity-label {
+  margin-bottom: 15rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 15rpx;
 }
 
 .equity-value-container {
@@ -1426,10 +1473,10 @@ page {
 }
 
 .equity-value {
+  margin-right: 8rpx;
   font-size: 40rpx;
   font-weight: 600;
   color: #333;
-  margin-right: 8rpx;
 }
 
 .equity-unit {
@@ -1440,35 +1487,34 @@ page {
 .sell-equity-btn {
   width: 100%;
   height: 90rpx;
-  border: none;
-  border-radius: 45rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
   font-size: 32rpx;
   font-weight: 500;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border: none;
+  border-radius: 45rpx;
   box-shadow: 0 8rpx 20rpx rgba(243, 156, 18, 0.3);
 }
-
 /* 股权趋势图卡片 */
 .equity-trend-card {
+  padding: 30rpx;
   background-color: white;
   border-radius: 16rpx;
-  padding: 30rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 30rpx;
 }
 
 .time-selector {
   display: flex;
+  overflow: hidden;
   background-color: #f0f0f0;
   border-radius: 20rpx;
-  overflow: hidden;
 }
 
 .time-option {
@@ -1478,25 +1524,25 @@ page {
 }
 
 .time-active {
-  background-color: #f39c12;
   color: white;
+  background-color: #f39c12;
 }
 
 .chart-container {
   height: 400rpx;
-  border-radius: 10rpx;
   overflow: hidden;
+  border-radius: 10rpx;
 }
 
 .chart-placeholder {
-  width: 100%;
-  height: 100%;
-  background-color: #f8f8f8;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
+  width: 100%;
+  height: 100%;
   font-size: 28rpx;
+  color: #999;
+  background-color: #f8f8f8;
 }
 
 .currency-image {
@@ -1504,33 +1550,32 @@ page {
   height: 60rpx;
   border-radius: 50%;
 }
-
 /* 添加刷新按钮样式 */
 .refresh-btn {
   position: absolute;
-  right: 45rpx;
   top: 86%;
-  transform: translateY(-50%);
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 30rpx;
+  right: 45rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 60rpx;
+  height: 60rpx;
   font-size: 32rpx;
   color: #999;
   background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 30rpx;
   transition: all 0.3s;
+  transform: translateY(-50%);
 }
 
 .refresh-btn.refreshing {
-  background-color: rgba(243, 156, 18, 0.2);
   color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.2);
 }
 
 .refresh-btn:active {
-  background-color: rgba(243, 156, 18, 0.3);
   color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.3);
 }
 
 .refresh-text {
@@ -1549,7 +1594,6 @@ page {
 .spin {
   animation: spin 1s linear infinite;
 }
-
 /* 添加加载状态样式 */
 .loading-container {
   display: flex;
@@ -1560,14 +1604,13 @@ page {
 }
 
 .loading-text {
+  margin-top: 20rpx;
   font-size: 28rpx;
   color: #666;
-  margin-top: 20rpx;
 }
-
 /* 禁用标签样式 */
 .tab-disabled {
-  opacity: 0.6;
   pointer-events: none;
+  opacity: 0.6;
 }
 </style>

@@ -31,7 +31,7 @@
 
       <!-- 去交易所按钮 -->
       <view class="exchange-btn-container">
-        <button class="exchange-btn" @click="goToExchange">交易所</button>
+        <button class="exchange-btn" @click="goToExchange">中银交易所</button>
       </view>
     </view>
   </view>
@@ -70,7 +70,7 @@ const userStore = useUserStore()
 const platformStore = usePlatformStore()
 
 // 自动刷新定时器
-let refreshTimer: ReturnType<typeof setInterval> | null = null
+const refreshTimer: ReturnType<typeof setInterval> | null = null
 
 // 标记初始加载是否完成
 const initialLoadCompleted = ref(false)
@@ -289,30 +289,27 @@ const goToExchange = () => {
 <style lang="scss">
 /* 全局重置 */
 page {
-  background-color: #f5f5f5;
   height: 100%;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f5f5;
 }
-
 /* 容器样式 */
 .trading-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
 }
-
 /* 顶部波浪装饰 */
 .wave-decoration {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 2;
   width: 100%;
   height: 16rpx;
   background: linear-gradient(to right, #f39c12, #e74c3c);
-  z-index: 2;
 }
-
 /* 顶部banner图片 */
 .banner-container {
   width: 100%;
@@ -321,34 +318,32 @@ page {
 }
 
 .banner-image {
-  width: 100%;
   display: block;
+  width: 100%;
 }
-
 /* 内容区域 */
 .content-area {
-  padding: 0;
-  margin-top: -40rpx;
   position: relative;
   z-index: 1;
+  padding: 0;
+  margin-top: -40rpx;
 }
-
 /* 去交易所按钮 */
 .exchange-btn-container {
-  margin: 0 0 40rpx;
   padding: 0 40rpx;
+  margin: 0 0 40rpx;
 }
 
 .exchange-btn {
   width: 100%;
   height: 100rpx;
-  border: none;
-  border-radius: 50rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
   font-size: 32rpx;
   font-weight: 500;
   line-height: 100rpx;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border: none;
+  border-radius: 50rpx;
   box-shadow: 0 8rpx 20rpx rgba(243, 156, 18, 0.3);
 }
 </style>

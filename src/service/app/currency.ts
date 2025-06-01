@@ -106,7 +106,7 @@ export async function claimCurrency(currencyId: number | string) {
   return httpPost<{ status: string; message: string }>(
     '/api/user/currencies/claim',
     {
-      currencyId: currencyId
+      currencyId
     }
   );
 }

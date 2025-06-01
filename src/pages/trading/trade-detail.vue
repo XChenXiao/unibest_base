@@ -127,15 +127,23 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { buyTradeOrder, sellCurrencyToPlatform, getCurrencyDetail } from '@/service/app/currency'
+import {
+  buyTradeOrder,
+  sellCurrencyToPlatform,
+  getCurrencyDetail,
+  buyUsdt,
+} from '@/service/app/currency'
 import { httpGet } from '@/utils/http'
 import { useUserStore } from '@/store/user'
 import { useCurrencyStore } from '@/store' // 导入货币store
+import { useUserInfoStore } from '@/store/userInfo' // 导入userInfoStore
 
 // 引入用户store
 const userStore = useUserStore()
 // 引入货币store
 const currencyStore = useCurrencyStore()
+// 引入userInfoStore
+const userInfoStore = useUserInfoStore()
 
 // 页面参数
 const currencyId = ref<string | number>('')
@@ -511,7 +519,7 @@ const handleConfirmTrade = async () => {
   // 检查实名认证状态
   const { useVerificationStore } = await import('@/store')
   const verificationStore = useVerificationStore()
-  
+
   if (!verificationStore.isVerified) {
     uni.showModal({
       title: '需要实名认证',
@@ -525,9 +533,68 @@ const handleConfirmTrade = async () => {
             url: '/pages/my/identity-verify',
           })
         }
-      }
+      },
     })
     return
+  }
+
+  // 如果是卖出操作，检查银行卡状态
+  if (!isTypeBuy.value) {
+    // 从 userInfoStore 中获取银行卡状态
+    const hasBankCard = userInfoStore.userInfo.has_bank_card
+
+    // 如果 store 中的银行卡状态为 false，则获取最新的银行卡状态
+    if (!hasBankCard) {
+      try {
+        // 显示加载状态
+        uni.showLoading({
+          title: '检查中...',
+        })
+
+        // 调用 userInfoStore 中的方法获取最新的银行卡状态
+        await userInfoStore.fetchBankCardStatus()
+        uni.hideLoading()
+
+        // 再次检查更新后的银行卡状态
+        if (!userInfoStore.userInfo.has_bank_card) {
+          uni.showModal({
+            title: '提示',
+            content: '卖出货币需要先开通银行卡，是否立即前往开通？',
+            confirmText: '去开通',
+            cancelText: '取消',
+            success: (res) => {
+              if (res.confirm) {
+                // 跳转到银行卡开户申请页面
+                uni.navigateTo({
+                  url: '/pages/my/bank-account-apply',
+                })
+              }
+            },
+          })
+          return
+        }
+      } catch (error) {
+        uni.hideLoading()
+        console.error('获取银行卡状态失败:', error)
+
+        // 发生错误时显示提示
+        uni.showModal({
+          title: '提示',
+          content: '卖出货币需要先开通银行卡，是否立即前往开通？',
+          confirmText: '去开通',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) {
+              // 跳转到银行卡开户申请页面
+              uni.navigateTo({
+                url: '/pages/my/bank-account-apply',
+              })
+            }
+          },
+        })
+        return
+      }
+    }
   }
 
   // 输入验证
@@ -610,12 +677,19 @@ const handleConfirmTrade = async () => {
           let response
 
           if (isTypeBuy.value) {
-            // 买入操作 - 调用API进行交易订单购买
-            // API路径: /api/currencies/trade-orders/{id}/buy
+            // 买入操作
             // 转换成number类型
             const orderIdVal =
               typeof orderId.value === 'string' ? parseInt(orderId.value) : orderId.value
-            response = await buyTradeOrder(orderIdVal, amount)
+
+            // 区分USDT和其他货币的购买API路径
+            if (currencySymbol.value === 'USDT') {
+              // USDT使用新的API路径: /api/orders/buy-usdt
+              response = await buyUsdt(amount)
+            } else {
+              // 其他货币使用原来的API路径: /api/currencies/trade-orders/{id}/buy
+              response = await buyTradeOrder(orderIdVal, amount)
+            }
           } else {
             // 卖出操作 - 调用API出售货币到平台
             // API路径: /api/currencies/sell-to-platform
@@ -665,7 +739,7 @@ const handleConfirmTrade = async () => {
             }, 2000)
           } else {
             // 处理API返回的错误信息
-            let errorMsg = response.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请重试`
+            const errorMsg = response.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请重试`
             // 一些常见错误的友好提示
             // if (errorMsg.includes('余额不足')) {
             //   errorMsg = isTypeBuy.value ? '您的余额不足，无法完成交易' : '您的货币余额不足';
@@ -724,17 +798,16 @@ onMounted(() => {
 <style lang="scss">
 /* 页面样式 */
 .trade-detail-container {
+  min-height: 100vh;
   padding: 30rpx;
   background-color: #f5f5f5;
-  min-height: 100vh;
 }
-
 /* 货币信息卡片 */
 .currency-card {
-  background-color: #ffffff;
-  border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -745,14 +818,14 @@ onMounted(() => {
 }
 
 .currency-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
   margin-right: 20rpx;
   background-color: rgba(149, 165, 166, 0.2);
+  border-radius: 50%;
 }
 
 .currency-image {
@@ -763,8 +836,8 @@ onMounted(() => {
 
 .currency-icon-text {
   font-size: 36rpx;
-  color: #333;
   font-weight: bold;
+  color: #333;
 }
 
 .currency-title {
@@ -779,9 +852,9 @@ onMounted(() => {
 }
 
 .currency-symbol {
+  margin-top: 4rpx;
   font-size: 26rpx;
   color: #999;
-  margin-top: 4rpx;
 }
 
 .price-row,
@@ -803,44 +876,43 @@ onMounted(() => {
 .hold-value,
 .balance-value {
   font-size: 28rpx;
-  color: #333;
   font-weight: 500;
+  color: #333;
 }
-
 /* 交易表单 */
 .trade-form {
-  background-color: #ffffff;
-  border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .form-title {
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
 .amount-input-container {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
   padding-bottom: 20rpx;
   margin-bottom: 30rpx;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .amount-input {
   flex: 1;
-  font-size: 40rpx;
   height: 90rpx;
+  font-size: 40rpx;
 }
 
 .currency-unit {
+  margin-left: 10rpx;
   font-size: 28rpx;
   color: #666;
-  margin-left: 10rpx;
 }
 
 .amount-slider-container {
@@ -850,16 +922,16 @@ onMounted(() => {
 .slider-labels {
   display: flex;
   justify-content: space-between;
+  margin-top: 10rpx;
   font-size: 24rpx;
   color: #999;
-  margin-top: 10rpx;
 }
 
 .trade-info {
-  background-color: #f9f9f9;
-  border-radius: 16rpx;
   padding: 20rpx;
   margin-bottom: 30rpx;
+  background-color: #f9f9f9;
+  border-radius: 16rpx;
 }
 
 .info-row {
@@ -879,8 +951,8 @@ onMounted(() => {
 }
 
 .total-row {
-  margin-top: 20rpx;
   padding-top: 20rpx;
+  margin-top: 20rpx;
   border-top: 1px dashed #e0e0e0;
 }
 
@@ -897,27 +969,26 @@ onMounted(() => {
 .confirm-button {
   width: 100%;
   height: 90rpx;
-  border-radius: 45rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: #ffffff;
+  margin-top: 20rpx;
   font-size: 32rpx;
   font-weight: 500;
-  margin-top: 20rpx;
+  color: #ffffff;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
+  border-radius: 45rpx;
 }
-
 /* 交易须知 */
 .trade-notice {
+  padding: 30rpx;
   background-color: #ffffff;
   border-radius: 20rpx;
-  padding: 30rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .notice-title {
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: 500;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
 .notice-item {
@@ -926,7 +997,7 @@ onMounted(() => {
 
 .notice-text {
   font-size: 26rpx;
-  color: #666;
   line-height: 1.5;
+  color: #666;
 }
 </style>
