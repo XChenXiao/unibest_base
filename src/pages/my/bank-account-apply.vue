@@ -219,7 +219,7 @@ onMounted(async () => {
   await depositTipsStore.fetchDepositTips()
 
   // 检查申请状态
-  await checkApplicationStatus()
+  // await checkApplicationStatus()
 })
 
 // 每次页面显示时检查状态
@@ -248,11 +248,10 @@ onShow(async () => {
     setTimeout(() => {
       uni.navigateBack()
     }, 2000)
-    return
   }
 
   // 检查是否有正在处理的申请
-  await checkApplicationStatus()
+  // await checkApplicationStatus()
 })
 
 // 更新是否可申请状态
