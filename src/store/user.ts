@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getUserInfoAPI } from '@/service/index/auth'
 import { getVerificationStatusAPI, IVerificationStatus } from '@/service/index/verification'
+import { checkBankCardStatusAPI } from '@/service/index/bankcard'
 
 const initState: IUserInfo = {
   name: '',
@@ -67,6 +68,11 @@ export const useUserStore = defineStore(
         rejected: false,
         rejection_reason: '',
       }
+      // 重置银行卡申请状态
+      bankCardApplicationStatus.value = BankCardStatus.NONE
+
+      // 清除本地存储中的用户信息更新时间
+      uni.removeStorageSync('userInfoUpdateTime')
     }
 
     // 更新用户余额
@@ -233,6 +239,60 @@ export const useUserStore = defineStore(
       return bankCardApplicationStatus.value
     })
 
+    // 获取银行卡状态
+    const fetchBankCardStatus = async () => {
+      if (!userInfo.value.token) {
+        return false
+      }
+
+      try {
+        const res = await checkBankCardStatusAPI()
+
+        if (res.status === 'success' && res.data) {
+          // 使用类型断言处理API返回的数据
+          const statusData = res.data as any
+          const hasBankCard = statusData.has_bank_card
+          const bankCardOpenedAt = statusData.bank_card_opened_at
+
+          // 更新用户银行卡状态
+          setUserInfo({
+            ...userInfo.value,
+            has_bank_card: hasBankCard,
+            bank_card_opened_at: bankCardOpenedAt,
+          })
+
+          // 如果用户已有银行卡，更新银行卡状态
+          if (hasBankCard) {
+            setBankCardStatus(BankCardStatus.APPROVED)
+          } else if (statusData.latest_application) {
+            const status = statusData.latest_application.status
+            switch (status) {
+              case 'pending':
+                setBankCardStatus(BankCardStatus.REVIEWING)
+                break
+              case 'completed':
+                setBankCardStatus(BankCardStatus.APPROVED)
+                break
+              case 'rejected':
+                setBankCardStatus(BankCardStatus.REJECTED)
+                break
+              default:
+                setBankCardStatus(BankCardStatus.NONE)
+            }
+          } else {
+            setBankCardStatus(BankCardStatus.NONE)
+          }
+
+          return true
+        }
+
+        return false
+      } catch (error) {
+        console.error('获取银行卡状态失败', error)
+        return false
+      }
+    }
+
     return {
       userInfo,
       verificationStatus,
@@ -242,6 +302,7 @@ export const useUserStore = defineStore(
       updateUserBalance,
       fetchUserInfo,
       fetchVerificationStatus,
+      fetchBankCardStatus,
       setBankCardStatus,
       isLogined,
       isVerified,

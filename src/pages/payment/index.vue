@@ -17,15 +17,11 @@
           <text class="amount-value">¥{{ orderInfo.total_amount || 0 }}</text>
         </view>
       </view>
-      
+
       <view class="payment-details">
         <view class="detail-item">
           <text class="detail-label">预存金额</text>
           <text class="detail-value">¥{{ orderInfo.deposit_amount || 0 }}</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-label">订单号</text>
-          <text class="detail-value">{{ orderInfo.order_id || '' }}</text>
         </view>
       </view>
     </view>
@@ -34,27 +30,35 @@
     <view class="payment-methods">
       <view class="method-title">选择支付方式</view>
       <view class="method-list">
-        <view 
-          class="method-item" 
+        <view
+          class="method-item"
           :class="{ active: selectedMethod === 'alipay' }"
           @click="selectPaymentMethod('alipay')"
         >
-          <view class="method-icon alipay-icon">
-            <text class="iconfont icon-alipay"></text>
+          <view class="method-icon">
+            <image
+              src="@/static/images/alipay.png"
+              class="payment-icon-img"
+              mode="aspectFit"
+            ></image>
           </view>
           <text class="method-name">支付宝</text>
           <view class="method-radio">
             <view class="radio-dot" v-if="selectedMethod === 'alipay'"></view>
           </view>
         </view>
-        
-        <view 
-          class="method-item" 
+
+        <view
+          class="method-item"
           :class="{ active: selectedMethod === 'wxpay' }"
           @click="selectPaymentMethod('wxpay')"
         >
-          <view class="method-icon wechat-icon">
-            <text class="iconfont icon-wechat"></text>
+          <view class="method-icon" style="width: 62rpx; height: 62rpx">
+            <image
+              src="@/static/images/wechat-pay.png"
+              class="payment-icon-img"
+              mode="aspectFit"
+            ></image>
           </view>
           <text class="method-name">微信支付</text>
           <view class="method-radio">
@@ -66,11 +70,7 @@
 
     <!-- 支付按钮 -->
     <view class="payment-footer">
-      <button 
-        class="pay-button" 
-        :disabled="!selectedMethod || isProcessing"
-        @click="handlePayment"
-      >
+      <button class="pay-button" :disabled="!selectedMethod || isProcessing" @click="handlePayment">
         {{ isProcessing ? '处理中...' : `立即支付 ¥${orderInfo.total_amount || 0}` }}
       </button>
     </view>
@@ -84,7 +84,7 @@
             <text class="iconfont icon-close"></text>
           </view>
         </view>
-        
+
         <view class="qrcode-content">
           <view class="qrcode-wrapper" v-if="paymentQRCode">
             <image :src="paymentQRCode" class="qrcode-image" mode="aspectFit"></image>
@@ -92,7 +92,7 @@
           <text class="qrcode-tip">请使用{{ selectedMethodName }}扫描二维码完成支付</text>
           <text class="qrcode-amount">支付金额：¥{{ orderInfo.total_amount || 0 }}</text>
         </view>
-        
+
         <view class="qrcode-footer">
           <button class="check-button" @click="checkPaymentStatus">检查支付状态</button>
         </view>
@@ -103,11 +103,12 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { 
-  createAccountOpenOrderAPI, 
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import {
+  createAccountOpenOrderAPI,
   queryAccountOpenOrderAPI,
-  type IAccountOpenOrder 
+  type IAccountOpenOrder,
+  type IAccountOpenOrderStatus,
 } from '@/service/index/account'
 import { useUserStore } from '@/store'
 
@@ -139,12 +140,27 @@ const selectedMethodName = computed(() => {
 // 页面加载时获取参数
 onLoad((options) => {
   pageParams.value = options as any
-  
+
   // 如果有传入的支付方式，设置默认选中
   if (options.paymentType) {
     selectedMethod.value = options.paymentType as 'alipay' | 'wxpay'
   } else {
     selectedMethod.value = 'alipay' // 默认选择支付宝
+  }
+
+  // 设置预存金额和总金额，以便在页面加载时就能显示
+  if (options.depositAmount) {
+    const amount = parseFloat(options.depositAmount)
+    orderInfo.value.deposit_amount = amount
+    orderInfo.value.total_amount = amount // 总金额等于预存金额
+  }
+})
+
+// 每次页面显示时检查支付状态
+onShow(() => {
+  // 如果有订单ID，检查支付状态
+  if (orderInfo.value.order_id) {
+    checkPaymentStatus()
   }
 })
 
@@ -158,22 +174,22 @@ const handlePayment = async () => {
   if (!selectedMethod.value) {
     uni.showToast({
       title: '请选择支付方式',
-      icon: 'none'
+      icon: 'none',
     })
     return
   }
 
   try {
     isProcessing.value = true
-    
+
     // 解析用户信息
     const userInfo = pageParams.value.userInfo ? JSON.parse(pageParams.value.userInfo) : {}
     const depositAmount = parseFloat(pageParams.value.depositAmount || '0')
-    
+
     if (!userInfo.name || !depositAmount) {
       uni.showToast({
         title: '参数错误，请重新操作',
-        icon: 'none'
+        icon: 'none',
       })
       return
     }
@@ -182,25 +198,27 @@ const handlePayment = async () => {
     const res = await createAccountOpenOrderAPI({
       payment_type: selectedMethod.value,
       deposit_amount: depositAmount,
-      user_info: userInfo
+      user_info: userInfo,
     })
 
     if (res.status === 'success' && res.data) {
-      orderInfo.value = res.data
-      
+      // 将返回的订单数据赋值给orderInfo
+      const orderData = res.data as unknown as IAccountOpenOrder
+      orderInfo.value = orderData
+
       // 统一处理支付方式，不区分平台
-      await handleUnifiedPayment(res.data)
+      await handleUnifiedPayment(orderData)
     } else {
       uni.showToast({
         title: res.message || '创建订单失败',
-        icon: 'none'
+        icon: 'none',
       })
     }
   } catch (error) {
     console.error('支付处理失败:', error)
     uni.showToast({
       title: '支付处理失败，请重试',
-      icon: 'none'
+      icon: 'none',
     })
   } finally {
     isProcessing.value = false
@@ -212,19 +230,19 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
   try {
     // 解析支付信息
     const payInfo = JSON.parse(orderData.pay_info || '{}')
-    
+
     // 如果有支付链接，直接跳转
     if (payInfo.pay_url) {
       // #ifdef APP-PLUS
       // APP端使用系统浏览器打开支付链接
       plus.runtime.openURL(payInfo.pay_url)
       // #endif
-      
+
       // #ifdef H5
       // H5端直接跳转
       window.location.href = payInfo.pay_url
       // #endif
-      
+
       // #ifdef MP-WEIXIN || MP-ALIPAY
       // 小程序端复制链接提示用户
       uni.setClipboardData({
@@ -233,15 +251,15 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
           uni.showToast({
             title: '链接已复制，请在浏览器中打开',
             icon: 'none',
-            duration: 3000
+            duration: 3000,
           })
-        }
+        },
       })
       // #endif
-      
+
       // 开始检查支付状态
       startPaymentCheck()
-    } 
+    }
     // 如果有二维码，显示二维码
     else if (payInfo.qr_code) {
       paymentQRCode.value = payInfo.qr_code
@@ -253,14 +271,14 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
       // #ifdef APP-PLUS
       // APP端使用内置浏览器
       uni.navigateTo({
-        url: `/pages/webview/index?url=${encodeURIComponent(payInfo.callback_url)}`
+        url: `/pages/webview/index?url=${encodeURIComponent(payInfo.callback_url)}`,
       })
       // #endif
-      
+
       // #ifdef H5
       window.location.href = payInfo.callback_url
       // #endif
-      
+
       // #ifdef MP-WEIXIN || MP-ALIPAY
       // 小程序端显示提示
       uni.showModal({
@@ -274,28 +292,27 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
               success: () => {
                 uni.showToast({
                   title: '链接已复制',
-                  icon: 'success'
+                  icon: 'success',
                 })
-              }
+              },
             })
           }
-        }
+        },
       })
       // #endif
-      
+
       startPaymentCheck()
-    }
-    else {
+    } else {
       uni.showToast({
         title: '支付信息格式错误',
-        icon: 'none'
+        icon: 'none',
       })
     }
   } catch (e) {
     console.error('处理支付信息失败:', e)
     uni.showToast({
       title: '支付信息解析失败',
-      icon: 'none'
+      icon: 'none',
     })
   }
 }
@@ -305,7 +322,7 @@ const startPaymentCheck = () => {
   if (checkTimer.value) {
     clearInterval(checkTimer.value)
   }
-  
+
   checkTimer.value = setInterval(() => {
     checkPaymentStatus()
   }, 3000) // 每3秒检查一次
@@ -314,28 +331,29 @@ const startPaymentCheck = () => {
 // 检查支付状态
 const checkPaymentStatus = async () => {
   if (!orderInfo.value.order_id) return
-  
+
   try {
     const res = await queryAccountOpenOrderAPI(orderInfo.value.order_id)
-    
+
     if (res.status === 'success' && res.data) {
-      if (res.data.status === 'completed' && res.data.payment_status === 'paid') {
+      // 检查订单状态
+      if (res.data.status === 'completed') {
         // 支付成功
         stopPaymentCheck()
         closeQRCode()
-        
+
         uni.showToast({
           title: '支付成功！',
-          icon: 'success'
+          icon: 'success',
         })
-        
+
         // 刷新用户信息
         await userStore.fetchUserInfo()
-        
+
         // 延迟跳转
         setTimeout(() => {
           uni.reLaunch({
-            url: '/pages/my/index'
+            url: '/pages/my/index',
           })
         }, 2000)
       }
@@ -368,36 +386,36 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .payment-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
   padding: 30rpx;
+  background-color: #f5f5f5;
 }
 
 .payment-card {
-  background-color: white;
-  border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background-color: white;
+  border-radius: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .payment-header {
-  border-bottom: 1px solid #f0f0f0;
   padding-bottom: 20rpx;
   margin-bottom: 20rpx;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .payment-title {
+  display: block;
+  margin-bottom: 20rpx;
   font-size: 32rpx;
   font-weight: 600;
   color: #333;
-  display: block;
-  margin-bottom: 20rpx;
 }
 
 .payment-amount {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .amount-label {
@@ -416,17 +434,17 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     margin-bottom: 15rpx;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .detail-label {
     font-size: 26rpx;
     color: #666;
   }
-  
+
   .detail-value {
     font-size: 26rpx;
     color: #333;
@@ -434,18 +452,18 @@ onUnmounted(() => {
 }
 
 .payment-methods {
-  background-color: white;
-  border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
+  background-color: white;
+  border-radius: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .method-title {
+  margin-bottom: 20rpx;
   font-size: 30rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
 .method-list {
@@ -454,60 +472,53 @@ onUnmounted(() => {
     align-items: center;
     padding: 20rpx 0;
     border-bottom: 1px solid #f0f0f0;
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
-    &.active {
-      .method-name {
-        color: #1890ff;
-      }
-    }
   }
-  
-  .method-icon {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 12rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 20rpx;
-    
-    &.alipay-icon {
-      background-color: #1677ff;
-      color: white;
-    }
-    
-    &.wechat-icon {
-      background-color: #07c160;
-      color: white;
-    }
-    
-    .iconfont {
-      font-size: 36rpx;
-    }
-  }
-  
+
   .method-name {
     flex: 1;
+    margin-left: 20rpx;
     font-size: 28rpx;
     color: #333;
   }
-  
+
+  .method-item.active {
+    .method-name {
+      color: #1890ff;
+    }
+  }
+
+  .method-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60rpx;
+    height: 60rpx;
+    overflow: hidden;
+    border-radius: 12rpx;
+  }
+
+  .payment-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
   .method-radio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 40rpx;
     height: 40rpx;
     border: 2rpx solid #d9d9d9;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
+
     .radio-dot {
-      width: 20rpx;
-      height: 20rpx;
+      width: 24rpx;
+      height: 24rpx;
       background-color: #1890ff;
       border-radius: 50%;
     }
@@ -516,9 +527,9 @@ onUnmounted(() => {
 
 .payment-footer {
   position: fixed;
+  right: 0;
   bottom: 0;
   left: 0;
-  right: 0;
   padding: 30rpx;
   background-color: white;
   border-top: 1px solid #f0f0f0;
@@ -527,31 +538,30 @@ onUnmounted(() => {
 .pay-button {
   width: 100%;
   height: 90rpx;
-  background: linear-gradient(135deg, #1890ff, #096dd9);
-  color: white;
-  border: none;
-  border-radius: 45rpx;
   font-size: 32rpx;
   font-weight: 600;
-  
+  color: white;
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+  border: none;
+  border-radius: 45rpx;
+
   &:disabled {
     background: #d9d9d9;
-    color: #999;
   }
 }
 
-// 二维码弹窗样式
+// 二维码弹窗
 .qrcode-popup {
   width: 600rpx;
+  overflow: hidden;
   background-color: white;
   border-radius: 20rpx;
-  overflow: hidden;
 }
 
 .qrcode-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 30rpx;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -563,17 +573,16 @@ onUnmounted(() => {
 }
 
 .qrcode-close {
-  width: 60rpx;
-  height: 60rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 60rpx;
+  height: 60rpx;
   color: #999;
-  font-size: 36rpx;
 }
 
 .qrcode-content {
-  padding: 40rpx;
+  padding: 30rpx;
   text-align: center;
 }
 
@@ -581,9 +590,9 @@ onUnmounted(() => {
   width: 400rpx;
   height: 400rpx;
   margin: 0 auto 30rpx;
+  overflow: hidden;
   border: 1px solid #f0f0f0;
   border-radius: 12rpx;
-  overflow: hidden;
 }
 
 .qrcode-image {
@@ -593,14 +602,14 @@ onUnmounted(() => {
 
 .qrcode-tip {
   display: block;
+  margin-bottom: 10rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 10rpx;
 }
 
 .qrcode-amount {
   display: block;
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: #ff4d4f;
 }
@@ -613,10 +622,10 @@ onUnmounted(() => {
 .check-button {
   width: 100%;
   height: 80rpx;
-  background-color: #1890ff;
+  font-size: 28rpx;
   color: white;
+  background-color: #1890ff;
   border: none;
   border-radius: 40rpx;
-  font-size: 28rpx;
 }
-</style> 
+</style>

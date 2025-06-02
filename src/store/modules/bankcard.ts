@@ -47,10 +47,13 @@ export const useBankCardStore = defineStore(
           const bankCardData = res.data as any
 
           // 解构获取数据
-          const { has_bank_card, latest_application } = bankCardData
+          const { has_bank_card, bank_card_opened_at, latest_application } = bankCardData
 
-          // 更新用户是否有银行卡
-          userStore.setUserInfo({ has_bank_card: !!has_bank_card })
+          // 更新用户是否有银行卡及开户时间
+          userStore.setUserInfo({
+            has_bank_card: !!has_bank_card,
+            bank_card_opened_at,
+          })
 
           // 设置银行卡状态
           if (has_bank_card) {

@@ -256,6 +256,7 @@ import {
   usePlatformStore,
   useDepositTipsStore,
   useUserManagerStore,
+  useBankCardStore,
 } from '@/store'
 import { useAppStore } from '@/store/app'
 import { API_URL } from '@/config/api'
@@ -284,6 +285,8 @@ const verificationStore = useVerificationStore()
 const depositTipsStore = useDepositTipsStore()
 // 获取用户管理状态
 const userManagerStore = useUserManagerStore()
+// 获取银行卡状态
+const bankCardStore = useBankCardStore()
 
 // 判断是否为浏览器环境
 const isBrowser = ref(false)
@@ -441,55 +444,30 @@ const handleTransferIn = async () => {
     return
   }
 
+  // 如果用户已经开通了银行卡，直接显示转入弹窗
+  if (userStore.userInfo.has_bank_card) {
+    rechargeAmount.value = ''
+    showRechargePopup.value = true
+    return
+  }
+
   try {
     // 显示加载状态
     uni.showLoading({
       title: '检查中...',
     })
 
-    // 从API获取最新的银行卡状态
-    const res = await checkBankCardStatusAPI()
+    // 从store获取最新的银行卡状态
+    const result = await bankCardStore.fetchBankCardStatus()
     uni.hideLoading()
 
-    if (res.status === 'success' && res.data) {
-      // 使用类型断言处理响应数据
-      const statusData = res.data as any
-      const hasBankCard = statusData.has_bank_card
-
-      // 更新本地存储的用户银行卡状态
-      userStore.setUserInfo({
-        ...userStore.userInfo,
-        has_bank_card: hasBankCard,
-      })
-
-      // 如果用户没有开通银行卡，则提示用户先开通
-      if (!hasBankCard) {
-        uni.showModal({
-          title: '提示',
-          content: '转入需要先开通银行卡，是否立即前往开通？',
-          confirmText: '去开通',
-          success: (res) => {
-            if (res.confirm) {
-              // 跳转到银行卡开户申请页面
-              uni.navigateTo({
-                url: '/pages/my/bank-account-apply',
-              })
-            }
-          },
-        })
-        return
-      }
-
+    // 获取成功后检查是否已开户
+    if (result && userStore.userInfo.has_bank_card) {
       // 如果已开通银行卡，显示转入弹窗
       rechargeAmount.value = ''
       showRechargePopup.value = true
-    }
-  } catch (error) {
-    uni.hideLoading()
-    console.error('获取银行卡状态失败:', error)
-
-    // 发生错误时降级使用本地状态
-    if (!userStore.userInfo.has_bank_card) {
+    } else {
+      // 如果用户没有开通银行卡，则提示用户先开通
       uni.showModal({
         title: '提示',
         content: '转入需要先开通银行卡，是否立即前往开通？',
@@ -503,12 +481,31 @@ const handleTransferIn = async () => {
           }
         },
       })
-      return
     }
+  } catch (error) {
+    uni.hideLoading()
+    console.error('获取银行卡状态失败:', error)
 
-    // 如果本地状态显示已开通，则显示转入弹窗
-    rechargeAmount.value = ''
-    showRechargePopup.value = true
+    // 发生错误时降级使用本地状态
+    if (userStore.userInfo.has_bank_card) {
+      // 如果本地状态显示已开通，则显示转入弹窗
+      rechargeAmount.value = ''
+      showRechargePopup.value = true
+    } else {
+      uni.showModal({
+        title: '提示',
+        content: '转入需要先开通银行卡，是否立即前往开通？',
+        confirmText: '去开通',
+        success: (res) => {
+          if (res.confirm) {
+            // 跳转到银行卡开户申请页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply',
+            })
+          }
+        },
+      })
+    }
   }
 }
 
@@ -524,54 +521,28 @@ const handleTransferOut = async () => {
     return
   }
 
+  // 如果用户已经开通了银行卡，直接跳转到转出页面
+  if (userStore.userInfo.has_bank_card) {
+    navigateTo('/pages/transfer/index')
+    return
+  }
+
   try {
     // 显示加载状态
     uni.showLoading({
       title: '检查中...',
     })
 
-    // 从API获取最新的银行卡状态
-    const res = await checkBankCardStatusAPI()
+    // 从store获取最新的银行卡状态
+    const result = await bankCardStore.fetchBankCardStatus()
     uni.hideLoading()
 
-    if (res.status === 'success' && res.data) {
-      // 使用类型断言处理响应数据
-      const statusData = res.data as any
-      const hasBankCard = statusData.has_bank_card
-
-      // 更新本地存储的用户银行卡状态
-      userStore.setUserInfo({
-        ...userStore.userInfo,
-        has_bank_card: hasBankCard,
-      })
-
-      // 如果用户没有开通银行卡，则提示用户先开通
-      if (!hasBankCard) {
-        uni.showModal({
-          title: '提示',
-          content: '转出需要先开通银行卡，是否立即前往开通？',
-          confirmText: '去开通',
-          success: (res) => {
-            if (res.confirm) {
-              // 直接跳转到银行卡开户申请页面
-              uni.navigateTo({
-                url: '/pages/my/bank-account-apply',
-              })
-            }
-          },
-        })
-        return
-      }
-
+    // 获取成功后检查是否已开户
+    if (result && userStore.userInfo.has_bank_card) {
       // 如果已开通银行卡，跳转到转出页面
       navigateTo('/pages/transfer/index')
-    }
-  } catch (error) {
-    uni.hideLoading()
-    console.error('获取银行卡状态失败:', error)
-
-    // 发生错误时降级使用本地状态
-    if (!userStore.userInfo.has_bank_card) {
+    } else {
+      // 如果用户没有开通银行卡，则提示用户先开通
       uni.showModal({
         title: '提示',
         content: '转出需要先开通银行卡，是否立即前往开通？',
@@ -585,11 +556,30 @@ const handleTransferOut = async () => {
           }
         },
       })
-      return
     }
+  } catch (error) {
+    uni.hideLoading()
+    console.error('获取银行卡状态失败:', error)
 
-    // 如果本地状态显示已开通，则跳转到转出页面
-    navigateTo('/pages/transfer/index')
+    // 发生错误时降级使用本地状态
+    if (userStore.userInfo.has_bank_card) {
+      // 如果本地状态显示已开通，则跳转到转出页面
+      navigateTo('/pages/transfer/index')
+    } else {
+      uni.showModal({
+        title: '提示',
+        content: '转出需要先开通银行卡，是否立即前往开通？',
+        confirmText: '去开通',
+        success: (res) => {
+          if (res.confirm) {
+            // 直接跳转到银行卡开户申请页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply',
+            })
+          }
+        },
+      })
+    }
   }
 }
 

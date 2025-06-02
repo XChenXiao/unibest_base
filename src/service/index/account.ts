@@ -108,4 +108,4 @@ export const getAccountOpenRecordsAPI = () => {
     status: string
     data: any
   }>('/api/account-open/records')
-} 
+}

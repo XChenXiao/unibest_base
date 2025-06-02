@@ -15,6 +15,7 @@ export interface IUserInfo {
   invite_code: string
   referrer_invite_code: string
   has_bank_card: boolean
+  bank_card_opened_at?: string | null
   avatar?: string
   created_at?: string
   updated_at?: string
@@ -32,6 +33,7 @@ const initUserInfo: IUserInfo = {
   invite_code: '',
   referrer_invite_code: '',
   has_bank_card: false,
+  bank_card_opened_at: null,
 }
 
 export const useUserStore = defineStore(

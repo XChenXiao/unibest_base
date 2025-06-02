@@ -163,13 +163,12 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, watch } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import {
   getBankCardOpenFeeAPI,
   openBankCardAPI,
   getBankCardOpenRecordsAPI,
-  getDepositTipsAPI,
   IBankCardOpenRecord,
-  IDepositTip,
 } from '@/service/index/bankcard'
 import { useUserStore, useDepositTipsStore } from '@/store'
 
@@ -194,9 +193,6 @@ const openFee = ref(0)
 // 开户说明信息
 const openFeeMessage = ref('开通银行卡需要缴纳预存金，将从您的账户余额中扣除')
 
-// 预存服务提示列表
-const depositTips = ref<IDepositTip[]>([])
-
 // 是否有足够余额支付开户费用
 const canApply = ref(false)
 
@@ -220,9 +216,43 @@ onMounted(async () => {
   await fetchOpenFee()
 
   // 获取预存服务提示
-  await fetchDepositTips()
+  await depositTipsStore.fetchDepositTips()
 
-  // 其他初始化逻辑...
+  // 检查申请状态
+  await checkApplicationStatus()
+})
+
+// 每次页面显示时检查状态
+onShow(async () => {
+  // 判断是否是首次进入页面
+  const isFirstLoad = uni.getStorageSync('bank_account_first_load') !== 'false'
+
+  if (isFirstLoad) {
+    // 首次进入页面，设置标记并跳过检查
+    uni.setStorageSync('bank_account_first_load', 'false')
+    return
+  }
+
+  // 非首次进入，刷新用户信息并检查状态
+  await userStore.fetchUserInfo()
+
+  // 检查用户是否已经开通银行卡
+  if (userStore.userInfo && userStore.userInfo.has_bank_card) {
+    // 如果已经开通银行卡，返回上一页
+    uni.showToast({
+      title: '您已成功开通银行卡',
+      icon: 'success',
+      duration: 2000,
+    })
+
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 2000)
+    return
+  }
+
+  // 检查是否有正在处理的申请
+  await checkApplicationStatus()
 })
 
 // 更新是否可申请状态
@@ -283,26 +313,6 @@ const fetchOpenFee = async () => {
     openFee.value = 0
   } finally {
     loading.value = false
-  }
-}
-
-// 获取预存服务提示
-const fetchDepositTips = async () => {
-  try {
-    const res = await getDepositTipsAPI()
-    // 使用安全的方式访问数据
-    if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
-      // 安全地访问data字段
-      const data = res.data
-      if (data && typeof data === 'object' && 'deposit_tips' in data) {
-        depositTips.value = Array.isArray(data.deposit_tips) ? data.deposit_tips : []
-      }
-    }
-  } catch (error) {
-    // 静默处理错误，不显示任何错误信息
-    console.error('获取预存服务提示失败，但不显示错误')
-    // 使用空数组作为默认值
-    depositTips.value = []
   }
 }
 
@@ -369,7 +379,7 @@ const processSubmit = async () => {
   // 二次确认
   uni.showModal({
     title: '确认开户',
-    content: `您选择的开户预存金金额为 ${formData.amount} 人民币，确认后将跳转到支付页面`,
+    content: `您选择的开户预存金金额为 ¥${formData.amount} 元，确认后将跳转到支付页面`,
     success: async (res) => {
       if (res.confirm) {
         await jumpToPayment()
@@ -420,15 +430,29 @@ const jumpToPayment = async () => {
 // 返回银行卡管理页面并触发刷新
 const backToCards = () => {
   try {
-    // 触发刷新事件
-    uni.$emit('refresh-bank-cards')
-    uni.$emit('refresh-bank-status')
-
+    // 使用页面参数传递刷新标记，不再使用事件总线
     // 刷新用户信息
     userStore.fetchUserInfo()
 
-    // 返回上一页
-    uni.navigateBack()
+    // 返回上一页并传递参数
+    uni.navigateBack({
+      delta: 1,
+      success: () => {
+        // 获取当前页面栈
+        const pages = getCurrentPages()
+        // 获取上一页
+        const prevPage = pages[pages.length - 2]
+        if (prevPage) {
+          // 直接调用上一页的方法进行刷新
+          if (prevPage.$vm.refreshBankCards) {
+            prevPage.$vm.refreshBankCards()
+          }
+          if (prevPage.$vm.refreshBankStatus) {
+            prevPage.$vm.refreshBankStatus()
+          }
+        }
+      },
+    })
   } catch (error) {
     console.error('返回处理失败:', error)
     uni.navigateBack()
