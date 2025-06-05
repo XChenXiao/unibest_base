@@ -128,11 +128,35 @@ onLaunch(async () => {
   } else {
     console.log('用户未登录，检查缓存的页面路径')
 
+    // 获取当前页面路径或缓存的上一个页面路径
+    const lastPagePath = uni.getStorageSync('last_page_path')
+
+    // 检查是否为注册路径
+    if (lastPagePath && lastPagePath.startsWith('/pages/register/')) {
+      console.log('检测到注册路径，不跳转到登录页:', lastPagePath)
+
+      // 如果是注册路径，直接跳转到该路径
+      uni.reLaunch({
+        url: lastPagePath,
+        complete: () => {
+          // 关闭启动封面
+          closeSplashscreen()
+        },
+      })
+      return
+    }
+
     // 获取当前页面路径
     const pages = getCurrentPages()
     if (pages.length > 0) {
       const currentPage = pages[pages.length - 1]
       const currentPath = '/' + currentPage.route
+
+      // 检查当前页面是否为注册路径
+      if (currentPath.startsWith('/pages/register/')) {
+        console.log('当前页面是注册路径，无需跳转到登录页:', currentPath)
+        return
+      }
 
       // 检查当前页面是否在白名单中
       if (isInNoLoginPaths(currentPath)) {

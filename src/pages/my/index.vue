@@ -437,7 +437,7 @@ const handleTransferIn = async () => {
   // 检查银行卡功能是否开放
   if (!platformStore.enableBankAccount) {
     uni.showToast({
-      title: '银行卡功能暂未开放',
+      title: '功能正在对接中',
       icon: 'none',
       duration: 2000,
     })
@@ -470,7 +470,7 @@ const handleTransferIn = async () => {
       // 如果用户没有开通银行卡，则提示用户先开通
       uni.showModal({
         title: '提示',
-        content: '转入需要先开通银行卡，是否立即前往开通？',
+        content: '转入并开通银行卡收款，是否立即前往开通？',
         confirmText: '去开通',
         success: (res) => {
           if (res.confirm) {
@@ -494,7 +494,7 @@ const handleTransferIn = async () => {
     } else {
       uni.showModal({
         title: '提示',
-        content: '转入需要先开通银行卡，是否立即前往开通？',
+        content: '转入并开通银行卡收款，是否立即前往开通？',
         confirmText: '去开通',
         success: (res) => {
           if (res.confirm) {
@@ -514,7 +514,7 @@ const handleTransferOut = async () => {
   // 检查银行卡功能是否开放
   if (!platformStore.enableBankAccount) {
     uni.showToast({
-      title: '银行卡功能暂未开放',
+      title: '功能正在对接中',
       icon: 'none',
       duration: 2000,
     })

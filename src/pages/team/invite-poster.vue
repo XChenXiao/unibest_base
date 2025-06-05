@@ -28,7 +28,7 @@
         class="copy-btn-container"
         @click="
           handleCopy(
-            `https://www.boceasy.com/mobile/#/register?invite_code=${teamInfo.invite_code}`,
+            `https://www.boceasy.com/mobile/#/pages/register/captcha?invite_code=${teamInfo.invite_code}`,
           )
         "
       >
@@ -92,10 +92,7 @@
                   font-size: 24.33rpx;
                 "
               >
-                <l-painter-text
-                  css="margin-right: 0rpx"
-                  :text="'邀请码:' + teamInfo.invite_code"
-                />
+                <l-painter-text css="margin-right: 0rpx" :text="'邀请码:' + teamInfo.invite_code" />
               </l-painter-view>
             </l-painter-view>
           </l-painter-view>
@@ -107,7 +104,7 @@
             "
           >
             <l-painter-qrcode
-              :text="`https://www.boceasy.com/mobile/#/register?invite_code=${teamInfo.invite_code}`"
+              :text="`https://www.boceasy.com/mobile/#/pages/register/captcha?invite_code=${teamInfo.invite_code}`"
               css="width: 180rpx; height: 180rpx;background:white;border:4rpx solid white;"
             />
           </l-painter-view>
@@ -129,7 +126,7 @@ defineOptions({
 
 // 用户信息
 const userStore = useUserStore()
-console.log(userStore.userInfo,'用户信息=========')
+console.log(userStore.userInfo, '用户信息=========')
 
 // 团队信息
 const teamInfo = reactive({
@@ -138,7 +135,7 @@ const teamInfo = reactive({
 })
 
 onMounted(() => {
-  console.log(userStore.userInfo,'用户信息=========')
+  console.log(userStore.userInfo, '用户信息=========')
   teamInfo.invite_code = userStore.userInfo?.invite_code
   teamInfo.realName = userStore.userInfo?.name || '用户'
 })

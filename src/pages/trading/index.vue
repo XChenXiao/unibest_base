@@ -263,9 +263,8 @@ const goToExchange = () => {
 
   // 检查交易所功能是否开放
   if (!platformStore.enableExchange) {
-    console.log('交易所功能未开放，显示提示')
     uni.showToast({
-      title: '交易所功能暂未开放',
+      title: '交易正在对接中',
       icon: 'none',
       duration: 2000,
     })

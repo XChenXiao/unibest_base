@@ -44,6 +44,11 @@ const isLogined = () => {
   return userStore.isLogined
 }
 
+// 检查当前路径是否为注册路径
+const isRegisterPath = (path: string) => {
+  return path.startsWith('/pages/register/')
+}
+
 // 登录拦截器 - 默认所有页面都需要登录，除了白名单中的页面
 const navigateToInterceptor = {
   // 注意，这里的url是 '/' 开头的，如 '/pages/index/index'，跟 'pages.json' 里面的 path 不同
@@ -51,6 +56,12 @@ const navigateToInterceptor = {
     console.log('路由拦截器检查URL:', url) // 添加调试输出
 
     const path = url.split('?')[0]
+
+    // 先检查是否为注册路径，如果是则直接允许导航，不需要登录
+    if (isRegisterPath(path)) {
+      console.log('检测到注册路径，允许导航:', path)
+      return true
+    }
 
     // 如果目标页面不需要登录，直接允许导航
     if (isInNoLoginPaths(path)) {
@@ -83,6 +94,28 @@ const navigateToInterceptor = {
 
     // 检查是否有缓存的页面路径
     const lastPagePath = uni.getStorageSync('last_page_path')
+
+    // 检查缓存的页面路径是否为注册路径
+    if (lastPagePath && isRegisterPath(lastPagePath)) {
+      console.log('检测到缓存的注册页面路径，重定向到:', lastPagePath)
+
+      // 设置重定向标志位，防止循环重定向
+      isRedirecting.value = true
+      uni.setStorageSync('redirecting_to_login', 'true')
+
+      // 使用reLaunch而不是跳转到登录页
+      uni.reLaunch({
+        url: lastPagePath,
+        complete: () => {
+          setTimeout(() => {
+            isRedirecting.value = false
+            uni.setStorageSync('redirecting_to_login', 'false')
+          }, 2000)
+        },
+      })
+      return false
+    }
+
     if (lastPagePath && isInNoLoginPaths(lastPagePath)) {
       console.log('检测到缓存的白名单页面路径，重定向到:', lastPagePath)
 

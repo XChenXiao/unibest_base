@@ -145,7 +145,7 @@
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { captchaRegisterAPI, generateCaptchaAPI } from '@/service/index/auth'
-import { onLoad, onHide, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onHide, onUnload, onShow } from '@dcloudio/uni-app'
 
 // 表单数据
 const formData = reactive({
@@ -178,10 +178,24 @@ onLoad((options) => {
   console.log('图形验证码注册页面加载，保存页面路径:', currentPath)
   uni.setStorageSync('last_page_path', currentPath)
 
+  // 重置登录重定向标志位，确保不会被重定向到登录页
+  uni.setStorageSync('redirecting_to_login', 'false')
+
   // 判断当前环境
   // #ifdef H5
   isBrowser.value = true
   // #endif
+})
+
+// 页面显示时保存路径
+onShow(() => {
+  // 保存当前页面路径到缓存
+  const currentPath = '/pages/register/captcha'
+  console.log('图形验证码注册页面显示，保存页面路径:', currentPath)
+  uni.setStorageSync('last_page_path', currentPath)
+
+  // 重置登录重定向标志位，确保不会被重定向到登录页
+  uni.setStorageSync('redirecting_to_login', 'false')
 })
 
 // 页面隐藏时保存路径
@@ -412,45 +426,42 @@ const goToLogin = () => {
 <style lang="scss">
 /* 全局重置 */
 page {
-  background: linear-gradient(135deg, #3498db, #1a5276);
   height: 100%;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #3498db, #1a5276);
 }
-
 /* 容器样式 */
 .register-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100%;
   padding: 30rpx;
-  position: relative;
 }
-
 /* 波浪装饰 */
 .wave-decoration {
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
+  left: 0;
   height: 200rpx;
   background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,154.7C384,149,480,107,576,96C672,85,768,107,864,128C960,149,1056,171,1152,165.3C1248,160,1344,128,1392,112L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>')
     no-repeat center;
   background-size: cover;
   opacity: 0.4;
 }
-
 /* 标题区域 */
 .title-area {
+  z-index: 1;
   margin-top: 60rpx;
   margin-bottom: 60rpx;
-  z-index: 1;
 
   .main-title {
+    display: block;
+    margin-bottom: 16rpx;
     font-size: 48rpx;
     font-weight: bold;
     color: #ffffff;
-    margin-bottom: 16rpx;
-    display: block;
   }
 
   .sub-title {
@@ -458,36 +469,35 @@ page {
     color: rgba(255, 255, 255, 0.8);
   }
 }
-
 /* 表单样式 */
 .register-form {
+  z-index: 1;
+  padding: 40rpx;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 20rpx;
-  padding: 40rpx;
   box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
-  z-index: 1;
 
   .form-group {
     margin-bottom: 30rpx;
 
     .form-label {
+      display: block;
+      margin-bottom: 10rpx;
       font-size: 28rpx;
       color: #333;
-      margin-bottom: 10rpx;
-      display: block;
     }
 
     .input-container {
       display: flex;
       align-items: center;
+      height: 80rpx;
+      padding: 0 20rpx;
       background-color: #f5f7fa;
       border-radius: 10rpx;
-      padding: 0 20rpx;
-      height: 80rpx;
 
       .uni-icons {
-        color: #666;
         margin-right: 15rpx;
+        color: #666;
       }
 
       .form-control {
@@ -499,8 +509,8 @@ page {
       .captcha-container {
         width: 160rpx;
         height: 80rpx;
-        border-radius: 4rpx;
         overflow: hidden;
+        border-radius: 4rpx;
 
         .captcha-image {
           width: 100%;
@@ -508,11 +518,11 @@ page {
         }
 
         .captcha-loading {
-          width: 100%;
-          height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
+          width: 100%;
+          height: 100%;
           font-size: 20rpx;
           color: #999;
           background-color: #f0f0f0;
@@ -530,21 +540,21 @@ page {
       margin-right: 15rpx;
 
       .checkbox {
+        position: relative;
         width: 32rpx;
         height: 32rpx;
         border: 2rpx solid #999;
         border-radius: 6rpx;
-        position: relative;
 
         &.checked::after {
-          content: '';
           position: absolute;
-          width: 20rpx;
-          height: 20rpx;
-          background-color: #3498db;
-          border-radius: 3rpx;
           top: 50%;
           left: 50%;
+          width: 20rpx;
+          height: 20rpx;
+          content: '';
+          background-color: #3498db;
+          border-radius: 3rpx;
           transform: translate(-50%, -50%);
         }
       }
@@ -561,13 +571,13 @@ page {
   }
 
   .register-btn {
-    background: linear-gradient(45deg, #3498db, #2980b9);
-    color: white;
     height: 88rpx;
-    line-height: 88rpx;
-    border-radius: 44rpx;
-    font-size: 32rpx;
     margin-bottom: 30rpx;
+    font-size: 32rpx;
+    line-height: 88rpx;
+    color: white;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    border-radius: 44rpx;
 
     &:disabled {
       opacity: 0.6;
@@ -575,21 +585,21 @@ page {
   }
 
   .download-app-btn {
-    background: linear-gradient(45deg, #e67e22, #d35400);
-    color: white;
-    height: 88rpx;
-    line-height: 88rpx;
-    border-radius: 44rpx;
-    font-size: 32rpx;
-    margin-bottom: 30rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    height: 88rpx;
+    margin-bottom: 30rpx;
+    font-size: 32rpx;
+    line-height: 88rpx;
+    color: white;
+    background: linear-gradient(45deg, #e67e22, #d35400);
+    border-radius: 44rpx;
   }
 
   .register-options {
-    text-align: center;
     margin-bottom: 20rpx;
+    text-align: center;
 
     .option-link {
       font-size: 26rpx;
@@ -599,13 +609,13 @@ page {
   }
 
   .login-link {
-    text-align: center;
     font-size: 24rpx;
     color: #666;
+    text-align: center;
 
     .login-text {
-      color: #3498db;
       margin-left: 10rpx;
+      color: #3498db;
     }
   }
 }
