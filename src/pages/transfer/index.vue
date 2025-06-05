@@ -130,13 +130,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
+
+// 用户余额
+const userBalance = computed(() => userStore.userInfo.balance || 0)
 
 // 返回上一页
 const goBack = () => {
@@ -212,7 +215,17 @@ const confirmRecharge = async () => {
 
 // 页面跳转
 const navigateTo = async (url: string) => {
-  // 直接跳转到目标页面
+  // 检查余额，如果为0则提示用户
+  if (userBalance.value <= 0) {
+    uni.showToast({
+      title: '没有余额',
+      icon: 'none',
+      duration: 2000,
+    })
+    return
+  }
+  
+  // 余额大于0，直接跳转到目标页面
   uni.navigateTo({ url })
 }
 
@@ -232,6 +245,9 @@ onMounted(async () => {
 
   // 获取银行卡开户费用
   await appStore.fetchBankCardOpenFee()
+  
+  // 确保获取到最新的用户余额信息
+  await userStore.fetchUserInfo()
 })
 
 // 获取预存服务提示
