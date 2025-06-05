@@ -60,50 +60,12 @@
         </view>
       </view>
 
-      <!-- 身份证正面上传 -->
-      <view class="form-group">
-        <text class="form-label">身份证人像面</text>
-        <view class="upload-container" @click="chooseImage('front')" v-if="!formData.frontImage">
-          <text class="uni-icons uniui-camera-filled upload-icon"></text>
-          <text class="upload-text">点击上传身份证人像面</text>
-        </view>
-        <view class="image-preview" v-else>
-          <image class="preview-image" :src="formData.frontImage" mode="aspectFit"></image>
-          <view class="image-actions">
-            <view class="action-btn preview-btn" @click="previewImage(formData.frontImage)">
-              <image src="/static/images/view.png" class="action-icon"></image>
-            </view>
-            <view class="action-btn delete-btn" @click="deleteImage('front')">
-              <image src="/static/images/del.png" class="action-icon"></image>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 身份证背面上传 -->
-      <view class="form-group">
-        <text class="form-label">身份证国徽面</text>
-        <view class="upload-container" @click="chooseImage('back')" v-if="!formData.backImage">
-          <text class="uni-icons uniui-camera-filled upload-icon"></text>
-          <text class="upload-text">点击上传身份证国徽面</text>
-        </view>
-        <view class="image-preview" v-else>
-          <image class="preview-image" :src="formData.backImage" mode="aspectFit"></image>
-          <view class="image-actions">
-            <view class="action-btn preview-btn" @click="previewImage(formData.backImage)">
-              <image src="/static/images/view.png" class="action-icon"></image>
-            </view>
-            <view class="action-btn delete-btn" @click="deleteImage('back')">
-              <image src="/static/images/del.png" class="action-icon"></image>
-            </view>
-          </view>
-        </view>
-      </view>
+      <!-- 身份证正反面上传组件已被移除 -->
 
       <!-- 提示说明 -->
       <view class="tips-container">
         <text class="tips-icon uni-icons uniui-info-filled"></text>
-        <text class="tips-text">请确保上传证件清晰可见，信息完整，否则可能导致认证失败</text>
+        <text class="tips-text">请确保填写的信息真实有效</text>
       </view>
 
       <!-- 提交按钮 -->
@@ -146,11 +108,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { useUserStore, useVerificationStore } from '@/store'
 import { submitVerificationAPI, getVerificationStatusAPI } from '@/service/index/verification'
 import { getEnvBaseUploadUrl } from '@/utils'
-import {
-  chooseAndUploadIdCardFront,
-  chooseAndUploadIdCardBack,
-  ImageType,
-} from '@/utils/imageUpload'
 
 // 获取用户状态
 const userStore = useUserStore()
@@ -179,11 +136,10 @@ const userInfo = reactive({
 const formData = reactive({
   name: '',
   idNumber: '',
-  frontImage: '',
-  backImage: '',
-  // 接口参数
-  id_card_front: '',
-  id_card_back: '',
+  // 移除了frontImage和backImage字段
+  // 接口参数 - 保留字段名但不再使用
+  id_card_front: 'default_id_card_front',
+  id_card_back: 'default_id_card_back',
 })
 
 // 获取状态图标样式
@@ -299,76 +255,6 @@ onMounted(async () => {
   }
 })
 
-// 选择图片
-const chooseImage = (type: 'front' | 'back') => {
-  // 根据类型选择不同的上传方法
-  const uploadMethod = type === 'front' ? chooseAndUploadIdCardFront : chooseAndUploadIdCardBack
-
-  loading.value = true
-
-  // 调用上传方法
-  uploadMethod()
-    .then((res) => {
-      if (res.status === 'success' && res.data) {
-        // 显示本地预览（如果有URL）
-        if (res.data.url) {
-          if (type === 'front') {
-            formData.frontImage = res.data.url
-          } else {
-            formData.backImage = res.data.url
-          }
-        }
-
-        // 保存上传后的图片路径 - 优先使用file_path
-        const filePath = res.data.file_path || res.data.path || res.data.url || ''
-        console.log('上传结果:', res.data)
-
-        if (type === 'front') {
-          formData.id_card_front = filePath
-          console.log('身份证正面上传成功:', filePath)
-        } else {
-          formData.id_card_back = filePath
-          console.log('身份证背面上传成功:', filePath)
-        }
-
-        uni.showToast({
-          icon: 'success',
-          title: '上传成功',
-        })
-      } else {
-        throw new Error(res.message || '上传失败')
-      }
-    })
-    .catch((error) => {
-      console.error('图片上传错误:', error)
-      uni.showToast({
-        icon: 'none',
-        title: typeof error === 'string' ? error : error.message || '上传失败',
-      })
-    })
-    .finally(() => {
-      loading.value = false
-    })
-}
-
-// 预览图片
-const previewImage = (image: string) => {
-  uni.previewImage({
-    urls: [image],
-  })
-}
-
-// 删除图片
-const deleteImage = (type: 'front' | 'back') => {
-  if (type === 'front') {
-    formData.frontImage = ''
-    formData.id_card_front = ''
-  } else {
-    formData.backImage = ''
-    formData.id_card_back = ''
-  }
-}
-
 // 提交认证申请
 const handleSubmit = async () => {
   // 表单验证
@@ -398,32 +284,16 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!formData.id_card_front) {
-    uni.showToast({
-      title: '请上传身份证人像面',
-      icon: 'none',
-    })
-    return
-  }
-
-  if (!formData.id_card_back) {
-    uni.showToast({
-      title: '请上传身份证国徽面',
-      icon: 'none',
-    })
-    return
-  }
-
   try {
     // 显示加载状态
     loading.value = true
 
-    // 调用实名认证API - 使用真实API
+    // 调用实名认证API - 使用默认值替代身份证图片
     const res = await submitVerificationAPI({
       real_name: formData.name,
       id_card_number: formData.idNumber,
-      id_card_front: formData.id_card_front,
-      id_card_back: formData.id_card_back,
+      id_card_front: formData.id_card_front, // 使用默认值
+      id_card_back: formData.id_card_back, // 使用默认值
     })
 
     if (res.status === 'success') {
@@ -458,7 +328,7 @@ const handleSubmit = async () => {
     }
   } catch (error: any) {
     uni.showToast({
-      title: error.data.message || '提交失败，请重试',
+      title: error.data?.message || '提交失败，请重试',
       icon: 'none',
     })
   } finally {

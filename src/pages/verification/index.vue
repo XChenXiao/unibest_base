@@ -81,42 +81,6 @@
           placeholder="请输入您的身份证号码"
         />
       </view>
-      <view class="form-item mb-4">
-        <view class="form-label mb-2">身份证正面照片</view>
-        <view class="upload-tips text-sm text-gray-500 mb-2">请上传清晰的身份证人像面照片</view>
-        <view
-          @click="chooseImage('front')"
-          class="upload-box bg-gray-100 p-4 rounded-lg flex items-center justify-center"
-        >
-          <block v-if="frontImageUrl">
-            <image :src="frontImageUrl" class="w-full" style="height: 180rpx" mode="aspectFit" />
-          </block>
-          <block v-else>
-            <view class="flex-col flex items-center">
-              <text class="i-carbon-add-filled text-5xl text-gray-400"></text>
-              <text class="text-gray-500 mt-2">上传身份证正面照片</text>
-            </view>
-          </block>
-        </view>
-      </view>
-      <view class="form-item mb-4">
-        <view class="form-label mb-2">身份证背面照片</view>
-        <view class="upload-tips text-sm text-gray-500 mb-2">请上传清晰的身份证国徽面照片</view>
-        <view
-          @click="chooseImage('back')"
-          class="upload-box bg-gray-100 p-4 rounded-lg flex items-center justify-center"
-        >
-          <block v-if="backImageUrl">
-            <image :src="backImageUrl" class="w-full" style="height: 180rpx" mode="aspectFit" />
-          </block>
-          <block v-else>
-            <view class="flex-col flex items-center">
-              <text class="i-carbon-add-filled text-5xl text-gray-400"></text>
-              <text class="text-gray-500 mt-2">上传身份证背面照片</text>
-            </view>
-          </block>
-        </view>
-      </view>
       <view class="form-item mt-8">
         <button
           @click="handleSubmit"
@@ -135,11 +99,7 @@ import { ref, onMounted } from 'vue'
 import { submitVerification, getVerificationStatus } from '@/service/app/user'
 import type { VerificationStatus } from '@/service/app/types'
 import { useUserStore, useVerificationStore } from '@/store'
-import {
-  chooseAndUploadIdCardFront,
-  chooseAndUploadIdCardBack,
-  ImageType,
-} from '@/utils/imageUpload'
+// 移除了身份证图片上传相关的导入
 
 defineOptions({
   name: 'Verification',
@@ -153,16 +113,13 @@ const verificationStore = useVerificationStore()
 const verificationForm = ref({
   real_name: '',
   id_card_number: '',
-  id_card_front: '',
-  id_card_back: '',
+  // 使用默认值替代
+  id_card_front: 'default_id_card_front',
+  id_card_back: 'default_id_card_back',
 })
 
 // 验证状态
 const verificationStatus = ref<any>(null)
-
-// 临时图片URL
-const frontImageUrl = ref('')
-const backImageUrl = ref('')
 
 // 加载状态
 const loading = ref(false)
@@ -213,81 +170,7 @@ const maskIdCard = (idCard?: string) => {
   return idCard.replace(/^(.{6})(.*)(.{4})$/, '$1******$3')
 }
 
-// 选择图片
-const chooseImage = (type: 'front' | 'back') => {
-  // 显示加载中
-  uni.showLoading({
-    title: '正在选择图片...',
-    mask: true,
-  })
-
-  // 根据类型选择不同的上传方法
-  const uploadMethod = type === 'front' ? chooseAndUploadIdCardFront : chooseAndUploadIdCardBack
-
-  try {
-    loading.value = true
-
-    // 调用上传方法
-    uploadMethod()
-      .then((res) => {
-        // 隐藏加载提示
-        uni.hideLoading()
-
-        if (res.status === 'success' && res.data) {
-          // 显示本地预览（如果有URL）
-          if (res.data.url) {
-            if (type === 'front') {
-              frontImageUrl.value = res.data.url
-            } else {
-              backImageUrl.value = res.data.url
-            }
-          }
-
-          // 保存上传后的图片路径 - 优先使用file_path
-          const filePath = res.data.file_path || res.data.path || ''
-          console.log('上传结果:', res.data)
-
-          if (type === 'front') {
-            verificationForm.value.id_card_front = filePath
-            console.log('身份证正面上传成功:', filePath)
-          } else {
-            verificationForm.value.id_card_back = filePath
-            console.log('身份证背面上传成功:', filePath)
-          }
-
-          uni.showToast({
-            icon: 'success',
-            title: '上传成功',
-          })
-        } else {
-          throw new Error(res.message || '上传失败')
-        }
-      })
-      .catch((error) => {
-        // 隐藏加载提示
-        uni.hideLoading()
-
-        console.error('图片上传错误:', error)
-        uni.showToast({
-          icon: 'none',
-          title: error.message || '上传失败',
-        })
-      })
-      .finally(() => {
-        loading.value = false
-      })
-  } catch (error: any) {
-    // 隐藏加载提示
-    uni.hideLoading()
-
-    console.error('选择图片出错:', error)
-    uni.showToast({
-      icon: 'none',
-      title: error.message || '上传失败',
-    })
-    loading.value = false
-  }
-}
+// 移除了选择图片相关函数
 
 // 提交认证
 const handleSubmit = async () => {
@@ -317,20 +200,7 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!verificationForm.value.id_card_front) {
-    uni.showToast({
-      icon: 'none',
-      title: '请上传身份证正面照片',
-    })
-    return
-  }
-  if (!verificationForm.value.id_card_back) {
-    uni.showToast({
-      icon: 'none',
-      title: '请上传身份证背面照片',
-    })
-    return
-  }
+  // 移除了身份证图片上传校验
 
   try {
     loading.value = true
@@ -345,8 +215,8 @@ const handleSubmit = async () => {
     console.log('提交实名认证数据:', {
       real_name: verificationForm.value.real_name,
       id_card_number: verificationForm.value.id_card_number,
-      id_card_front: verificationForm.value.id_card_front,
-      id_card_back: verificationForm.value.id_card_back,
+      id_card_front: 'default_id_card_front', // 使用默认值
+      id_card_back: 'default_id_card_back', // 使用默认值
     })
 
     // 直接提交JSON数据，不使用FormData
@@ -354,8 +224,8 @@ const handleSubmit = async () => {
       data: {
         real_name: verificationForm.value.real_name,
         id_card_number: verificationForm.value.id_card_number,
-        id_card_front: verificationForm.value.id_card_front,
-        id_card_back: verificationForm.value.id_card_back,
+        id_card_front: 'default_id_card_front', // 使用默认值
+        id_card_back: 'default_id_card_back', // 使用默认值
       },
     })
 
@@ -396,7 +266,7 @@ const handleSubmit = async () => {
     // 显示错误信息
     uni.showToast({
       icon: 'none',
-      title: error.data.message || '提交失败，请重试',
+      title: error.data?.message || '提交失败，请重试',
     })
   } finally {
     loading.value = false
