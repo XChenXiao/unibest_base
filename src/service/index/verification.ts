@@ -6,8 +6,6 @@ import { http } from '@/utils/http'
 export interface IVerificationParams {
   real_name: string
   id_card_number: string
-  id_card_front: string
-  id_card_back: string
 }
 
 /**
@@ -19,10 +17,6 @@ export interface IVerificationStatus {
   status: 'pending' | 'approved' | 'rejected'
   real_name: string
   id_card_number: string
-  id_card_front: string
-  id_card_back: string
-  id_card_front_url: string
-  id_card_back_url: string
   remark?: string
   verified_at?: string
   created_at: string
@@ -49,9 +43,6 @@ export const getVerificationStatusAPI = () => {
 export const submitVerificationAPI = (data: {
   real_name: string;
   id_card_number: string;
-  id_card_front: string;
-  id_card_back: string;
-  face_image?: string;
 }) => {
   return http.post<any>('/api/verification/submit', data)
 } 

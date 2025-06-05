@@ -511,76 +511,27 @@ const handleTransferIn = async () => {
 
 // 处理转出
 const handleTransferOut = async () => {
-  // 检查银行卡功能是否开放
-  if (!platformStore.enableBankAccount) {
-    uni.showToast({
-      title: '功能正在对接中',
-      icon: 'none',
-      duration: 2000,
+  // 检查实名认证状态
+  if (!verificationStore.isVerified) {
+    uni.showModal({
+      title: '需要实名认证',
+      content: '转出功能需要完成实名认证后才能使用，请先完成实名认证。',
+      confirmText: '去认证',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确认，跳转到实名认证页面
+          uni.navigateTo({
+            url: '/pages/my/identity-verify',
+          })
+        }
+      },
     })
     return
   }
 
-  // 如果用户已经开通了银行卡，直接跳转到转出页面
-  if (userStore.userInfo.has_bank_card) {
-    navigateTo('/pages/transfer/index')
-    return
-  }
-
-  try {
-    // 显示加载状态
-    uni.showLoading({
-      title: '检查中...',
-    })
-
-    // 从store获取最新的银行卡状态
-    const result = await bankCardStore.fetchBankCardStatus()
-    uni.hideLoading()
-
-    // 获取成功后检查是否已开户
-    if (result && userStore.userInfo.has_bank_card) {
-      // 如果已开通银行卡，跳转到转出页面
-      navigateTo('/pages/transfer/index')
-    } else {
-      // 如果用户没有开通银行卡，则提示用户先开通
-      uni.showModal({
-        title: '提示',
-        content: '转出需要先开通银行卡，是否立即前往开通？',
-        confirmText: '去开通',
-        success: (res) => {
-          if (res.confirm) {
-            // 直接跳转到银行卡开户申请页面
-            uni.navigateTo({
-              url: '/pages/my/bank-account-apply',
-            })
-          }
-        },
-      })
-    }
-  } catch (error) {
-    uni.hideLoading()
-    console.error('获取银行卡状态失败:', error)
-
-    // 发生错误时降级使用本地状态
-    if (userStore.userInfo.has_bank_card) {
-      // 如果本地状态显示已开通，则跳转到转出页面
-      navigateTo('/pages/transfer/index')
-    } else {
-      uni.showModal({
-        title: '提示',
-        content: '转出需要先开通银行卡，是否立即前往开通？',
-        confirmText: '去开通',
-        success: (res) => {
-          if (res.confirm) {
-            // 直接跳转到银行卡开户申请页面
-            uni.navigateTo({
-              url: '/pages/my/bank-account-apply',
-            })
-          }
-        },
-      })
-    }
-  }
+  // 直接跳转到转出页面
+  navigateTo('/pages/transfer/index')
 }
 
 // 关闭充值弹窗

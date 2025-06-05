@@ -113,9 +113,7 @@ const verificationStore = useVerificationStore()
 const verificationForm = ref({
   real_name: '',
   id_card_number: '',
-  // 使用默认值替代
-  id_card_front: 'default_id_card_front',
-  id_card_back: 'default_id_card_back',
+  // 移除身份证正反面字段
 })
 
 // 验证状态
@@ -200,8 +198,6 @@ const handleSubmit = async () => {
     return
   }
 
-  // 移除了身份证图片上传校验
-
   try {
     loading.value = true
 
@@ -215,8 +211,6 @@ const handleSubmit = async () => {
     console.log('提交实名认证数据:', {
       real_name: verificationForm.value.real_name,
       id_card_number: verificationForm.value.id_card_number,
-      id_card_front: 'default_id_card_front', // 使用默认值
-      id_card_back: 'default_id_card_back', // 使用默认值
     })
 
     // 直接提交JSON数据，不使用FormData
@@ -224,8 +218,6 @@ const handleSubmit = async () => {
       data: {
         real_name: verificationForm.value.real_name,
         id_card_number: verificationForm.value.id_card_number,
-        id_card_front: 'default_id_card_front', // 使用默认值
-        id_card_back: 'default_id_card_back', // 使用默认值
       },
     })
 

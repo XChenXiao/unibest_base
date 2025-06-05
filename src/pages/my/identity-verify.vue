@@ -136,10 +136,7 @@ const userInfo = reactive({
 const formData = reactive({
   name: '',
   idNumber: '',
-  // 移除了frontImage和backImage字段
-  // 接口参数 - 保留字段名但不再使用
-  id_card_front: 'default_id_card_front',
-  id_card_back: 'default_id_card_back',
+  // 移除了身份证正反面字段
 })
 
 // 获取状态图标样式
@@ -288,12 +285,10 @@ const handleSubmit = async () => {
     // 显示加载状态
     loading.value = true
 
-    // 调用实名认证API - 使用默认值替代身份证图片
+    // 调用实名认证API - 无需身份证图片
     const res = await submitVerificationAPI({
       real_name: formData.name,
       id_card_number: formData.idNumber,
-      id_card_front: formData.id_card_front, // 使用默认值
-      id_card_back: formData.id_card_back, // 使用默认值
     })
 
     if (res.status === 'success') {
