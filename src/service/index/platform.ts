@@ -9,6 +9,9 @@ export interface PlatformSettingsResponse {
   data: {
     enable_bank_account: boolean;
     enable_exchange: boolean;
+    enable_gold_buy: boolean;
+    enable_gold_sell: boolean;
+    enable_usdt_buy: boolean;
   };
 }
 
@@ -30,7 +33,10 @@ export const getPlatformFrontendSettings = async () => {
       message: '获取平台前端功能开关设置失败',
       data: {
         enable_bank_account: true, // 默认开启
-        enable_exchange: true // 默认开启
+        enable_exchange: true, // 默认开启
+        enable_gold_buy: true, // 默认开启
+        enable_gold_sell: true, // 默认开启
+        enable_usdt_buy: true // 默认开启
       }
     };
   }

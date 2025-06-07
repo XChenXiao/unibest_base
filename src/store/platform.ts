@@ -6,6 +6,9 @@ export const usePlatformStore = defineStore('platform', () => {
   // 平台功能开关状态
   const enableBankAccount = ref(true) // 默认开启
   const enableExchange = ref(true) // 默认开启
+  const enableGoldBuy = ref(true) // 默认开启
+  const enableGoldSell = ref(true) // 默认开启
+  const enableUsdtBuy = ref(true) // 默认开启
 
   // 加载状态
   const isLoading = ref(false)
@@ -38,11 +41,17 @@ export const usePlatformStore = defineStore('platform', () => {
         const settings = response.data as {
           enable_bank_account: boolean
           enable_exchange: boolean
+          enable_gold_buy: boolean
+          enable_gold_sell: boolean
+          enable_usdt_buy: boolean
         }
 
         console.log('平台功能开关设置:', settings)
         enableBankAccount.value = settings.enable_bank_account
         enableExchange.value = settings.enable_exchange
+        enableGoldBuy.value = settings.enable_gold_buy
+        enableGoldSell.value = settings.enable_gold_sell
+        enableUsdtBuy.value = settings.enable_usdt_buy
         isLoaded.value = true
         hasRequestedSettings.value = true // 标记已经请求过
 
@@ -51,6 +60,12 @@ export const usePlatformStore = defineStore('platform', () => {
           enableBankAccount.value,
           '交易所=',
           enableExchange.value,
+          '黄金买入=',
+          enableGoldBuy.value,
+          '黄金卖出=',
+          enableGoldSell.value,
+          'USDT买入=',
+          enableUsdtBuy.value
         )
       } else {
         console.warn('获取平台功能开关设置失败或返回数据为空:', response)
@@ -65,6 +80,9 @@ export const usePlatformStore = defineStore('platform', () => {
   return {
     enableBankAccount,
     enableExchange,
+    enableGoldBuy,
+    enableGoldSell,
+    enableUsdtBuy,
     isLoading,
     isLoaded,
     hasRequestedSettings,

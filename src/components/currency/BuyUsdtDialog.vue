@@ -217,6 +217,24 @@ const handleConfirm = async () => {
       })
       return
     }
+    
+    // 检查平台USDT购买功能是否开启
+    const { usePlatformStore } = await import('@/store/platform')
+    const platformStore = usePlatformStore()
+    
+    // 确保平台设置已加载
+    if (!platformStore.isLoaded) {
+      await platformStore.fetchPlatformSettings()
+    }
+    
+    // 检查USDT购买功能
+    if (!platformStore.enableUsdtBuy) {
+      uni.showToast({
+        title: '购买系统正在维护更新',
+        icon: 'none',
+      })
+      return
+    }
 
     const res = await buyUsdt(buyAmount)
 

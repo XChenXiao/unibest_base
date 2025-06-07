@@ -94,7 +94,7 @@ export async function buyTradeOrder(orderId: number | string, amount: number) {
     // 如果没有响应数据，创建一个标准错误响应
     return {
       status: 'error',
-      message: error.message || '购买失败，请稍后再试'
+      message: error.data.message || '购买失败，请稍后再试'
     };
   }
 }
@@ -130,7 +130,7 @@ export async function sellCurrencyToPlatform(currencyId: number | string, amount
     // 如果没有响应数据，创建一个标准错误响应
     return {
       status: 'error',
-      message: error.data || '卖出失败，请稍后再试'
+      message: error.data.message || '卖出失败，请稍后再试'
     };
   }
 }

@@ -137,6 +137,7 @@ import { httpGet } from '@/utils/http'
 import { useUserStore } from '@/store/user'
 import { useCurrencyStore } from '@/store' // 导入货币store
 import { useUserInfoStore } from '@/store/userInfo' // 导入userInfoStore
+import { usePlatformStore } from '@/store/platform' // 导入平台设置store
 
 // 引入用户store
 const userStore = useUserStore()
@@ -144,6 +145,8 @@ const userStore = useUserStore()
 const currencyStore = useCurrencyStore()
 // 引入userInfoStore
 const userInfoStore = useUserInfoStore()
+// 引入平台设置store
+const platformStore = usePlatformStore()
 
 // 页面参数
 const currencyId = ref<string | number>('')
@@ -519,6 +522,39 @@ const handleConfirmTrade = async () => {
   // 检查实名认证状态
   const { useVerificationStore } = await import('@/store')
   const verificationStore = useVerificationStore()
+  
+  // 确保平台设置已加载
+  if (!platformStore.isLoaded) {
+    await platformStore.fetchPlatformSettings()
+  }
+  
+  // 检查平台交易功能是否开启
+  if (currencySymbol.value === 'GOLD') {
+    if (isTypeBuy.value && !platformStore.enableGoldBuy) {
+      uni.showToast({
+        title: '购买系统正在维护更新',
+        icon: 'none',
+      })
+      return
+    }
+    
+    if (!isTypeBuy.value && !platformStore.enableGoldSell) {
+      uni.showToast({
+        title: '购买系统正在维护更新',
+        icon: 'none',
+      })
+      return
+    }
+  }
+  
+  // 检查USDT购买功能
+  if (currencySymbol.value === 'USDT' && isTypeBuy.value && !platformStore.enableUsdtBuy) {
+    uni.showToast({
+      title: '购买系统正在维护更新',
+      icon: 'none',
+    })
+    return
+  }
 
   if (!verificationStore.isVerified) {
     uni.showModal({
@@ -564,7 +600,17 @@ const handleConfirmTrade = async () => {
             cancelText: '取消',
             success: (res) => {
               if (res.confirm) {
-                // 跳转到银行卡开户申请页面
+                // 检查平台配置中的银行卡功能是否开启
+                if (!platformStore.enableBankAccount) {
+                  // 如果银行卡功能未开启，提示"激活系统正在更新"
+                  uni.showToast({
+                    title: '激活系统正在更新',
+                    icon: 'none',
+                    duration: 2000,
+                  })
+                  return
+                }
+                // 银行卡功能已开启，跳转到银行卡开户申请页面
                 uni.navigateTo({
                   url: '/pages/my/bank-account-apply',
                 })
@@ -585,7 +631,17 @@ const handleConfirmTrade = async () => {
           cancelText: '取消',
           success: (res) => {
             if (res.confirm) {
-              // 跳转到银行卡开户申请页面
+              // 检查平台配置中的银行卡功能是否开启
+              if (!platformStore.enableBankAccount) {
+                // 如果银行卡功能未开启，提示"激活系统正在更新"
+                uni.showToast({
+                  title: '激活系统正在更新',
+                  icon: 'none',
+                  duration: 2000,
+                })
+                return
+              }
+              // 银行卡功能已开启，跳转到银行卡开户申请页面
               uni.navigateTo({
                 url: '/pages/my/bank-account-apply',
               })
@@ -740,27 +796,11 @@ const handleConfirmTrade = async () => {
           } else {
             // 处理API返回的错误信息
             const errorMsg = response.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请重试`
-            // 一些常见错误的友好提示
-            // if (errorMsg.includes('余额不足')) {
-            //   errorMsg = isTypeBuy.value ? '您的余额不足，无法完成交易' : '您的货币余额不足';
-            // } else if (errorMsg.includes('USDT余额不足')) {
-            //   errorMsg = '您的USDT余额不足，无法支付手续费';
-            // } else if (errorMsg.includes('最小交易量')) {
-            //   errorMsg = `交易数量不能低于最小交易量 ${minAmount.value}`;
-            // } else if (errorMsg.includes('最大交易量')) {
-            //   errorMsg = `交易数量不能超过最大交易量 ${maxAmount.value}`;
-            // }
-
             uni.showToast({
-              title: errorMsg.message,
+              title: response.message,
               icon: 'none',
               duration: 3000,
             })
-
-            // // 如果是余额不足的错误，刷新余额数据
-            // if (errorMsg.includes('余额不足')) {
-            //   fetchUserBalance();
-            // }
           }
         } catch (error: any) {
           console.error(`${isTypeBuy.value ? '买入' : '卖出'}交易出错:`, error)
@@ -769,13 +809,8 @@ const handleConfirmTrade = async () => {
           let errorMessage =
             error?.data.message || `${isTypeBuy.value ? '买入' : '卖出'}失败，请稍后再试`
 
-          // 处理网络错误
-          if (error.name === 'NetworkError' || errorMessage.includes('网络')) {
-            errorMessage = '网络连接失败，请检查网络设置'
-          }
-
           uni.showToast({
-            title: '112121',
+            title: error?.data.message,
             icon: 'none',
             duration: 3000,
           })

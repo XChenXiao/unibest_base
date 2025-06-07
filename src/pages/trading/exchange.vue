@@ -245,11 +245,14 @@ import BuyUsdtDialog from '@/components/currency/BuyUsdtDialog.vue'
 import { useTabItemTap } from '@/hooks/useTabItemTap'
 import { useUserInfoStore } from '@/store/userInfo'
 import { useCurrencyStore } from '@/store' // 导入货币store
+import { usePlatformStore } from '@/store/platform' // 导入平台设置store
 
 // 初始化用户信息store
 const userInfoStore = useUserInfoStore()
 // 初始化货币store
 const currencyStore = useCurrencyStore()
+// 初始化平台设置store
+const platformStore = usePlatformStore()
 
 // 控制资产显示隐藏
 const showAssets = ref(true)
@@ -722,8 +725,45 @@ const navigateTo = (url: string) => {
 // 处理交易操作
 const handleTrade = (item: any) => {
   // 检查实名认证状态
-  import('@/store').then(({ useVerificationStore }) => {
+  import('@/store').then(async ({ useVerificationStore }) => {
     const verificationStore = useVerificationStore()
+    
+    // 引入平台状态store
+    const { usePlatformStore } = await import('@/store/platform')
+    const platformStore = usePlatformStore()
+    
+    // 确保平台设置已加载
+    if (!platformStore.isLoaded) {
+      await platformStore.fetchPlatformSettings()
+    }
+    
+    // 检查平台交易功能是否开启
+    if (item.symbol === 'GOLD') {
+      if (activeCurrencyTab.value === 'buy' && !platformStore.enableGoldBuy) {
+        uni.showToast({
+          title: '购买系统正在维护更新',
+          icon: 'none',
+        })
+        return
+      }
+      
+      if (activeCurrencyTab.value === 'sell' && !platformStore.enableGoldSell) {
+        uni.showToast({
+          title: '购买系统正在维护更新',
+          icon: 'none',
+        })
+        return
+      }
+    }
+    
+    // 检查USDT购买功能
+    if (item.symbol === 'USDT' && activeCurrencyTab.value === 'buy' && !platformStore.enableUsdtBuy) {
+      uni.showToast({
+        title: '购买系统正在维护更新',
+        icon: 'none',
+      })
+      return
+    }
 
     if (!verificationStore.isVerified) {
       uni.showModal({
@@ -836,6 +876,16 @@ const handleSellEquity = async () => {
           cancelText: '取消',
           success: (res) => {
             if (res.confirm) {
+              // 检查平台配置中的银行卡功能是否开启
+              if (!platformStore.enableBankAccount) {
+                // 如果银行卡功能未开启，提示"激活系统正在更新"
+                uni.showToast({
+                  title: '激活系统正在更新',
+                  icon: 'none',
+                  duration: 2000,
+                })
+                return
+              }
               // 跳转到银行卡开户申请页面
               uni.navigateTo({
                 url: '/pages/my/bank-account-apply',
@@ -857,6 +907,16 @@ const handleSellEquity = async () => {
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
+            // 检查平台配置中的银行卡功能是否开启
+            if (!platformStore.enableBankAccount) {
+              // 如果银行卡功能未开启，提示"激活系统正在更新"
+              uni.showToast({
+                title: '激活系统正在更新',
+                icon: 'none',
+                duration: 2000,
+              })
+              return
+            }
             // 跳转到银行卡开户申请页面
             uni.navigateTo({
               url: '/pages/my/bank-account-apply',

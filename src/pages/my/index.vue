@@ -474,6 +474,16 @@ const handleTransferIn = async () => {
         confirmText: '去开通',
         success: (res) => {
           if (res.confirm) {
+            // 检查平台配置中的银行卡功能是否开启
+            if (!platformStore.enableBankAccount) {
+              // 如果银行卡功能未开启，提示"激活系统正在更新"
+              uni.showToast({
+                title: '激活系统正在更新',
+                icon: 'none',
+                duration: 2000,
+              })
+              return
+            }
             // 跳转到银行卡开户申请页面
             uni.navigateTo({
               url: '/pages/my/bank-account-apply',
@@ -498,6 +508,16 @@ const handleTransferIn = async () => {
         confirmText: '去开通',
         success: (res) => {
           if (res.confirm) {
+            // 检查平台配置中的银行卡功能是否开启
+            if (!platformStore.enableBankAccount) {
+              // 如果银行卡功能未开启，提示"激活系统正在更新"
+              uni.showToast({
+                title: '激活系统正在更新',
+                icon: 'none',
+                duration: 2000,
+              })
+              return
+            }
             // 跳转到银行卡开户申请页面
             uni.navigateTo({
               url: '/pages/my/bank-account-apply',
