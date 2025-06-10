@@ -70,7 +70,7 @@
       <!-- 操作按钮 -->
       <view class="action-buttons">
         <button class="action-btn transfer-in" @click.stop="handleTransferIn">转入</button>
-        <button class="action-btn transfer-out" @click.stop="handleTransferOut">转出</button>
+        <button class="action-btn transfer-out" @click.stop="handleTransferOut">提现转出</button>
       </view>
     </view>
 
