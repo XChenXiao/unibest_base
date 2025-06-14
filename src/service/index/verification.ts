@@ -1,4 +1,4 @@
-import { http } from '@/utils/http'
+import { httpGet, httpPost } from '@/utils/http'
 
 /**
  * 实名认证请求参数接口
@@ -23,26 +23,44 @@ export interface IVerificationStatus {
   updated_at: string
 }
 
+// 验证接口返回类型
+export interface VerificationResponse {
+  status: string
+  message?: string
+  data?: {
+    verification?: {
+      real_name: string
+      id_card_number: string
+      verified_at?: string
+      updated_at?: string
+      status?: string
+    }
+  }
+}
+
 /**
  * 获取用户实名认证状态
  */
 export const getVerificationStatusAPI = () => {
-  return http.get<{
-    status: string;
-    data?: {
-      verification?: IVerificationStatus;
-      verification_status: 'pending' | 'approved' | 'rejected' | 'unsubmitted';
-      is_verified: boolean;
-    };
-  }>('/api/verification/status')
+  return httpGet<VerificationResponse>('/api/verification/status')
 }
 
 /**
  * 提交实名认证
  */
 export const submitVerificationAPI = (data: {
-  real_name: string;
-  id_card_number: string;
+  real_name: string
+  id_card_number: string
 }) => {
-  return http.post<any>('/api/verification/submit', data)
-} 
+  return httpPost<VerificationResponse>('/api/verification/submit', data)
+}
+
+/**
+ * 更新实名信息
+ */
+export const updateVerificationAPI = (data: {
+  real_name: string
+  id_card_number: string
+}) => {
+  return httpPost<VerificationResponse>('/api/verification/update', data)
+}
