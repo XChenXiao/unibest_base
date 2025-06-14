@@ -1,4 +1,4 @@
-import { http } from '@/utils/request'
+import { httpGet, httpPost } from '@/utils/http'
 
 /**
  * 实名认证请求参数接口
@@ -42,8 +42,8 @@ export interface VerificationResponse {
  * 获取实名认证状态
  * @returns Promise<VerificationResponse>
  */
-export const getVerificationStatusAPI = (): Promise<VerificationResponse> => {
-  return http.get('/api/verification/status')
+export const getVerificationStatusAPI = () => {
+  return httpGet<VerificationResponse>('/api/verification/status')
 }
 
 /**
@@ -54,8 +54,8 @@ export const getVerificationStatusAPI = (): Promise<VerificationResponse> => {
 export const submitVerificationAPI = (data: {
   real_name: string
   id_card_number: string
-}): Promise<VerificationResponse> => {
-  return http.post('/api/verification/submit', data)
+}) => {
+  return httpPost<VerificationResponse>('/api/verification/submit', data)
 }
 
 /**
@@ -66,6 +66,6 @@ export const submitVerificationAPI = (data: {
 export const updateVerificationAPI = (data: {
   real_name: string
   id_card_number: string
-}): Promise<VerificationResponse> => {
-  return http.post('/api/verification/update', data)
+}) => {
+  return httpPost<VerificationResponse>('/api/verification/update', data)
 } 
