@@ -119,6 +119,9 @@ const uploadBaseUrl = getEnvBaseUploadUrl()
 // 认证状态：none-未认证，pending-审核中，approved-已通过，rejected-已拒绝
 const verifyStatus = ref<'none' | 'pending' | 'approved' | 'rejected'>('none')
 
+// 是否是编辑模式
+const isEditMode = ref(false)
+
 // 加载状态
 const loading = ref(false)
 
@@ -173,7 +176,7 @@ const getStatusText = () => {
     case 'pending':
       return '认证审核中'
     case 'approved':
-      return '认证已通过'
+      return isEditMode.value ? '修改实名信息' : '认证已通过'
     case 'rejected':
       return '认证未通过'
     default:
@@ -187,7 +190,7 @@ const getStatusDesc = () => {
     case 'pending':
       return '您的实名认证申请正在审核中，请耐心等待'
     case 'approved':
-      return '您已完成实名认证，可以使用完整的平台功能'
+      return isEditMode.value ? '请填写新的实名信息' : '您已完成实名认证，可以使用完整的平台功能'
     case 'rejected':
       return '很抱歉，您的实名认证未通过，请修改后重新提交'
     default:
@@ -203,10 +206,23 @@ const maskIdNumber = (idNumber: string) => {
 
 // 页面加载时检查认证状态
 onMounted(async () => {
+  // 检查是否为编辑模式
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  // @ts-ignore
+  const query = currentPage.options || {}
+  
+  if (query.mode === 'edit') {
+    isEditMode.value = true
+    verifyStatus.value = 'approved'
+  }
+  
   // 直接从verificationStore获取认证状态
   if (verificationStore.isVerified) {
     // 用户已通过实名认证，直接设置状态为approved
-    verifyStatus.value = 'approved'
+    if (!isEditMode.value) {
+      verifyStatus.value = 'approved'
+    }
 
     try {
       // 从用户信息或缓存中获取已认证的实名信息
@@ -214,7 +230,7 @@ onMounted(async () => {
 
       // 如果需要更详细的实名认证信息，可以获取认证状态详情
       // 但仅当需要展示身份证号和认证时间等详细信息时才查询
-      if (!userInfo.idNumber || !userInfo.verifyTime) {
+      if (!userInfo.idNumber || !userInfo.verifyTime || isEditMode.value) {
         const res = await getVerificationStatusAPI()
 
         // 基于API返回的数据结构访问verification对象
@@ -228,6 +244,12 @@ onMounted(async () => {
             userInfo.name = verification.real_name || userInfo.name
             userInfo.idNumber = verification.id_card_number || ''
             userInfo.verifyTime = verification.verified_at || verification.updated_at || ''
+            
+            // 如果是编辑模式，填充表单数据
+            if (isEditMode.value) {
+              formData.name = verification.real_name || ''
+              formData.idNumber = verification.id_card_number || ''
+            }
           }
         }
       }
@@ -236,7 +258,7 @@ onMounted(async () => {
       // 使用基础用户信息作为备选
       userInfo.name = userStore.userInfo.phone || ''
     }
-  } else {
+  } else if (!isEditMode.value) {
     // 如果用户未通过实名认证，需要获取当前的认证状态
     await verificationStore.fetchVerificationStatus()
 
@@ -285,11 +307,21 @@ const handleSubmit = async () => {
     // 显示加载状态
     loading.value = true
 
-    // 调用实名认证API - 无需身份证图片
-    const res = await submitVerificationAPI({
-      real_name: formData.name,
-      id_card_number: formData.idNumber,
-    })
+    // 根据是否为编辑模式调用不同的API
+    let res
+    if (isEditMode.value) {
+      // 调用更新API
+      res = await http.post('/api/verification/update', {
+        real_name: formData.name,
+        id_card_number: formData.idNumber,
+      })
+    } else {
+      // 调用提交认证API
+      res = await submitVerificationAPI({
+        real_name: formData.name,
+        id_card_number: formData.idNumber,
+      })
+    }
 
     if (res.status === 'success') {
       // 直接更新verificationStore状态为已认证
@@ -312,7 +344,7 @@ const handleSubmit = async () => {
 
       // 提交成功提示
       uni.showToast({
-        title: '实名认证提交成功并已通过',
+        title: isEditMode.value ? '实名信息修改成功' : '实名认证提交成功并已通过',
         icon: 'success',
       })
 

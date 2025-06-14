@@ -19,6 +19,8 @@ interface NavigateToOptions {
        "/pages/my/bank-account-apply" |
        "/pages/my/bank-cards" |
        "/pages/my/customer-service" |
+       "/pages/my/identity-info" |
+       "/pages/my/identity-update" |
        "/pages/my/identity-verify" |
        "/pages/my/index" |
        "/pages/my/reset-password" |
@@ -27,6 +29,7 @@ interface NavigateToOptions {
        "/pages/my/wallet" |
        "/pages/my/wechat-payment-setting" |
        "/pages/my/withdraw" |
+       "/pages/payment/bank-card-order" |
        "/pages/payment/index" |
        "/pages/register/captcha" |
        "/pages/register/index" |

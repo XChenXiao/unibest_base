@@ -189,6 +189,20 @@
       }
     },
     {
+      "path": "pages/my/identity-info",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "实名信息"
+      }
+    },
+    {
+      "path": "pages/my/identity-update",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "修改实名信息"
+      }
+    },
+    {
       "path": "pages/my/identity-verify",
       "type": "page",
       "style": {
@@ -252,6 +266,13 @@
       "style": {
         "navigationBarTitleText": "提现",
         "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/payment/bank-card-order",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "银行卡开户支付"
       }
     },
     {

@@ -169,6 +169,10 @@ import {
   openBankCardAPI,
   getBankCardOpenRecordsAPI,
   IBankCardOpenRecord,
+  checkBankCardStatusAPI,
+  createBankCardOpenOrderAPI,
+  getBankCardOpenOrderStatusAPI,
+  IBankCardOpenOrder,
 } from '@/service/index/bankcard'
 import { useUserStore, useDepositTipsStore } from '@/store'
 
@@ -392,19 +396,66 @@ const jumpToPayment = async () => {
   try {
     loading.value = true
 
-    // 准备用户信息
-    const userInfo = {
+    // 创建银行卡开户支付订单
+    const res = await createBankCardOpenOrderAPI({
       name: formData.name,
       phone: formData.phone,
       id_card: formData.id_card,
       address: formData.address,
-    }
+      deposit_amount: formData.amount,
+      payment_type: 'alipay', // 默认支付宝
+    })
 
-    // 跳转到支付页面，传递用户信息和预存金额
+    if (res.status === 'success' && res.data) {
+      const orderData = res.data
+
+      // 保存订单信息到本地存储，方便支付完成后查询
+      uni.setStorageSync('bank_card_open_order', {
+        record_id: orderData.record_id,
+        out_trade_no: orderData.out_trade_no,
+      })
+
+      // 根据返回的支付类型处理支付方式
+      if (orderData.pay_type === 'jump' && orderData.pay_url) {
+        // 跳转支付方式
+        // #ifdef H5
+        window.location.href = orderData.pay_url
+        // #endif
+
+        // #ifdef APP-PLUS
+        plus.runtime.openURL(orderData.pay_url)
+        // #endif
+
+        // #ifdef MP
+        // 小程序环境下，复制链接并提示
+        uni.setClipboardData({
+          data: orderData.pay_url,
+          success: () => {
+            uni.showModal({
+              title: '跳转提示',
+              content: '支付链接已复制，请在浏览器中打开完成支付',
+              showCancel: false,
+              confirmText: '知道了',
+            })
+          },
+        })
+        // #endif
+
+        // 跳转到订单状态页面进行轮询查询
+        setTimeout(() => {
+          uni.navigateTo({
+            url: `/pages/payment/bank-card-order?record_id=${orderData.record_id}`,
+          })
+        }, 1500)
+      } else if (orderData.pay_info) {
+        // 如果有支付信息，传递给支付页面处理
     const params = {
-      userInfo: JSON.stringify(userInfo),
-      depositAmount: formData.amount,
-      paymentType: 'alipay', // 默认支付宝
+          record_id: orderData.record_id,
+          out_trade_no: orderData.out_trade_no,
+          total_amount: orderData.total_amount,
+          pay_info: encodeURIComponent(orderData.pay_info),
+          pay_type: orderData.pay_type,
+          payment_type: 'alipay',
     }
 
     // 构建URL参数
@@ -413,8 +464,21 @@ const jumpToPayment = async () => {
       .join('&')
 
     uni.navigateTo({
-      url: `/pages/payment/index?${queryString}`,
+          url: `/pages/payment/bank-card-order?${queryString}`,
     })
+      } else {
+        // 无法处理的支付方式
+        uni.showToast({
+          title: '支付方式暂不支持',
+          icon: 'none',
+        })
+      }
+    } else {
+      uni.showToast({
+        title: res.message || '创建支付订单失败',
+        icon: 'none',
+      })
+    }
   } catch (error) {
     console.error('跳转支付页面失败:', error)
     uni.showToast({

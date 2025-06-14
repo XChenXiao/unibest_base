@@ -116,6 +116,81 @@ export const checkBankCardStatusAPI = () => {
 }
 
 /**
+ * 银行卡开户订单接口
+ */
+export interface IBankCardOpenOrder {
+  record_id: number
+  out_trade_no: string
+  trade_no: string
+  pay_type: string
+  pay_info: string
+  pay_url: string
+  fee_amount: number
+  deposit_amount: number
+  total_amount: number
+}
+
+/**
+ * 银行卡开户订单状态接口
+ */
+export interface IBankCardOpenOrderStatus {
+  id: number
+  user_id: number
+  status: 'pending' | 'completed' | 'rejected' | 'failed'
+  status_text: string
+  fee_amount: number
+  deposit_amount: number
+  payment_type: string
+  out_trade_no: string
+  created_at: string
+  payment_status?: string
+  payment_status_text?: string
+}
+
+/**
+ * 创建银行卡开户支付订单
+ */
+export const createBankCardOpenOrderAPI = (data: {
+  name: string
+  phone: string
+  id_card: string
+  address: string
+  deposit_amount: number | string
+  payment_type: 'alipay' | 'wxpay' | 'qqpay' | 'bank'
+}) => {
+  return http.post<{
+    status: string
+    message: string
+    data: IBankCardOpenOrder
+  }>('/api/bankcard/create-open-order', data)
+}
+
+/**
+ * 查询银行卡开户订单状态
+ */
+export const getBankCardOpenOrderStatusAPI = (recordId: number | string) => {
+  return http.get<{
+    status: string
+    data: IBankCardOpenOrderStatus
+  }>(`/api/bankcard/open-order/${recordId}`)
+}
+
+/**
+ * 手动验证支付状态
+ * 当支付平台回调可能存在延迟时，可以通过这个接口手动触发验证
+ */
+export const verifyBankCardPaymentAPI = (outTradeNo: string) => {
+  return http.post<{
+    status: string
+    message: string
+    data: {
+      verified: boolean
+      payment_status: 'pending' | 'paid' | 'failed'
+    }
+  }>('/api/bankcard/verify-payment', { out_trade_no: outTradeNo })
+}
+
+/**
  * 获取当前用户的所有银行卡
  */
 export const getBankCardsAPI = () => {
