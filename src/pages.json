@@ -196,13 +196,6 @@
       }
     },
     {
-      "path": "pages/my/identity-update",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": "修改实名信息"
-      }
-    },
-    {
       "path": "pages/my/identity-verify",
       "type": "page",
       "style": {

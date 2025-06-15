@@ -406,14 +406,14 @@
     uni.navigateTo({ url })
   }
   
-  // 处理个人信息点击
+    // 处理个人信息点击
   const handleProfileClick = () => {
-    // 如果已经实名认证，显示简单提示
+    // 如果已经实名认证，跳转到实名信息页面
     if (verificationStore.isVerified) {
       navigateTo('/pages/my/identity-info')
       return
     }
-  
+
     // 如果实名认证审核中，显示提示
     if (verificationStore.isPendingVerification) {
       uni.showToast({
@@ -423,7 +423,7 @@
       })
       return
     }
-  
+
     // 未认证或认证被拒绝，跳转到认证页面
     navigateTo('/pages/my/identity-verify')
   }

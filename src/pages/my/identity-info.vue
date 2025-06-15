@@ -159,10 +159,20 @@
     
         // 基于API返回的数据结构访问verification对象
         if (res.status === 'success' && res.data) {
-          // 获取认证信息
-          const verificationData = res.data
-          if (verificationData && verificationData.verification) {
-            // 填充用户信息
+          // 使用类型断言来处理API返回的数据
+          const verificationData = res.data as {
+            verification?: {
+              real_name: string
+              id_card_number: string
+              verified_at?: string
+              updated_at?: string
+              status?: string
+            }
+          }
+          
+          // 检查是否有verification对象
+          if (verificationData.verification) {
+            // 获取认证信息
             const verification = verificationData.verification
             console.log(verification,'verificationData')
             userInfo.name = verification.real_name || userInfo.name
