@@ -20,7 +20,6 @@ interface NavigateToOptions {
        "/pages/my/bank-cards" |
        "/pages/my/customer-service" |
        "/pages/my/identity-info" |
-       "/pages/my/identity-update" |
        "/pages/my/identity-verify" |
        "/pages/my/index" |
        "/pages/my/reset-password" |
