@@ -103,11 +103,13 @@ export const http = <T>(options: CustomRequestOptions) => {
             resolve(responseData)
           } else {
             // 业务逻辑错误处理
-            !options.hideErrorToast &&
+            if (!options.hideErrorToast) {
+              // 显示错误提示
               uni.showToast({
                 icon: 'none',
                 title: responseData.message || '请求失败',
               })
+            }
             console.error('业务逻辑错误:', responseData)
             reject(responseData)
           }
