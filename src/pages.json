@@ -191,7 +191,9 @@
     {
       "path": "pages/my/identity-info",
       "type": "page",
-      "style": {}
+      "style": {
+        "navigationBarTitleText": "实名信息"
+      }
     },
     {
       "path": "pages/my/identity-verify",
@@ -373,7 +375,9 @@
       "path": "pages/webview/index",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "支付"
+        "navigationBarTitleText": "微信支付",
+        "navigationBarBackgroundColor": "#07C160",
+        "navigationBarTextStyle": "white"
       }
     },
     {

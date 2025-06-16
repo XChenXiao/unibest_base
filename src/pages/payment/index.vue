@@ -228,90 +228,179 @@ const handlePayment = async () => {
 // 统一支付处理方式
 const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
   try {
-    // 解析支付信息
-    const payInfo = JSON.parse(orderData.pay_info || '{}')
+    // 定义支付信息接口
+    interface PayInfo {
+      pay_url?: string;
+      qr_code?: string;
+      callback_url?: string;
+      [key: string]: any;
+    }
+    
+    // 安全解析支付信息
+    let payInfo: PayInfo = {}
+    if (orderData.pay_info) {
+      try {
+        payInfo = JSON.parse(orderData.pay_info) as PayInfo
+      } catch (e) {
+        console.error('支付信息解析失败:', e)
+        // 如果解析失败，使用空对象继续后续逻辑
+      }
+    }
 
-    // 如果有支付链接，直接跳转
-    if (payInfo.pay_url) {
-      // #ifdef APP-PLUS
-      // APP端使用系统浏览器打开支付链接
-      plus.runtime.openURL(payInfo.pay_url)
-      // #endif
+    // 记录调试日志
+    console.log('支付信息:', { orderData, payInfo })
 
-      // #ifdef H5
-      // H5端直接跳转
-      window.location.href = payInfo.pay_url
-      // #endif
-
-      // #ifdef MP-WEIXIN || MP-ALIPAY
-      // 小程序端复制链接提示用户
-      uni.setClipboardData({
-        data: payInfo.pay_url,
-        success: () => {
-          uni.showToast({
-            title: '链接已复制，请在浏览器中打开',
-            icon: 'none',
-            duration: 3000,
+    // 根据支付信息处理不同的支付方式
+    if (payInfo && typeof payInfo === 'object') {
+      // 如果是微信支付，跳转到WebView页面
+      if (selectedMethod.value === 'wxpay') {
+        let payUrl = ''
+        
+        // 优先使用pay_url字段
+        if (payInfo.pay_url) {
+          payUrl = payInfo.pay_url
+        } 
+        // 如果没有pay_url但有其他URL字段，尝试使用
+        else if (payInfo.url) {
+          payUrl = payInfo.url
+        }
+        // 直接使用pay_info作为URL（如果是字符串形式）
+        else if (typeof orderData.pay_info === 'string' && orderData.pay_info.includes('http')) {
+          payUrl = orderData.pay_info
+        }
+        
+        // 如果找到了支付URL，跳转到WebView页面
+        if (payUrl) {
+          // #ifdef APP-PLUS
+          // APP端使用内置WebView
+          uni.navigateTo({
+            url: `/pages/webview/index?url=${encodeURIComponent(payUrl)}&orderId=${orderInfo.value.order_id}`,
           })
-        },
-      })
-      // #endif
+          // #endif
 
-      // 开始检查支付状态
-      startPaymentCheck()
-    }
-    // 如果有二维码，显示二维码
-    else if (payInfo.qr_code) {
-      paymentQRCode.value = payInfo.qr_code
-      showQRCode.value = true
-      startPaymentCheck()
-    }
-    // 如果是回调URL方式
-    else if (payInfo.callback_url) {
-      // #ifdef APP-PLUS
-      // APP端使用内置浏览器
-      uni.navigateTo({
-        url: `/pages/webview/index?url=${encodeURIComponent(payInfo.callback_url)}`,
-      })
-      // #endif
+          // #ifdef H5
+          // H5端使用新窗口打开
+          window.open(payUrl, '_blank')
+          // #endif
 
-      // #ifdef H5
-      window.location.href = payInfo.callback_url
-      // #endif
+          // #ifdef MP-WEIXIN
+          // 微信小程序使用内置WebView（如果支持）或复制链接
+          uni.navigateTo({
+            url: `/pages/webview/index?url=${encodeURIComponent(payUrl)}&orderId=${orderInfo.value.order_id}`,
+            fail: () => {
+              // 如果WebView导航失败，复制链接
+              uni.setClipboardData({
+                data: payUrl,
+                success: () => {
+                  uni.showModal({
+                    title: '打开微信支付',
+                    content: '链接已复制，请在浏览器中打开完成支付',
+                    showCancel: false
+                  })
+                }
+              })
+            }
+          })
+          // #endif
 
-      // #ifdef MP-WEIXIN || MP-ALIPAY
-      // 小程序端显示提示
+          // 开始检查支付状态
+          startPaymentCheck()
+          return // 提前返回，不执行后续逻辑
+        }
+      }
+      
+      // 处理其他支付方式或备用逻辑（当微信支付没有URL时）
+      // 如果有支付链接，直接跳转
+      if (payInfo.pay_url) {
+        // #ifdef APP-PLUS
+        // APP端使用系统浏览器打开支付链接
+        plus.runtime.openURL(payInfo.pay_url)
+        // #endif
+
+        // #ifdef H5
+        // H5端直接跳转
+        window.location.href = payInfo.pay_url
+        // #endif
+
+        // #ifdef MP-WEIXIN || MP-ALIPAY
+        // 小程序端复制链接提示用户
+        uni.setClipboardData({
+          data: payInfo.pay_url,
+          success: () => {
+            uni.showToast({
+              title: '链接已复制，请在浏览器中打开',
+              icon: 'none',
+              duration: 3000,
+            })
+          },
+        })
+        // #endif
+
+        // 开始检查支付状态
+        startPaymentCheck()
+      }
+      // 如果有二维码，显示二维码
+      else if (payInfo.qr_code) {
+        paymentQRCode.value = payInfo.qr_code
+        showQRCode.value = true
+        startPaymentCheck()
+      }
+      // 如果是回调URL方式
+      else if (payInfo.callback_url) {
+        // #ifdef APP-PLUS
+        // APP端使用内置浏览器
+        uni.navigateTo({
+          url: `/pages/webview/index?url=${encodeURIComponent(payInfo.callback_url)}&orderId=${orderInfo.value.order_id}`,
+        })
+        // #endif
+
+        // #ifdef H5
+        window.location.href = payInfo.callback_url
+        // #endif
+
+        // #ifdef MP-WEIXIN || MP-ALIPAY
+        // 小程序端显示提示
+        uni.showModal({
+          title: '支付提示',
+          content: '请复制链接到浏览器中完成支付',
+          confirmText: '复制链接',
+          success: (res) => {
+            if (res.confirm) {
+              uni.setClipboardData({
+                data: payInfo.callback_url!,
+                success: () => {
+                  uni.showToast({
+                    title: '链接已复制',
+                    icon: 'success',
+                  })
+                },
+              })
+            }
+          },
+        })
+        // #endif
+
+        startPaymentCheck()
+      } else {
+        // 未识别的支付方式，显示交易号
+        uni.showModal({
+          title: '支付提示',
+          content: `请记录您的订单号: ${orderData.transaction_no || orderData.order_id}，并联系客服完成支付`,
+          showCancel: false
+        })
+      }
+    } else {
+      // payInfo不是对象或为空的处理
       uni.showModal({
         title: '支付提示',
-        content: '请复制链接到浏览器中完成支付',
-        confirmText: '复制链接',
-        success: (res) => {
-          if (res.confirm) {
-            uni.setClipboardData({
-              data: payInfo.callback_url,
-              success: () => {
-                uni.showToast({
-                  title: '链接已复制',
-                  icon: 'success',
-                })
-              },
-            })
-          }
-        },
-      })
-      // #endif
-
-      startPaymentCheck()
-    } else {
-      uni.showToast({
-        title: '支付信息格式错误',
-        icon: 'none',
+        content: `您的订单已创建 (订单号: ${orderData.transaction_no || orderData.order_id})，请保存订单号并联系客服进行支付`,
+        showCancel: false
       })
     }
   } catch (e) {
     console.error('处理支付信息失败:', e)
     uni.showToast({
-      title: '支付信息解析失败',
+      title: '支付信息处理失败，请联系客服',
       icon: 'none',
     })
   }
@@ -330,10 +419,19 @@ const startPaymentCheck = () => {
 
 // 检查支付状态
 const checkPaymentStatus = async () => {
-  if (!orderInfo.value.order_id) return
+  if (!orderInfo.value.order_id) {
+    console.log('缺少订单ID，无法检查支付状态')
+    return
+  }
 
   try {
+    // 记录调试日志
+    console.log('正在检查订单状态:', orderInfo.value.order_id)
+    
     const res = await queryAccountOpenOrderAPI(orderInfo.value.order_id)
+
+    // 记录返回结果
+    console.log('订单状态查询结果:', res)
 
     if (res.status === 'success' && res.data) {
       // 检查订单状态
@@ -356,10 +454,22 @@ const checkPaymentStatus = async () => {
             url: '/pages/my/index',
           })
         }, 2000)
+      } else if (res.data.status === 'failed') {
+        // 支付失败
+        stopPaymentCheck()
+        uni.showModal({
+          title: '支付失败',
+          content: '很抱歉，您的支付未能完成，请稍后重试或联系客服',
+          showCancel: false
+        })
       }
+      // 其他状态继续等待
+    } else {
+      console.log('查询响应格式不正确:', res)
     }
   } catch (error) {
     console.error('检查支付状态失败:', error)
+    // 查询失败不停止检查，继续等待下次检查
   }
 }
 
