@@ -11,7 +11,7 @@
       <!-- 支付信息卡片 -->
       <view class="payment-card">
         <view class="payment-header">
-          <text class="payment-title">账户开户支付</text>
+          <text class="payment-title">{{ paymentTitle }}</text>
           <view class="payment-amount">
             <text class="amount-label">支付金额</text>
             <text class="amount-value">¥{{ orderInfo.total_amount || 0 }}</text>
@@ -110,6 +110,12 @@
     type IAccountOpenOrder,
     type IAccountOpenOrderStatus,
   } from '@/service/index/account'
+  import {
+    createBankCardOpenOrderAPI,
+    getBankCardOpenOrderStatusAPI,
+    type IBankCardOpenOrder,
+    type IBankCardOpenOrderStatus,
+  } from '@/service/index/bankcard'
   import { useUserStore } from '@/store'
   
   // 用户存储
@@ -120,10 +126,11 @@
     userInfo?: string
     depositAmount?: string
     paymentType?: string
+    type?: string // 支付类型：account_open-开户验证, bankcard-银行卡开户
   }>({})
   
-  // 订单信息
-  const orderInfo = ref<Partial<IAccountOpenOrder>>({})
+  // 订单信息，使用any类型避免类型冲突
+  const orderInfo = ref<any>({})
   
   // 支付相关状态
   const selectedMethod = ref<'alipay' | 'wxpay' | ''>('')
@@ -135,6 +142,14 @@
   // 计算属性
   const selectedMethodName = computed(() => {
     return selectedMethod.value === 'alipay' ? '支付宝' : '微信'
+  })
+  
+  // 计算标题
+  const paymentTitle = computed(() => {
+    if (pageParams.value.type === 'bankcard') {
+      return '银行卡开户支付'
+    }
+    return '账户开户支付'
   })
   
   // 页面加载时获取参数
@@ -159,7 +174,7 @@
   // 每次页面显示时检查支付状态
   onShow(() => {
     // 如果有订单ID，检查支付状态
-    if (orderInfo.value.order_id) {
+    if (orderInfo.value && (orderInfo.value.record_id || orderInfo.value.order_id)) {
       checkPaymentStatus()
     }
   })
@@ -194,16 +209,31 @@
         return
       }
   
-      // 创建开户支付订单
-      const res = await createAccountOpenOrderAPI({
-        payment_type: selectedMethod.value,
-        deposit_amount: depositAmount,
-        user_info: userInfo,
-      })
+      // 根据不同的支付类型调用不同的API
+      let res: any
+      
+      if (pageParams.value.type === 'bankcard') {
+        // 银行卡开户支付
+        res = await createBankCardOpenOrderAPI({
+          name: userInfo.name,
+          phone: userInfo.phone,
+          id_card: userInfo.id_card,
+          address: userInfo.address,
+          deposit_amount: depositAmount,
+          payment_type: selectedMethod.value
+        })
+      } else {
+        // 默认账户开户支付
+        res = await createAccountOpenOrderAPI({
+          payment_type: selectedMethod.value,
+          deposit_amount: depositAmount,
+          user_info: userInfo,
+        })
+      }
   
       if (res.status === 'success' && res.data) {
         // 将返回的订单数据赋值给orderInfo
-        const orderData = res.data as unknown as IAccountOpenOrder
+        const orderData = res.data as any
         orderInfo.value = orderData
   
         // 统一处理支付方式，不区分平台
@@ -226,7 +256,7 @@
   }
   
   // 统一支付处理方式
-  const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
+  const handleUnifiedPayment = async (orderData: any) => {
     try {
       // 定义支付信息接口
       interface PayInfo {
@@ -419,23 +449,38 @@
   
   // 检查支付状态
   const checkPaymentStatus = async () => {
-    if (!orderInfo.value.order_id) {
+    // 检查是否有订单ID
+    if (!orderInfo.value || (!orderInfo.value.record_id && !orderInfo.value.order_id)) {
       console.log('缺少订单ID，无法检查支付状态')
       return
     }
   
     try {
       // 记录调试日志
-      console.log('正在检查订单状态:', orderInfo.value.order_id)
+      const orderId = orderInfo.value.record_id || orderInfo.value.order_id
+      console.log('正在检查订单状态:', orderId)
       
-      const res = await queryAccountOpenOrderAPI(orderInfo.value.order_id)
+      let res: any
+      
+      if (pageParams.value.type === 'bankcard') {
+        // 银行卡开户支付状态查询
+        const recordId = typeof orderId === 'number' ? orderId : parseInt(orderId)
+        res = await getBankCardOpenOrderStatusAPI(recordId)
+      } else {
+        // 默认账户开户支付状态查询
+        const orderIdStr = typeof orderId === 'string' ? orderId : String(orderId)
+        res = await queryAccountOpenOrderAPI(orderIdStr)
+      }
   
       // 记录返回结果
       console.log('订单状态查询结果:', res)
   
       if (res.status === 'success' && res.data) {
-        // 检查订单状态
-        if (res.data.status === 'completed') {
+        // 记录更详细的日志
+        console.log('订单详细信息:', res.data)
+        
+        // 检查订单状态，如果完成或支付状态为已支付则跳转
+        if (res.data.status === 'completed' || res.data.status === 'paid' || res.data.payment_status === 'paid') {
           // 支付成功
           stopPaymentCheck()
           closeQRCode()
@@ -450,11 +495,19 @@
   
           // 延迟跳转
           setTimeout(() => {
-            uni.reLaunch({
-              url: '/pages/my/index',
-            })
+            if (pageParams.value.type === 'bankcard') {
+              // 银行卡开户成功后跳转到银行卡页面
+              uni.reLaunch({
+                url: '/pages/my/bank-cards',
+              })
+            } else {
+              // 默认跳转到个人中心
+              uni.reLaunch({
+                url: '/pages/my/index',
+              })
+            }
           }, 2000)
-        } else if (res.data.status === 'failed') {
+        } else if (res.data.status === 'failed' || res.data.payment_status === 'failed') {
           // 支付失败
           stopPaymentCheck()
           uni.showModal({

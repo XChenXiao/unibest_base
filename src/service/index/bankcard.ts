@@ -59,13 +59,6 @@ export interface IBankCardStatusResponse {
 }
 
 /**
- * 获取银行卡开通手续费
- */
-export const getBankCardOpenFeeAPI = () => {
-  return http.get<any>('/api/bank-card/open-fee')
-}
-
-/**
  * 获取预存服务提示
  */
 export interface IDepositTip {
@@ -77,6 +70,45 @@ export interface IDepositTip {
   updated_at: string
 }
 
+/**
+ * 获取银行卡开户配置信息
+ */
+export interface IBankCardConfig {
+  open_fee: number
+  min_deposit_amount: number
+  bank_name: string
+  description: string
+  icon: string
+  deposit_tips: IDepositTip[]
+  payment_types: {
+    alipay: string
+    wxpay: string
+    qqpay: string
+    bank: string
+  }
+  required_fields: {
+    name: string
+    phone: string
+    id_card: string
+    address: string
+    deposit_amount: string
+  }
+}
+
+/**
+ * 获取银行卡开户配置
+ */
+export const getBankCardConfigAPI = () => {
+  return http.get<{
+    status: string
+    message: string
+    data: IBankCardConfig
+  }>('/api/user/bankcard/config')
+}
+
+/**
+ * 获取预存服务提示
+ */
 export const getDepositTipsAPI = () => {
   return http.get<{
     status: string
@@ -105,14 +137,14 @@ export const openBankCardAPI = (data: {
  * 获取用户的银行卡开户申请记录
  */
 export const getBankCardOpenRecordsAPI = () => {
-  return http.get<any>('/api/bank-card/open-records')
+  return http.get<any>('/api/user/bankcard/open-records')
 }
 
 /**
  * 查询用户银行卡开户申请状态和银行卡账户开通状态
  */
 export const checkBankCardStatusAPI = () => {
-  return http.get<IBankCardStatusResponse>('/api/bank-card/status')
+  return http.get<IBankCardStatusResponse>('/api/user/bankcard/status')
 }
 
 /**
@@ -162,7 +194,7 @@ export const createBankCardOpenOrderAPI = (data: {
     status: string
     message: string
     data: IBankCardOpenOrder
-  }>('/api/bankcard/create-open-order', data)
+  }>('/api/user/bankcard/open-order', data)
 }
 
 /**
@@ -172,7 +204,7 @@ export const getBankCardOpenOrderStatusAPI = (recordId: number | string) => {
   return http.get<{
     status: string
     data: IBankCardOpenOrderStatus
-  }>(`/api/bankcard/open-order/${recordId}`)
+  }>(`/api/user/bankcard/open-order/${recordId}`)
 }
 
 /**
@@ -187,7 +219,7 @@ export const verifyBankCardPaymentAPI = (outTradeNo: string) => {
       verified: boolean
       payment_status: 'pending' | 'paid' | 'failed'
     }
-  }>('/api/bankcard/verify-payment', { out_trade_no: outTradeNo })
+  }>('/api/user/bankcard/verify-payment', { out_trade_no: outTradeNo })
 }
 
 /**

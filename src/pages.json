@@ -382,7 +382,9 @@
       "path": "pages/webview/index",
       "type": "page",
       "style": {
-        "navigationBarTitleText": "支付"
+        "navigationBarTitleText": "微信支付",
+        "navigationBarBackgroundColor": "#07C160",
+        "navigationBarTextStyle": "white"
       }
     },
     {
