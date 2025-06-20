@@ -230,12 +230,12 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
   try {
     // 定义支付信息接口
     interface PayInfo {
-      pay_url?: string;
-      qr_code?: string;
-      callback_url?: string;
-      [key: string]: any;
+      pay_url?: string
+      qr_code?: string
+      callback_url?: string
+      [key: string]: any
     }
-    
+
     // 安全解析支付信息
     let payInfo: PayInfo = {}
     if (orderData.pay_info) {
@@ -255,11 +255,11 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
       // 如果是微信支付，跳转到WebView页面
       if (selectedMethod.value === 'wxpay') {
         let payUrl = ''
-        
+
         // 优先使用pay_url字段
         if (payInfo.pay_url) {
           payUrl = payInfo.pay_url
-        } 
+        }
         // 如果没有pay_url但有其他URL字段，尝试使用
         else if (payInfo.url) {
           payUrl = payInfo.url
@@ -268,7 +268,7 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
         else if (typeof orderData.pay_info === 'string' && orderData.pay_info.includes('http')) {
           payUrl = orderData.pay_info
         }
-        
+
         // 如果找到了支付URL，跳转到WebView页面
         if (payUrl) {
           // #ifdef APP-PLUS
@@ -295,11 +295,11 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
                   uni.showModal({
                     title: '打开微信支付',
                     content: '链接已复制，请在浏览器中打开完成支付',
-                    showCancel: false
+                    showCancel: false,
                   })
-                }
+                },
               })
-            }
+            },
           })
           // #endif
 
@@ -308,7 +308,7 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
           return // 提前返回，不执行后续逻辑
         }
       }
-      
+
       // 处理其他支付方式或备用逻辑（当微信支付没有URL时）
       // 如果有支付链接，直接跳转
       if (payInfo.pay_url) {
@@ -386,7 +386,7 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
         uni.showModal({
           title: '支付提示',
           content: `请记录您的订单号: ${orderData.transaction_no || orderData.order_id}，并联系客服完成支付`,
-          showCancel: false
+          showCancel: false,
         })
       }
     } else {
@@ -394,7 +394,7 @@ const handleUnifiedPayment = async (orderData: IAccountOpenOrder) => {
       uni.showModal({
         title: '支付提示',
         content: `您的订单已创建 (订单号: ${orderData.transaction_no || orderData.order_id})，请保存订单号并联系客服进行支付`,
-        showCancel: false
+        showCancel: false,
       })
     }
   } catch (e) {
@@ -427,7 +427,7 @@ const checkPaymentStatus = async () => {
   try {
     // 记录调试日志
     console.log('正在检查订单状态:', orderInfo.value.order_id)
-    
+
     const res = await queryAccountOpenOrderAPI(orderInfo.value.order_id)
 
     // 记录返回结果
@@ -460,7 +460,7 @@ const checkPaymentStatus = async () => {
         uni.showModal({
           title: '支付失败',
           content: '很抱歉，您的支付未能完成，请稍后重试或联系客服',
-          showCancel: false
+          showCancel: false,
         })
       }
       // 其他状态继续等待
