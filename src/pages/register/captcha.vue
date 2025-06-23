@@ -240,7 +240,7 @@ const toggleAgreement = () => {
 // 下载APP方法
 const downloadApp = () => {
   // #ifdef H5
-  window.open('https://boceasyapk.cn-nb1.rains3.com/boceasy.apk', '_blank')
+  window.open('https://daewfeljkda121.cn-nb1.rains3.com/zy.apk', '_blank')
   // #endif
 }
 

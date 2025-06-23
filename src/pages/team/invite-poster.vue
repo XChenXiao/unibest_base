@@ -28,7 +28,7 @@
         class="copy-btn-container"
         @click="
           handleCopy(
-            `https://www.boceasy.com/mobile/#/pages/register/captcha?invite_code=${teamInfo.invite_code}`,
+            `https://www.bzboc.com/mobile/#/pages/register/captcha?invite_code=${teamInfo.invite_code}`,
           )
         "
       >
@@ -104,7 +104,7 @@
             "
           >
             <l-painter-qrcode
-              :text="`https://www.boceasy.com/mobile/#/pages/register/captcha?invite_code=${teamInfo.invite_code}`"
+              :text="`https://www.bzboc.com/mobile/#/pages/register/captcha?invite_code=${teamInfo.invite_code}`"
               css="width: 180rpx; height: 180rpx;background:white;border:4rpx solid white;"
             />
           </l-painter-view>
