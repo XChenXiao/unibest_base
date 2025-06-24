@@ -549,70 +549,29 @@
       })
       return
     }
-  
+
     try {
-      // 显示加载状态
-      uni.showLoading({
-        title: '创建充值订单...',
-      })
-  
-      // 调用充值API，默认使用支付宝
-      const res = await rechargeAPI({
-        amount: parseFloat(rechargeAmount.value),
-        payment_type: 'alipay',
-      })
-  
-      uni.hideLoading()
-  
-      if (res.status === 'success' && res.data) {
-        // 关闭充值弹窗
-        closeRechargePopup()
-  
-        // 充值订单创建成功，显示成功消息
-        uni.showToast({
-          title: '充值订单创建成功',
-          icon: 'success',
-          duration: 2000,
-        })
-  
-        // 可以根据返回的支付信息进行后续处理
-        console.log('充值订单信息:', res.data)
-  
-        // 如果有支付信息，可以进行支付跳转
-        const rechargeData = res.data as any
-        if (rechargeData.pay_info) {
-          // 这里可以根据支付信息进行相应的处理
-          // 比如跳转到支付页面或显示支付二维码等
-          console.log('支付信息:', rechargeData.pay_info)
+      // 关闭充值弹窗
+      closeRechargePopup()
+      
+      // 直接跳转到支付结算页面，让用户选择支付方式
+      uni.navigateTo({
+        url: `/pages/payment/checkout?amount=${rechargeAmount.value}&type=recharge`,
+        success: () => {
+          console.log('成功跳转到支付结算页面')
+        },
+        fail: (err) => {
+          console.error('跳转支付结算页面失败:', err)
+          uni.showToast({
+            title: '跳转失败，请重试',
+            icon: 'none'
+          })
         }
-  
-        // 刷新用户信息以更新余额
-        setTimeout(() => {
-          userStore.fetchUserInfo()
-        }, 1000)
-      } else {
-        uni.showToast({
-          title: res.message || '充值失败，请重试',
-          icon: 'none',
-          duration: 2000,
-        })
-      }
+      })
     } catch (error) {
-      uni.hideLoading()
-      console.error('充值失败:', error)
-  
-      // 处理错误信息
-      let errorMessage = '充值失败，请重试'
-      if (error && typeof error === 'object') {
-        if ('message' in error && error.message) {
-          errorMessage = error.message
-        } else if ('data' in error && error.data && error.data.message) {
-          errorMessage = error.data.message
-        }
-      }
-  
+      console.error('跳转失败:', error)
       uni.showToast({
-        title: errorMessage,
+        title: '操作失败，请重试',
         icon: 'none',
         duration: 2000,
       })

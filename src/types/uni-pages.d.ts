@@ -29,6 +29,7 @@ interface NavigateToOptions {
        "/pages/my/wechat-payment-setting" |
        "/pages/my/withdraw" |
        "/pages/payment/bank-card-order" |
+       "/pages/payment/checkout" |
        "/pages/payment/index" |
        "/pages/register/captcha" |
        "/pages/register/index" |

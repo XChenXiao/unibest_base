@@ -269,6 +269,22 @@
       }
     },
     {
+      "path": "pages/payment/checkout",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "支付结算",
+        "navigationBarBackgroundColor": "#f5f5f5",
+        "navigationBarTextStyle": "black",
+        "app-plus": {
+          "titleNView": {
+            "titleSize": "16px",
+            "titleWeight": "bold",
+            "titleAlign": "center"
+          }
+        }
+      }
+    },
+    {
       "path": "pages/payment/index",
       "type": "page",
       "style": {
