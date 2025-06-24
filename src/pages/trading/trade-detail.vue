@@ -399,7 +399,7 @@ const getCurrencyIconUrl = (iconPath: string) => {
   }
 
   // 否则拼接基础URL
-  return `https://www.boceasy.com/storage/${iconPath}`
+  return `https://www.bzboc.com/storage/${iconPath}`
 }
 
 // 根据货币符号获取背景颜色

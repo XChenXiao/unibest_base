@@ -111,9 +111,9 @@ const usdtIconUrl = computed(() => {
   if (props.iconUrl) {
     return props.iconUrl.startsWith('http')
       ? props.iconUrl
-      : `https://www.boceasy.com/storage/${props.iconUrl}`
+      : `https://www.bzboc.com/storage/${props.iconUrl}`
   }
-  return 'https://www.boceasy.com/storage/currencies/usdt.png'
+  return 'https://www.bzboc.com/storage/currencies/usdt.png'
 })
 
 // 计算按钮是否禁用
