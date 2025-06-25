@@ -43,7 +43,7 @@
         <view class="card-header">
           <view class="bank-logo">
             <image src="/static/images/bank-icon.png" mode="aspectFit"></image>
-            <text>中国银行</text>
+            <text>我的钱包</text>
           </view>
           <!-- <view class="check-account">
             <button class="check-btn" @click="navigateTo('/pages/my/wallet')">查看账号</button>
@@ -128,7 +128,7 @@
             <wd-icon name="wallet" size="40rpx" />
           </view>
           <view class="menu-content">
-            <text class="menu-title">我的钱包</text>
+            <text class="menu-title">中国银行</text>
             <text class="menu-desc">查看收支记录</text>
           </view>
           <wd-icon name="arrow-right" class="menu-arrow" />
