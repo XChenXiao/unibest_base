@@ -228,7 +228,7 @@ const handleReset = async () => {
     const res = await forgotPasswordAPI({
       phone: formData.phone,
       name: formData.name,
-      id_card: formData.idCard,
+      id_card_number: formData.idCard,
       new_password: formData.newPassword,
       new_password_confirmation: formData.confirmPassword
     });

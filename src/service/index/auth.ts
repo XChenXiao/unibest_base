@@ -87,7 +87,7 @@ export interface ICaptchaLoginParams {
 export interface IForgotPasswordParams {
   phone: string
   name: string
-  id_card: string
+  id_card_number: string
   new_password: string
   new_password_confirmation: string
 }
