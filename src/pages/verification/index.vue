@@ -231,15 +231,35 @@ const handleSubmit = async () => {
         title: '实名认证提交成功并已通过',
       })
 
+      // 从返回数据中获取实名信息
+      const realName = (res as any).data?.real_name || verificationForm.value.real_name;
+      const idCardNumber = (res as any).data?.id_card_number || verificationForm.value.id_card_number;
+
       // 直接更新verificationStore状态为已认证
       verificationStore.setVerificationInfo({
         verified: true,
         pending: false,
         rejected: false,
         rejection_reason: '',
-        real_name: (res as any).data?.real_name,
-        id_card_number: (res as any).data?.id_card_number,
+        real_name: realName,
+        id_card_number: idCardNumber,
       })
+
+      // 直接更新用户信息中的姓名
+      userStore.setUserInfo({
+        ...userStore.userInfo,
+        name: realName,
+      })
+
+      console.log('实名认证成功，已直接更新用户姓名为:', realName);
+
+      // 实名认证成功后，立即获取最新的用户信息以确保所有用户数据都是最新的
+      try {
+        await userStore.fetchUserInfo()
+        console.log('实名认证成功后更新用户信息完成')
+      } catch (error) {
+        console.error('更新用户信息失败:', error)
+      }
 
       // 延迟1.5秒后返回首页，让用户看到成功提示
       setTimeout(() => {

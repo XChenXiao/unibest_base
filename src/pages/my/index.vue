@@ -304,8 +304,11 @@
   // 使用UniApp的onShow生命周期函数
   onShow(() => {
     console.log('我的页面显示，刷新数据')
-    // 检查用户数据和余额
-    checkUserInfo()
+    // 强制刷新用户信息，不考虑缓存时间
+    if (userStore.isLogined) {
+      console.log('强制刷新用户信息')
+      userStore.fetchUserInfo()
+    }
   })
   
   // 页面挂载时添加事件监听

@@ -138,8 +138,8 @@ export async function submitVerification({
   data: FormData | {
     real_name: string;
     id_card_number: string;
-    id_card_front: string;
-    id_card_back: string;
+    id_card_front?: string;
+    id_card_back?: string;
   };
   options?: CustomRequestOptions;
 }) {
