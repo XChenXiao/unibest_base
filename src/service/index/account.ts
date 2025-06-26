@@ -24,6 +24,7 @@ export interface IAccountOpenFeeConfig {
     address: string
     deposit_amount: string
   }
+  is_open_enabled?: boolean
 }
 
 /**
@@ -67,6 +68,19 @@ export const getAccountOpenFeeAPI = () => {
     message: string
     data: IAccountOpenFeeConfig
   }>('/api/account-open/fee')
+}
+
+/**
+ * 检查平台是否开放了开户功能
+ */
+export const checkAccountOpenEnabledAPI = async () => {
+  try {
+    const res = await getAccountOpenFeeAPI()
+    return res && res.status === 'success' && res.data && res.data.data && res.data.data.is_open_enabled === true
+  } catch (error) {
+    console.error('检查开户功能状态失败:', error)
+    return false
+  }
 }
 
 /**

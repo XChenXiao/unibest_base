@@ -120,6 +120,20 @@ export const http = <T>(options: CustomRequestOptions) => {
             statusCode: res.statusCode,
           })
 
+          // 检查是否为提现密码错误
+          const responseData = res.data as any
+          if (responseData && responseData.message === '提现密码错误') {
+            // 提现密码错误，不需要跳转到登录页面，直接返回错误信息
+            !options.hideErrorToast &&
+              uni.showToast({
+                icon: 'none',
+                title: responseData.message || '提现密码错误',
+              })
+            reject(res)
+            return
+          }
+
+          // 其他401错误，认为是token失效，清理用户信息并跳转到登录页
           // 直接从pinia获取userStore进行清理
           const userStore = useUserStore()
           userStore.clearUserInfo()

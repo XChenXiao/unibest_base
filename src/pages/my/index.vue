@@ -133,7 +133,7 @@
           </view>
           <view class="menu-content">
             <text class="menu-title">中国银行</text>
-            <text class="menu-desc">查看收支记录</text>
+            <!-- 隐藏描述文字 -->
           </view>
           <wd-icon name="arrow-right" class="menu-arrow" />
         </view>
@@ -253,7 +253,7 @@
   
   <script lang="ts" setup>
   import { ref, reactive, onMounted, onUnmounted } from 'vue'
-  import { onShow } from '@dcloudio/uni-app'
+  import { onShow, onLoad } from '@dcloudio/uni-app'
   import {
     useUserStore,
     useVerificationStore,
@@ -305,6 +305,18 @@
   // 预存服务提示列表
   const depositTips = ref<DepositTip[]>([])
   
+  // 处理页面参数，检查是否需要显示充值弹窗
+  onLoad((options) => {
+    console.log('页面加载参数:', options)
+    // 检查是否有showRecharge参数，如果有则显示充值弹窗
+    if (options && options.showRecharge === 'true') {
+      // 延迟一点执行，确保页面已经完全加载
+      setTimeout(() => {
+        showRechargeDialog()
+      }, 300)
+    }
+  })
+  
   // 使用UniApp的onShow生命周期函数
   onShow(async () => {
     console.log('我的页面显示，刷新数据')
@@ -315,6 +327,10 @@
       // 检查并更新用户余额
       await checkUserInfo()
     }
+    
+    // #ifdef H5
+    isBrowser.value = true
+    // #endif
   })
   
   // 页面挂载时添加事件监听
@@ -370,6 +386,16 @@
       } catch (error) {
         console.error('获取余额失败:', error)
         // 余额获取失败时不影响页面正常显示
+      }
+      
+      // 获取中国银行余额
+      if (userStore.userInfo.has_bank_card) {
+        try {
+          // 使用同步方法获取银行卡余额
+          await bankCardStore.syncBankCardBalance()
+        } catch (error) {
+          console.error('获取中国银行余额失败:', error)
+        }
       }
     }
   }
@@ -541,12 +567,27 @@
   
   // 处理提现
   const handleWithdraw = () => {
-    // 仅展示用，显示提示信息
-    uni.showToast({
-      title: '提现功能即将上线',
-      icon: 'none',
-      duration: 2000
-    })
+    // 检查实名认证状态
+    if (!verificationStore.isVerified) {
+      uni.showModal({
+        title: '需要实名认证',
+        content: '提现功能需要完成实名认证后才能使用，请先完成实名认证。',
+        confirmText: '去认证',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 用户点击确认，跳转到实名认证页面
+            uni.navigateTo({
+              url: '/pages/my/identity-verify',
+            })
+          }
+        },
+      })
+      return
+    }
+    
+    // 直接跳转到提现详情页面，不再显示提示弹窗
+    navigateTo('/pages/my/withdraw')
   }
   
   // 关闭充值弹窗
@@ -621,18 +662,43 @@
     showBalance.value = !showBalance.value
   }
   
-  // 处理充值/转入
-  const handleRecharge = () => {
+  // 显示充值弹窗的公共方法
+  const showRechargeDialog = () => {
+    // 检查实名认证状态
+    if (!verificationStore.isVerified) {
+      uni.showModal({
+        title: '需要实名认证',
+        content: '预存金功能需要完成实名认证后才能使用，请先完成实名认证。',
+        confirmText: '去认证',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 用户点击确认，跳转到实名认证页面
+            uni.navigateTo({
+              url: '/pages/my/identity-verify',
+            })
+          }
+        },
+      })
+      return
+    }
+    
+    // 显示充值弹窗
     rechargeAmount.value = ''
     showRechargePopup.value = true
-  
+    
     // 如果用户没有开通银行卡且没有获取预存金金额，则获取预存金金额
     if (!userStore.userInfo.has_bank_card && !appStore.hasFetchedBankCardOpenFee) {
       appStore.fetchBankCardOpenFee()
     }
-  
+    
     // 获取最新的预存金提示
     fetchDepositTips()
+  }
+  
+  // 处理充值/转入
+  const handleRecharge = () => {
+    showRechargeDialog()
   }
   
   // 获取预存服务提示
@@ -658,17 +724,8 @@
   
   // 处理银行卡点击
   const handleBankCardClick = () => {
-    // 检查银行卡功能是否开放
-    if (!platformStore.enableBankAccount) {
-      uni.showToast({
-        title: '银行卡功能暂未开放',
-        icon: 'none',
-      })
-      return
-    }
-  
-    // 功能已开放，跳转到中国银行页面
-    navigateTo('/pages/my/bank')
+    // 不执行任何跳转操作
+    return
   }
   </script>
   

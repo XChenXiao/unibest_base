@@ -5,7 +5,7 @@ import { http } from '@/utils/http'
  */
 export interface IWithdrawParams {
   amount: number
-  withdraw_type: 'bank' | 'alipay' | 'wechat'
+  withdraw_type: 'bank' | 'bank_balance' | 'alipay' | 'wechat'
   bank_card_id?: number
   alipay_account_id?: number
   wechat_account_id?: number
@@ -65,7 +65,23 @@ export const applyWithdrawAPI = (params: IWithdrawParams) => {
       amount: number
       status: string
     }
-  }>('/api/withdraw/apply', params)
+  }>('/api/withdraw/balance/apply', params)
+}
+
+/**
+ * 提交银行卡余额提现申请（用于支付宝、微信提现）
+ * @param params 提现参数
+ */
+export const applyBankCardWithdrawAPI = (params: IWithdrawParams) => {
+  return http.post<{
+    status: string
+    message: string
+    data?: {
+      withdraw_id: number
+      amount: number
+      status: string
+    }
+  }>('/api/withdraw/bank-card/apply', params)
 }
 
 /**

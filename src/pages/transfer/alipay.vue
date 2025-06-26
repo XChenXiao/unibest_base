@@ -83,15 +83,19 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/store/user';
-import { withdraw } from '@/service/app';
+import { applyBankCardWithdrawAPI } from '@/service/index/withdraw';
 import { IWithdrawParams } from '@/service/index/withdraw';
 import { http } from '@/utils/http';
+import { useBankCardStore } from '@/store';
+import { onShow } from '@dcloudio/uni-app';
 
 // 用户store
 const userStore = useUserStore();
+// 银行卡store
+const bankCardStore = useBankCardStore();
 
 // 账户余额
-const accountBalance = ref(userStore.userInfo.balance || 0);
+const accountBalance = ref<number>(Number(userStore.userInfo.balance) || 0);
 
 // 提现金额
 const transferAmount = ref('');
@@ -207,14 +211,15 @@ const handleSubmit = () => {
       };
 
       // 调用提现API
-      const response = await withdraw(params);
+      const response = await applyBankCardWithdrawAPI(params);
 
       uni.hideLoading();
 
       if (response.status === 'success') {
         uni.showToast({
           title: '提现申请已提交',
-          icon: 'success'
+          icon: 'success',
+          duration: 2000
         });
 
         // 刷新用户信息（余额）
@@ -227,15 +232,26 @@ const handleSubmit = () => {
       } else {
         uni.showToast({
           title: response.message || '提现失败',
-          icon: 'none'
+          icon: 'none',
+          duration: 3000
         });
       }
     } catch (error) {
       uni.hideLoading();
       console.error('提现请求失败:', error);
+      
+      // 显示更详细的错误信息
+      let errorMessage = '提现失败，请重试';
+      if (error && error.data && error.data.message) {
+        errorMessage = error.data.message;
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      }
+      
       uni.showToast({
-        title: '提现失败，请重试',
-        icon: 'none'
+        title: errorMessage,
+        icon: 'none',
+        duration: 3000
       });
     } finally {
       isSubmitting.value = false;
@@ -257,6 +273,17 @@ onMounted(async () => {
   uni.$on('select-alipay-account', (account) => {
     selectedAccount.value = account;
   });
+});
+
+// 页面显示时更新余额
+onShow(async () => {
+  console.log('支付宝转账页面显示，更新用户余额');
+  // 更新用户余额
+  await userStore.fetchUserInfo();
+  // 更新账户余额引用
+  accountBalance.value = Number(userStore.userInfo.balance) || 0;
+  // 更新银行卡余额
+  await bankCardStore.fetchBankCardBalance();
 });
 
 // 在组件卸载时清理

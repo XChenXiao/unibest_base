@@ -104,21 +104,52 @@
 
       <!-- 卡片列表区域 -->
       <view class="card-list" v-if="cards.length > 0">
-        <view class="bank-card" v-for="card in cards" :key="card.id">
+        <view 
+          class="bank-card" 
+          v-for="card in cards" 
+          :key="card.id" 
+          @click="isFromWithdraw ? selectCardForWithdraw(card) : null"
+          :class="{
+            'selectable-card': isFromWithdraw,
+            'default-card': card.is_default,
+            'selected-card': isFromWithdraw && selectedCardId === card.id
+          }"
+        >
           <view class="card-header">
             <view class="card-bank-name">{{ card.bank_name }}</view>
             <text class="card-default-tag" v-if="card.is_default">默认</text>
           </view>
           <view class="card-holder-name">{{ card.card_holder }}</view>
           <view class="card-number">{{ card.masked_card_number }}</view>
+          
+          <!-- 卡片操作区域 -->
           <view class="card-actions">
-            <button class="btn-default" @click="setAsDefault(card.id)" :disabled="card.is_default">
-              设为默认
+            <!-- 从提现页面进入时显示选择按钮 -->
+            <button v-if="isFromWithdraw" class="btn-select" @click.stop="selectCardForWithdraw(card)">
+              {{ selectedCardId === card.id ? '已选择' : '选择此卡' }}
             </button>
-            <button class="btn-delete" @click="confirmDeleteCard(card.id)">删除</button>
+            <!-- 正常银行卡管理功能，无论是否从提现页面进入都显示 -->
+            <view :class="{'normal-actions': true, 'full-width': !isFromWithdraw}">
+              <button class="btn-default" @click.stop="setAsDefault(card.id)" :disabled="card.is_default">
+                设为默认
+              </button>
+              <button class="btn-delete" @click.stop="confirmDeleteCard(card.id)">删除</button>
+            </view>
           </view>
         </view>
       </view>
+      
+      <!-- 返回按钮 - 仅在从提现页面进入时显示 -->
+      <button v-if="isFromWithdraw" class="return-btn" @click="goBack">
+        返回提现页面
+      </button>
+      
+      <!-- 调试按钮 - 仅在开发环境显示 -->
+      <!-- #ifdef H5 -->
+      <button v-if="!isFromWithdraw" class="debug-btn" @click="toggleSelectMode">
+        {{ isFromWithdraw ? '关闭' : '开启' }}选择模式(调试用)
+      </button>
+      <!-- #endif -->
     </view>
   </view>
 </template>
@@ -134,9 +165,11 @@ import {
   setDefaultBankCardAPI,
   IBankCard,
 } from '@/service/index/bankcard'
+import { useBankCardStore } from '@/store'
 
 // 用户数据
 const userStore = useUserStore()
+const bankCardStore = useBankCardStore()
 
 // 银行卡数据状态
 const loading = ref(false)
@@ -155,6 +188,11 @@ const bankCardStatus = reactive({
   open_fee: 0,
   can_apply: false,
 })
+
+// 是否从提现页面进入，用于判断是选择银行卡还是管理银行卡
+const isFromWithdraw = ref(false)
+// 当前选中的银行卡ID
+const selectedCardId = ref<number | null>(null)
 
 // 计算属性
 const isActivated = computed(() => bankCardStatus.has_bank_card)
@@ -185,9 +223,101 @@ const newCard = ref({
 
 // 在页面加载时获取银行卡状态和卡片列表
 onMounted(async () => {
+  // 检查是否从提现页面进入
+  const pages = getCurrentPages()
+  console.log('当前页面栈:', pages.map(p => p.route || '未知路由'))
+  
+  // 默认设置为false
+  isFromWithdraw.value = false
+  
+  // 获取当前页面
+  const currentPage = pages[pages.length - 1]
+  
+  // 检查URL参数
+  if (currentPage && currentPage.$vm) {
+    // @ts-ignore
+    const query = currentPage.options || {}
+    console.log('页面参数:', query)
+    
+    if (query.from === 'withdraw') {
+      isFromWithdraw.value = true
+      console.log('通过URL参数检测到来自提现页面，启用选择模式')
+    }
+  }
+  
+  // 如果URL参数检测失败，尝试通过页面栈检测
+  if (!isFromWithdraw.value) {
+    // 获取上一个页面
+    const prevPage = pages.length > 1 ? pages[pages.length - 2] : null
+    
+    if (prevPage) {
+      const prevRoute = prevPage.route || ''
+      console.log('上一页面路由:', prevRoute)
+      
+      // 更全面的检测逻辑
+      if (
+        prevRoute.includes('withdraw') || 
+        prevRoute.includes('my/withdraw') || 
+        (prevPage.$vm && prevPage.$vm.$options && 
+         prevPage.$vm.$options.name === 'withdraw')
+      ) {
+        isFromWithdraw.value = true
+        console.log('通过页面栈检测到来自提现页面，启用选择模式')
+      } else {
+        console.log('非来自提现页面，路由:', prevRoute)
+      }
+    } else {
+      console.log('无法获取上一页面信息或直接进入本页面')
+    }
+  }
+  
+  // 临时调试：强制启用选择模式
+  if (!isFromWithdraw.value) {
+    // isFromWithdraw.value = true
+    // console.log('强制启用选择模式(测试用)')
+  }
+
   await fetchBankCardStatus()
   if (isActivated.value) {
     await fetchBankCards()
+    
+    // 如果是从提现页面进入，检查是否有默认选中的银行卡
+    if (isFromWithdraw.value && cards.value.length > 0) {
+      // 获取当前页面栈
+      const pages = getCurrentPages()
+      const prevPage = pages.length > 1 ? pages[pages.length - 2] : null
+      
+      if (prevPage && prevPage.$vm) {
+        // 尝试获取提现页面的选中银行卡ID
+        try {
+          // @ts-ignore
+          const withdrawBankCardId = prevPage.$vm.bankCardId
+          if (withdrawBankCardId) {
+            selectedCardId.value = withdrawBankCardId
+            console.log('从提现页面获取到选中的银行卡ID:', withdrawBankCardId)
+          } else {
+            // 如果没有选中的银行卡，默认选中默认卡或第一张卡
+            const defaultCard = cards.value.find(card => card.is_default)
+            if (defaultCard) {
+              selectedCardId.value = defaultCard.id
+              console.log('默认选中默认银行卡:', defaultCard.id)
+            } else {
+              selectedCardId.value = cards.value[0].id
+              console.log('默认选中第一张银行卡:', cards.value[0].id)
+            }
+          }
+        } catch (error) {
+          console.error('获取提现页面选中银行卡ID失败:', error)
+          // 默认选中默认卡或第一张卡
+          const defaultCard = cards.value.find(card => card.is_default)
+          if (defaultCard) {
+            selectedCardId.value = defaultCard.id
+          } else if (cards.value.length > 0) {
+            selectedCardId.value = cards.value[0].id
+          }
+        }
+      }
+    }
   }
 
   // 添加事件监听器，用于从申请页面返回时刷新数据
@@ -199,6 +329,49 @@ onUnmounted(() => {
   uni.$off('refresh-bank-cards', refreshData)
 })
 
+// 选择银行卡并返回提现页面
+const selectCardForWithdraw = (card: IBankCard) => {
+  if (!isFromWithdraw.value) return
+  
+  try {
+    console.log('尝试选择银行卡:', card)
+    
+    // 更新选中的银行卡ID
+    selectedCardId.value = card.id
+    
+    // 使用Pinia store存储选中的银行卡
+    bankCardStore.setSelectedBankCard(card)
+    
+    uni.showToast({
+      title: '已选择银行卡',
+      icon: 'success',
+      duration: 1500
+    })
+    
+    // 延迟返回，让用户看到提示
+    setTimeout(() => {
+      uni.navigateBack({
+        success: () => {
+          console.log('成功返回提现页面')
+        },
+        fail: (err) => {
+          console.error('返回提现页面失败:', err)
+          // 如果返回失败，尝试直接跳转到提现页面
+          uni.redirectTo({
+            url: '/pages/my/withdraw'
+          })
+        }
+      })
+    }, 1500)
+  } catch (error) {
+    console.error('选择银行卡失败:', error)
+    uni.showToast({
+      title: '选择失败',
+      icon: 'none'
+    })
+  }
+}
+
 // 刷新数据函数
 const refreshData = async () => {
   console.log('正在刷新银行卡数据...')
@@ -206,6 +379,11 @@ const refreshData = async () => {
   if (isActivated.value) {
     await fetchBankCards()
   }
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 
 // 获取银行卡状态
@@ -431,6 +609,11 @@ const deleteCard = async (id: number) => {
     loading.value = false
   }
 }
+
+// 切换选择模式
+const toggleSelectMode = () => {
+  isFromWithdraw.value = !isFromWithdraw.value
+}
 </script>
 
 <style lang="scss" scoped>
@@ -529,6 +712,40 @@ const deleteCard = async (id: number) => {
   box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
 }
 
+.selectable-card {
+  position: relative;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.selectable-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(59, 130, 246, 0.05);
+  border-radius: 16rpx;
+  pointer-events: none;
+}
+
+.selectable-card:active {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.default-card {
+  border: 2rpx solid #10b981;
+  box-shadow: 0 4rpx 8rpx rgba(16, 185, 129, 0.1);
+}
+
+.selected-card {
+  border: 2rpx solid #3b82f6;
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.2);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -560,7 +777,18 @@ const deleteCard = async (id: number) => {
 
 .card-actions {
   display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.normal-actions {
+  display: flex;
   justify-content: space-between;
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
 }
 
 .btn-default {
@@ -586,6 +814,18 @@ const deleteCard = async (id: number) => {
   border: none;
   background-color: #fee2e2;
   color: #ef4444;
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.btn-select {
+  width: 100%;
+  padding: 10rpx 0;
+  margin-bottom: 10rpx;
+  border-radius: 8rpx;
+  border: none;
+  background-color: #3b82f6;
+  color: #ffffff;
   font-size: 24rpx;
   text-align: center;
 }
@@ -722,5 +962,29 @@ const deleteCard = async (id: number) => {
 }
 .icon-time:before {
   content: '\e65f';
+}
+
+.return-btn {
+  width: 100%;
+  padding: 12rpx 0;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  text-align: center;
+  margin-top: 20rpx;
+}
+
+.debug-btn {
+  width: 100%;
+  padding: 12rpx 0;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  text-align: center;
+  margin-top: 20rpx;
 }
 </style>

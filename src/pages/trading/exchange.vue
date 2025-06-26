@@ -114,9 +114,6 @@
                 </text>
                 <view class="holding-info">
                   <text class="holding-amount">持有: {{ formatAmount(item.holdAmount) }}</text>
-                  <text class="fee-info" v-if="activeCurrencyTab === 'sell'">
-                    手续费: {{ item.fee }}%
-                  </text>
                 </view>
                 <view class="limit-info">
                   <text class="limit-text">
@@ -128,7 +125,7 @@
                   </text>
                   <text
                     class="remaining-text"
-                    v-if="item.symbol !== 'USDT' && item.symbol !== 'GOLD'"
+                    v-if="item.symbol !== 'GOLD'"
                   >
                     剩余: {{ formatAmount(item.remainingAmount) }}
                   </text>
@@ -210,14 +207,7 @@
         @confirm="confirmSellEquity"
       />
 
-      <!-- 购买USDT弹窗 -->
-      <buy-usdt-dialog
-        ref="buyUsdtDialog"
-        :price="usdtInfo.price"
-        :userBalance="userBalance"
-        :iconUrl="usdtInfo.icon"
-        @success="handleBuyUsdtSuccess"
-      />
+      <!-- 已移除USDT弹窗 -->
     </scroll-view>
   </view>
 </template>
@@ -241,7 +231,7 @@ import {
 import { httpGet } from '@/utils/http'
 import type { UserCurrency } from '@/service/app/types'
 import SellEquityPopup from '@/components/equity/SellEquityPopup.vue'
-import BuyUsdtDialog from '@/components/currency/BuyUsdtDialog.vue'
+// USDT组件已移除
 import { useTabItemTap } from '@/hooks/useTabItemTap'
 import { useUserInfoStore } from '@/store/userInfo'
 import { useCurrencyStore } from '@/store' // 导入货币store
@@ -297,15 +287,7 @@ const userCurrencies = ref<any[]>([])
 // 股权出售弹窗
 const sellEquityPopup = ref(null)
 
-// USDT购买弹窗
-const buyUsdtDialog = ref(null)
-
-// USDT信息
-const usdtInfo = ref({
-  id: 0,
-  price: 1.0,
-  icon: '',
-})
+// USDT相关变量已移除
 
 // 用户余额
 const userBalance = ref(0)
@@ -356,14 +338,14 @@ const fetchCurrencyOrders = async () => {
       // 清空现有数组
       currencies.length = 0
 
-      // 处理数据，不再过滤掉USDT的货币订单并转换格式
+      // 处理数据，过滤掉USDT的货币订单并转换格式
       if (Array.isArray(response.data)) {
         console.log('开始处理平台订单数据，订单数量:', response.data.length)
         for (let i = 0; i < response.data.length; i++) {
           const order = response.data[i]
           console.log(`处理订单 ${i + 1}:`, order.currency_symbol, order.currency_name)
 
-          // 排除USDT订单，因为我们会手动添加USDT
+          // 排除USDT订单
           if (order.currency_symbol !== 'USDT') {
             // 获取用户持有量 - 使用currency store获取
             const holdAmount = currencyStore.getUserCurrencyAmount(order.currency_symbol)
@@ -389,26 +371,12 @@ const fetchCurrencyOrders = async () => {
             })
 
             console.log(`添加货币 ${order.currency_symbol} 到列表，持有量: ${holdAmount}`)
-          } else {
-            console.log('跳过USDT订单，将在后续手动添加')
           }
         }
         console.log('平台订单处理完成，当前货币列表长度:', currencies.length)
       }
 
-      // 如果是买入标签，添加USDT货币
-      if (activeCurrencyTab.value === 'buy') {
-        // 获取USDT信息
-        await fetchUsdtInfo()
-
-        // 更新USDT持有量 - 使用currency store获取
-        const usdtIndex = currencies.findIndex((c) => c.symbol === 'USDT')
-        if (usdtIndex !== -1) {
-          const usdtAmount = currencyStore.getUserCurrencyAmount('USDT')
-          currencies[usdtIndex].holdAmount = usdtAmount
-          console.log(`更新USDT持有量: ${usdtAmount}`)
-        }
-      }
+      // 不再添加USDT货币
 
       // 获取用户余额
       await fetchUserBalance()
@@ -437,76 +405,7 @@ const fetchCurrencyOrders = async () => {
   }
 }
 
-// 获取USDT信息并添加到货币列表中
-const fetchUsdtInfo = async () => {
-  try {
-    // 获取USDT信息，使用GET请求访问buy-usdt接口
-    const response = await httpGet<any>('/api/orders/buy-usdt')
-
-    console.log('获取USDT信息响应:', JSON.stringify(response))
-
-    if (response.status === 'success' && response.data) {
-      // 检查响应数据结构
-      const usdtData = response.data.currency || response.data
-
-      if (!usdtData) {
-        console.error('USDT数据结构不正确:', response.data)
-        return
-      }
-
-      // 保存USDT信息，用于购买弹窗
-      usdtInfo.value = {
-        id: usdtData.id,
-        price: usdtData.price,
-        icon: usdtData.icon,
-      }
-
-      // 检查是否已经存在USDT条目，避免重复添加
-      const existingUsdtIndex = currencies.findIndex((c) => c.symbol === 'USDT')
-
-      if (existingUsdtIndex === -1) {
-        // 如果不存在，则创建USDT币种信息并添加到货币列表中
-        currencies.push({
-          id: usdtData.id,
-          orderId: 0, // USDT没有平台订单ID
-          name: usdtData.name,
-          symbol: 'USDT',
-          iconUrl: getCurrencyIconUrl(usdtData.icon),
-          buyPrice: usdtData.price,
-          sellPrice: usdtData.price,
-          holdAmount: 0, // 这将在后续更新
-          totalAmount: 1000000, // 一个比较大的数字
-          remainingAmount: 1000000, // 一个比较大的数字
-          minAmount: usdtData.min_transaction_amount,
-          maxAmount: usdtData.max_transaction_amount,
-          fee: 0, // USDT通常不收手续费
-          unit: '个',
-          bgColor: getBgColorBySymbol('USDT'),
-        })
-
-        console.log('添加USDT到货币列表:', currencies[currencies.length - 1])
-      } else {
-        // 如果已存在，则更新现有的USDT信息
-        currencies[existingUsdtIndex] = {
-          ...currencies[existingUsdtIndex],
-          id: usdtData.id,
-          name: usdtData.name,
-          buyPrice: usdtData.price,
-          sellPrice: usdtData.price,
-          iconUrl: getCurrencyIconUrl(usdtData.icon),
-          minAmount: usdtData.min_transaction_amount,
-          maxAmount: usdtData.max_transaction_amount,
-        }
-
-        console.log('更新已存在的USDT信息:', currencies[existingUsdtIndex])
-      }
-    } else {
-      console.warn('获取USDT信息失败或返回数据为空')
-    }
-  } catch (error) {
-    console.error('获取USDT信息失败:', error)
-  }
-}
+// 不再需要获取USDT信息
 
 // 获取用户余额
 const fetchUserBalance = async () => {
@@ -807,7 +706,7 @@ const handleTrade = (item: any) => {
       price: item.sellPrice,
       type: activeCurrencyTab.value,
       iconUrl: item.iconUrl ? encodeURIComponent(item.iconUrl) : '',
-      fee: item.fee || 2,
+      fee: 0, // 已取消手续费
       minAmount: item.minAmount || 0.01,
       maxAmount: item.maxAmount || 100,
       holdAmount: item.holdAmount || 0,
@@ -823,30 +722,7 @@ const handleTrade = (item: any) => {
   })
 }
 
-// 打开购买USDT弹窗
-const openBuyUsdtDialog = (item: any) => {
-  if (item.symbol !== 'USDT') return
-
-  // 设置USDT信息
-  usdtInfo.value = {
-    id: item.id,
-    price: item.buyPrice,
-    icon: item.iconUrl,
-  }
-
-  // 打开弹窗
-  if (buyUsdtDialog.value) {
-    ;(buyUsdtDialog.value as any).open()
-  }
-}
-
-// 处理USDT购买成功
-const handleBuyUsdtSuccess = () => {
-  // 购买USDT成功后，刷新用户持有货币数据
-  currencyStore.fetchUserCurrencies(true)
-  // 刷新货币订单数据
-  fetchCurrencyOrders()
-}
+// USDT相关函数已移除
 
 // 处理出售股权操作
 const handleSellEquity = async () => {

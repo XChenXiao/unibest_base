@@ -47,11 +47,7 @@
         <text class="balance-value">¥{{ formatAmount(userBalance) }}</text>
       </view>
 
-      <!-- 显示用户USDT余额 -->
-      <view class="balance-row" v-if="!isTypeBuy">
-        <text class="balance-label">USDT余额</text>
-        <text class="balance-value">{{ formatUsdtAmount(userUsdtBalance) }} USDT</text>
-      </view>
+      <!-- 不再显示USDT余额，因为不再需要USDT支付手续费 -->
     </view>
 
     <!-- 交易表单 -->
@@ -90,10 +86,7 @@
             ¥{{ formatAmount((parseFloat(tradeAmount) || 0) * currencyPrice) }}
           </text>
         </view>
-        <view class="info-row" v-if="!isTypeBuy">
-          <text class="info-label">手续费 ({{ feeRate }}%)</text>
-          <text class="info-value">{{ formatUsdtAmount(feeAmountInUsdt) }} USDT</text>
-        </view>
+        <!-- 不再显示USDT手续费 -->
         <view class="info-row total-row">
           <text class="info-label">实际{{ isTypeBuy ? '支付' : '获得' }}</text>
           <text class="info-value highlight">¥{{ formatAmount(actualAmount) }}</text>
@@ -115,7 +108,7 @@
         <text class="notice-text">2. 买入操作将扣除您账户中相应的人民币余额。</text>
       </view>
       <view class="notice-item">
-        <text class="notice-text">3. 卖出操作将扣除您持有的相应数量货币。</text>
+        <text class="notice-text">3. 卖出操作将扣除您持有的相应数量货币，直接获得人民币收益。</text>
       </view>
       <view class="notice-item">
         <text class="notice-text">4. 交易一旦确认，无法撤销。</text>
@@ -162,13 +155,9 @@ const minAmount = ref(0.01) // 默认最小交易量
 const maxAmount = ref(100) // 默认最大交易量
 const userHoldAmount = ref(0)
 const userBalance = ref(0) // 用户余额
-const userUsdtBalance = ref(0) // 用户持有的USDT余额
 
 // 交易数量
 const tradeAmount = ref<string>('')
-
-// 获取USDT价格（用于手续费计算）
-const usdtPrice = ref(1.0) // USDT对人民币的价格，通常接近1
 
 // 页面加载时获取参数
 onLoad((options) => {
@@ -298,9 +287,6 @@ const fetchCurrencyDetails = async () => {
   try {
     uni.showLoading({ title: '加载中...' })
 
-    // 获取USDT价格信息（用于手续费计算）
-    await fetchUsdtPrice()
-
     // 获取用户持有的货币
     if (tradeType.value === 'sell') {
       // 先从store获取货币列表
@@ -359,39 +345,6 @@ const fetchCurrencyDetails = async () => {
   }
 }
 
-// 获取USDT价格信息
-const fetchUsdtPrice = async () => {
-  try {
-    // 获取USDT信息，使用GET请求访问buy-usdt接口
-    const response = await httpGet<any>('/api/orders/buy-usdt')
-
-    console.log('获取USDT价格信息响应:', JSON.stringify(response))
-
-    if (response.status === 'success' && response.data) {
-      // 检查响应数据结构
-      const usdtData = response.data.currency || response.data
-
-      if (usdtData && usdtData.price) {
-        // 更新USDT价格
-        usdtPrice.value = parseFloat(usdtData.price.toString())
-        console.log('获取到USDT价格:', usdtPrice.value)
-      } else {
-        console.warn('USDT价格数据结构不正确:', response.data)
-        // 保持默认值
-        usdtPrice.value = 1.0
-      }
-    } else {
-      console.warn('获取USDT价格信息失败或返回数据为空')
-      // 保持默认值
-      usdtPrice.value = 1.0
-    }
-  } catch (error) {
-    console.error('获取USDT价格信息失败:', error)
-    // 保持默认值
-    usdtPrice.value = 1.0
-  }
-}
-
 // 获取货币图标URL
 const getCurrencyIconUrl = (iconPath: string) => {
   if (!iconPath) return ''
@@ -435,17 +388,6 @@ const actualAmount = computed(() => {
   return total
 })
 
-// 计算手续费金额（USDT）
-const feeAmountInUsdt = computed(() => {
-  if (!isTypeBuy.value) {
-    const amount = parseFloat(tradeAmount.value) || 0
-    const totalAmount = amount * currencyPrice.value
-    // 交易总额 * 手续费率 / USDT价格 = 等价值的USDT手续费
-    return (totalAmount * (feeRate.value / 100)) / usdtPrice.value
-  }
-  return 0
-})
-
 // 处理滑块变化
 const handleSliderChange = (e: any) => {
   tradeAmount.value = e.detail.value.toString()
@@ -458,15 +400,6 @@ const formatAmount = (amount: number) => {
     return '0.00'
   }
   return amount.toFixed(2)
-}
-
-// 格式化USDT显示，精确到4位小数
-const formatUsdtAmount = (amount: number) => {
-  // 处理undefined、null或NaN的情况
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    return '0.0000'
-  }
-  return amount.toFixed(4)
 }
 
 // 获取用户余额
@@ -489,31 +422,9 @@ const fetchUserBalance = async () => {
       console.log('用户余额数据不存在，设置为0')
       userBalance.value = 0
     }
-
-    // 获取用户USDT余额
-    await fetchUserUsdtBalance()
   } catch (error) {
     console.error('获取用户余额失败:', error)
     userBalance.value = 0
-
-    // 即使获取人民币余额失败，也尝试获取USDT余额
-    await fetchUserUsdtBalance()
-  }
-}
-
-// 获取用户USDT余额
-const fetchUserUsdtBalance = async () => {
-  try {
-    // 从store获取USDT余额
-    await currencyStore.fetchUserCurrencies(false)
-
-    // 通过store获取USDT持有量
-    const usdtAmount = currencyStore.getUserCurrencyAmount('USDT')
-    userUsdtBalance.value = usdtAmount
-    console.log('从store获取的用户USDT余额:', usdtAmount)
-  } catch (error) {
-    console.error('获取USDT余额失败:', error)
-    userUsdtBalance.value = 0
   }
 }
 
@@ -625,27 +536,6 @@ const handleConfirmTrade = async () => {
       icon: 'none',
     })
     return
-  }
-
-  // 如果是卖出，验证用户USDT余额是否足够支付手续费
-  if (!isTypeBuy.value) {
-    const feeAmount = feeAmountInUsdt.value
-    if (feeAmount > userUsdtBalance.value) {
-      uni.showModal({
-        title: 'USDT余额不足',
-        content: `您的USDT余额不足以支付${formatUsdtAmount(feeAmount)} USDT的手续费，是否前往充值？`,
-        confirmText: '去充值',
-        cancelText: '取消',
-        success: (res) => {
-          if (res.confirm) {
-            uni.navigateTo({
-              url: '/pages/trading/exchange',
-            })
-          }
-        },
-      })
-      return
-    }
   }
 
   // 确认提示

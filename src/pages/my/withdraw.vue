@@ -2,467 +2,846 @@
 {
   style: {
     navigationBarTitleText: '提现',
-    navigationStyle: 'custom',
+    navigationStyle: 'default',
   },
 }
 </route>
 
 <template>
   <view class="withdraw-container">
-    <!-- 顶部波浪装饰 -->
-    <view class="wave-decoration"></view>
-    
-    <!-- 返回按钮 -->
-    <view class="back-button" @click="goBack">
-      <wd-icon name="arrow-left" size="36rpx" />
-    </view>
-    
-    <!-- 页面标题 -->
-    <view class="page-title">
-      <text class="title-text">账户提现</text>
-    </view>
-    
-    <!-- 余额信息 -->
-    <view class="balance-info">
-      <text class="balance-label">可用余额</text>
-      <view class="balance-value">
-        <text class="amount-symbol">¥</text>
-        <text class="amount-value">{{ formatBalance(userStore.userInfo.balance) }}</text>
+    <!-- 提现金额输入区域 -->
+    <view class="amount-section">
+      <view class="section-title">提现金额</view>
+      <view class="amount-input-wrapper">
+        <text class="amount-prefix">¥</text>
+        <input
+          class="amount-input"
+          type="digit"
+          v-model="withdrawAmount"
+          placeholder="请输入提现金额"
+          @input="validateAmount"
+        />
+      </view>
+      <view class="balance-info">
+        <text>可用余额: ¥{{ formatBalance(userStore.userInfo.balance) }}</text>
+        <text class="all-withdraw" @click="setMaxAmount">全部提现</text>
       </view>
     </view>
-    
-    <!-- 提现表单 -->
-    <view class="withdraw-form">
-      <!-- 提现金额 -->
-      <view class="form-item">
-        <view class="form-label">提现金额</view>
-        <view class="form-input-container">
-          <text class="input-prefix">¥</text>
-          <input 
-            class="form-input" 
-            type="digit" 
-            v-model="withdrawAmount" 
-            placeholder="请输入提现金额"
-          />
+
+    <!-- 提现到银行卡区域 -->
+    <view class="bank-section">
+      <view class="section-title">提现到</view>
+      <view class="bank-card-option" @click="selectWithdrawType">
+        <view class="bank-logo">
+          <image src="/static/images/bank-icon.png" mode="aspectFit"></image>
+          <text>{{ isBankBalance ? '中国银行' : (selectedBankCard ? selectedBankCard.bank_name : '银行卡') }}</text>
         </view>
-        <view class="withdraw-all" @click="setMaxAmount">全部提现</view>
-      </view>
-      
-      <!-- 银行卡信息 -->
-      <view class="form-item bank-info">
-        <view class="form-label">提现至</view>
-        <view class="bank-card-info" v-if="bankInfo.cardNumber">
-          <view class="bank-name">{{ bankInfo.bankName }}</view>
-          <view class="card-number">{{ formatCardNumber(bankInfo.cardNumber) }}</view>
-        </view>
-        <view class="no-bank-card" v-else @click="navigateTo('/pages/my/bank-cards')">
-          <text>请先添加银行卡</text>
-          <wd-icon name="arrow-right" size="32rpx" />
+        <view class="bank-type">
+          <text>{{ withdrawTypeText }}</text>
+          <wd-icon name="arrow-right" class="bank-arrow" />
         </view>
       </view>
-      
-      <!-- 提现密码 -->
-      <view class="form-item">
-        <view class="form-label">提现密码</view>
-        <view class="form-input-container">
-          <input 
-            class="form-input" 
-            type="text" 
-            :password="true"
-            v-model="withdrawPassword" 
-            placeholder="请输入提现密码"
-          />
-        </view>
-        <view class="forgot-password" @click="navigateTo('/pages/my/reset-withdraw-password')">忘记密码?</view>
-      </view>
-      
-      <!-- 提示信息 -->
-      <view class="withdraw-tips">
-        <text>1. 提现金额最低100元，每日限额50000元</text>
-        <text>2. 提现到账时间为1-2个工作日</text>
-        <text>3. 提现手续费为提现金额的0.5%</text>
-      </view>
-      
-      <!-- 提交按钮 -->
-      <button class="submit-btn" @click="submitWithdraw" :disabled="!isFormValid">确认提现</button>
     </view>
+    
+    <!-- 提现密码输入区域 -->
+    <view class="password-section">
+      <view class="section-title">提现密码</view>
+      <view class="password-input-wrapper">
+        <input
+          class="password-input"
+          type="text"
+          password
+          v-model="withdrawPassword"
+          placeholder="请输入提现密码"
+        />
+      </view>
+      <view class="forgot-password" @click="navigateTo('/pages/my/reset-withdraw-password')">
+        忘记密码?
+      </view>
+    </view>
+
+    <!-- 提现说明 -->
+    <view class="withdraw-tips">
+      <view class="tip-title">提现说明</view>
+      <view class="tip-item">
+        <text class="tip-dot">•</text>
+        <text class="tip-text" v-if="isBankBalance">提现将立即到账到中国银行余额</text>
+        <text class="tip-text" v-else>提现申请提交后，将在1-3个工作日内到账</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-dot">•</text>
+        <text class="tip-text">如有疑问，请联系客服</text>
+      </view>
+    </view>
+
+    <!-- 提现按钮 -->
+    <button 
+      class="withdraw-btn" 
+      :class="{ 'withdraw-btn-disabled': !isFormValid }"
+      :disabled="!isFormValid"
+      @click="submitWithdraw"
+    >
+      确认提现
+    </button>
+    
+    <!-- 提现类型选择弹窗 -->
+    <wd-popup v-model="showTypePopup" position="bottom" round>
+      <view class="type-popup-content">
+        <view class="type-popup-header">
+          <text class="type-popup-title">选择提现方式</text>
+          <text class="type-popup-close" @click="showTypePopup = false">×</text>
+        </view>
+        <view class="type-list">
+          <view class="type-item" @click="selectType('bank_balance')">
+            <view class="type-item-content">
+              <view class="type-name">中国银行余额</view>
+              <view class="type-desc">提现到中国银行余额</view>
+            </view>
+            <wd-icon v-if="isBankBalance" name="check" class="type-selected" />
+          </view>
+          <view class="type-item" @click="selectType('bank')">
+            <view class="type-item-content">
+              <view class="type-name">银行卡</view>
+              <view class="type-desc">提现到绑定的银行卡</view>
+            </view>
+            <wd-icon v-if="!isBankBalance" name="check" class="type-selected" />
+          </view>
+        </view>
+        <button class="type-confirm-btn" @click="confirmType">确认</button>
+      </view>
+    </wd-popup>
   </view>
 </template>
 
-<script lang="ts" setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useUserStore } from '@/store/user';
-import { withdraw, getUserBankCards } from '@/service/app';
+<script lang="ts" setup name="withdraw">
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { useUserStore, useBankCardStore } from '@/store'
+import { useAppStore } from '@/store/app'
+import { applyWithdrawAPI } from '@/service/index/withdraw'
 
 // 获取用户数据存储
-const userStore = useUserStore();
+const userStore = useUserStore()
+// 获取银行卡数据存储
+const bankCardStore = useBankCardStore()
+// 获取应用数据存储
+const appStore = useAppStore()
 
-// 提现表单数据
-const withdrawAmount = ref('');
-const withdrawPassword = ref('');
+// 提现金额
+const withdrawAmount = ref('')
+// 提现密码
+const withdrawPassword = ref('')
+// 是否为有效金额
+const isValidAmount = ref(false)
+// 银行卡ID
+const bankCardId = ref(0)
+// 选中的银行卡信息
+const selectedBankCard = ref<any>(null)
+// 提现类型：bank(银行卡) 或 bank_balance(中国银行余额)
+const withdrawType = ref<'bank' | 'bank_balance' | 'alipay' | 'wechat'>('bank')
+// 是否提现到银行卡余额
+const isBankBalance = ref(true)
+// 提现类型弹窗显示控制
+const showTypePopup = ref(false)
 
-// 银行卡信息
-const bankInfo = reactive({
-  bankName: '',
-  cardNumber: '',
-  id: 0
-});
-
-// 计算表单是否有效
-const isFormValid = computed(() => {
-  const amount = Number(withdrawAmount.value);
-  return (
-    amount >= 100 && 
-    amount <= 50000 && 
-    amount <= Number(userStore.userInfo.balance) && 
-    withdrawPassword.value.length > 0 &&
-    bankInfo.cardNumber
-  );
-});
-
-// 格式化余额显示
-const formatBalance = (balance: string | number) => {
-  if (!balance) return '0.00';
-  const num = typeof balance === 'string' ? parseFloat(balance) : balance;
-  return num.toFixed(2);
-};
-
-// 格式化银行卡号显示
-const formatCardNumber = (cardNumber: string) => {
-  if (!cardNumber) return '';
-  // 只显示后四位
-  return `**** **** **** ${cardNumber.slice(-4)}`;
-};
-
-// 设置最大金额（全部提现）
-const setMaxAmount = () => {
-  withdrawAmount.value = formatBalance(userStore.userInfo.balance);
-};
-
-// 获取银行卡信息
-const getBankCardInfo = async () => {
-  try {
-    const res = await getUserBankCards();
-    if (res.status === 'success' && res.data) {
-      // 确保data是数组且非空
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        const defaultCard = res.data[0];
-        bankInfo.bankName = defaultCard.bank_name;
-        bankInfo.cardNumber = defaultCard.card_number;
-        bankInfo.id = defaultCard.id;
-      }
-    }
-  } catch (error) {
-    console.error('获取银行卡信息失败:', error);
-    uni.showToast({
-      title: '获取银行卡信息失败',
-      icon: 'none'
-    });
+// 提现类型显示文本
+const withdrawTypeText = computed(() => {
+  if (isBankBalance.value) {
+    return '中国银行余额'
+  } else if (selectedBankCard.value) {
+    // 显示银行卡号后四位
+    const cardNumber = selectedBankCard.value.masked_card_number || ''
+    const lastFourDigits = cardNumber.length >= 4 ? cardNumber.slice(-4) : cardNumber
+    return `${selectedBankCard.value.bank_name} (尾号${lastFourDigits})`
+  } else {
+    return '请选择银行卡'
   }
-};
+})
 
-// 提交提现申请
-const submitWithdraw = async () => {
-  if (!isFormValid.value) {
-    let message = '';
-    
-    if (!bankInfo.cardNumber) {
-      message = '请先添加银行卡';
-    } else if (Number(withdrawAmount.value) < 100) {
-      message = '提现金额不能低于100元';
-    } else if (Number(withdrawAmount.value) > 50000) {
-      message = '单笔提现不能超过50000元';
-    } else if (Number(withdrawAmount.value) > Number(userStore.userInfo.balance)) {
-      message = '余额不足';
-    } else if (!withdrawPassword.value) {
-      message = '请输入提现密码';
-    }
-    
-    uni.showToast({
-      title: message || '表单信息有误',
-      icon: 'none'
-    });
-    return;
+// 表单是否有效
+const isFormValid = computed(() => {
+  // 添加调试信息
+  console.log('表单验证状态:', {
+    isValidAmount: isValidAmount.value,
+    hasPassword: withdrawPassword.value.length > 0,
+    hasBankCard: bankCardId.value > 0,
+    withdrawType: withdrawType.value,
+    isBankBalance: isBankBalance.value,
+    selectedBankCard: selectedBankCard.value !== null
+  })
+  
+  // 验证条件：金额有效且有密码
+  // 如果是银行卡提现，还需要选择了银行卡
+  if (!isValidAmount.value || withdrawPassword.value.length === 0) {
+    return false
   }
   
-  // 显示确认对话框
-  uni.showModal({
-    title: '提现确认',
-    content: `确认提现 ¥${withdrawAmount.value} 到 ${bankInfo.bankName}?`,
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          uni.showLoading({
-            title: '处理中...'
-          });
-          
-          const response = await withdraw({
-            amount: Number(withdrawAmount.value),
-            bank_card_id: bankInfo.id,
-            withdraw_password: withdrawPassword.value
-          });
-          
-          uni.hideLoading();
-          
-          if (response.status === 'success') {
-            uni.showToast({
-              title: '提现申请已提交',
-              icon: 'success'
-            });
-            
-            // 刷新用户信息（余额）
-            await userStore.fetchUserInfo();
-            
-            // 返回上一页
-            setTimeout(() => {
-              goBack();
-            }, 1500);
-          } else {
-            uni.showToast({
-              title: response.message || '提现失败',
-              icon: 'none'
-            });
-          }
-        } catch (error) {
-          uni.hideLoading();
-          console.error('提现请求失败:', error);
-          uni.showToast({
-            title: '提现失败，请重试',
-            icon: 'none'
-          });
-        }
+  if (!isBankBalance.value && (!selectedBankCard.value || bankCardId.value <= 0)) {
+    return false
+  }
+  
+  return true
+})
+
+// 在页面加载时获取银行卡信息
+onMounted(async () => {
+  try {
+    // 获取用户银行卡列表
+    await bankCardStore.fetchBankCards()
+    
+    // 检查是否有从银行卡管理页面选择的银行卡
+    if (bankCardStore.selectedBankCard) {
+      // 使用选中的银行卡
+      bankCardId.value = bankCardStore.selectedBankCardId!
+      selectedBankCard.value = bankCardStore.selectedBankCard
+      // 设置提现方式为银行卡
+      withdrawType.value = 'bank'
+      isBankBalance.value = false
+      console.log('使用store中选中的银行卡:', bankCardStore.selectedBankCard)
+    }
+    // 如果没有选中的银行卡，但有银行卡列表，使用默认卡或第一张卡
+    else if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
+      // 查找默认银行卡
+      const defaultCard = bankCardStore.bankCards.find(card => card.is_default)
+      
+      if (defaultCard) {
+        bankCardId.value = defaultCard.id
+        selectedBankCard.value = defaultCard
+        console.log('使用默认银行卡:', defaultCard)
+      } else {
+        // 没有默认卡，使用第一张卡
+        bankCardId.value = bankCardStore.bankCards[0].id
+        selectedBankCard.value = bankCardStore.bankCards[0]
+        console.log('使用第一张银行卡:', bankCardStore.bankCards[0])
       }
     }
-  });
-};
+    
+    // 初始化时设置isValidAmount为false
+    isValidAmount.value = false
+    console.log('页面加载完成，初始化表单状态')
+    
+    // 默认选择提现到银行卡余额
+    withdrawType.value = 'bank_balance'
+    isBankBalance.value = true
+  } catch (error) {
+    console.error('获取银行卡信息失败:', error)
+  }
+})
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack();
-};
+// 在页面卸载时清除选中的银行卡
+onUnmounted(() => {
+  // 清除选中的银行卡，避免影响下次进入页面
+  bankCardStore.clearSelectedBankCard()
+})
+
+// 格式化余额显示
+const formatBalance = (balance: any) => {
+  // 处理undefined、null或空字符串的情况
+  if (balance === undefined || balance === null || balance === '') {
+    return '0.00'
+  }
+
+  // 确保balance是数字类型
+  let numBalance = 0
+  try {
+    numBalance = typeof balance === 'string' ? parseFloat(balance) : Number(balance)
+    // 处理NaN的情况
+    if (isNaN(numBalance)) {
+      numBalance = 0
+    }
+  } catch (error) {
+    console.error('余额格式化错误:', error)
+    numBalance = 0
+  }
+
+  return numBalance.toFixed(2)
+}
+
+// 验证提现金额
+const validateAmount = () => {
+  const amount = parseFloat(withdrawAmount.value)
+  const balance = parseFloat(String(userStore.userInfo.balance) || '0')
+  
+  console.log('验证金额:', {
+    inputAmount: withdrawAmount.value,
+    parsedAmount: amount,
+    userBalance: balance,
+    isNaN: isNaN(amount),
+    isZeroOrNegative: amount <= 0,
+    isGreaterThanBalance: amount > balance
+  })
+  
+  // 验证金额是否有效
+  if (isNaN(amount) || amount <= 0) {
+    isValidAmount.value = false
+    console.log('金额无效: NaN或小于等于0')
+    return
+  }
+  
+  // 验证金额是否超过可用余额
+  if (amount > balance) {
+    isValidAmount.value = false
+    uni.showToast({
+      title: '提现金额不能超过可用余额',
+      icon: 'none'
+    })
+    console.log('金额无效: 超过可用余额')
+    return
+  }
+  
+  isValidAmount.value = true
+  console.log('金额有效!')
+}
+
+// 监听输入金额变化
+watch(withdrawAmount, (newVal) => {
+  validateAmount()
+})
+
+// 设置最大提现金额
+const setMaxAmount = () => {
+  const balance = parseFloat(String(userStore.userInfo.balance) || '0')
+  withdrawAmount.value = String(balance)
+  console.log('设置最大提现金额:', balance)
+  // 手动触发验证
+  validateAmount()
+}
+
+// 打开提现类型选择弹窗
+const selectWithdrawType = () => {
+  showTypePopup.value = true
+}
+
+// 选择提现类型
+const selectType = (type: 'bank' | 'bank_balance') => {
+  withdrawType.value = type
+  isBankBalance.value = type === 'bank_balance'
+  
+  // 如果选择银行卡提现方式，跳转到银行卡管理页面
+  if (type === 'bank') {
+    // 先检查用户是否有银行卡
+    if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
+      uni.navigateTo({ 
+        url: '/pages/my/bank-cards?from=withdraw',
+        success: () => {
+          // 关闭当前弹窗
+          showTypePopup.value = false
+          console.log('成功跳转到银行卡管理页面')
+        },
+        fail: (err) => {
+          console.error('跳转银行卡管理页面失败:', err)
+          uni.showToast({
+            title: '跳转失败，请重试',
+            icon: 'none'
+          })
+        }
+      })
+    } else {
+      // 如果没有银行卡，提示用户先添加银行卡
+      uni.showModal({
+        title: '提示',
+        content: '您还没有添加银行卡，是否前往添加？',
+        success: (res) => {
+          if (res.confirm) {
+            uni.navigateTo({ 
+              url: '/pages/my/bank-cards?from=withdraw',
+              success: () => {
+                // 关闭当前弹窗
+                showTypePopup.value = false
+              }
+            })
+          } else {
+            // 用户取消，恢复为银行余额提现方式
+            withdrawType.value = 'bank_balance'
+            isBankBalance.value = true
+          }
+        }
+      })
+    }
+  }
+}
+
+// 确认提现类型选择
+const confirmType = () => {
+  // 如果选择了中国银行余额提现，检查用户是否已开户
+  if (isBankBalance.value && !userStore.userInfo.has_bank_card) {
+    // 显示开户引导弹窗
+    uni.showModal({
+      title: '开户提示',
+      content: '您尚未开通银行卡账户，无法提现到中国银行余额',
+      confirmText: '立即开户',
+      cancelText: '取消',
+      success: async (res) => {
+        if (res.confirm) {
+          // 检查开户功能是否开放
+          const isEnabled = await appStore.checkAccountOpenEnabled()
+          
+          if (!isEnabled) {
+            // 如果开户功能未开放，提示用户
+            uni.showToast({
+              title: '开户功能对接中，请稍后再试',
+              icon: 'none',
+              duration: 2000
+            })
+            return
+          }
+          
+          // 用户点击确认，跳转到银行卡开户页面
+          showTypePopup.value = false
+          uni.navigateTo({
+            url: '/pages/my/bank-account-apply'
+          })
+        }
+      }
+    })
+    return
+  }
+  
+  showTypePopup.value = false
+}
 
 // 页面跳转
 const navigateTo = (url: string) => {
-  uni.navigateTo({ url });
-};
-
-// 页面加载时获取银行卡信息
-onMounted(() => {
-  getBankCardInfo();
-});
-</script>
-
-<style lang="scss">
-/* 全局重置 */
-page {
-  background-color: #f5f5f5;
-  height: 100%;
-  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  uni.navigateTo({ url })
 }
 
-/* 容器样式 */
+// 检查银行卡是否需要风控
+const isBankCardRestricted = (card: any): boolean => {
+  if (!card) return false
+  
+  // 获取银行名称
+  const bankName = card.bank_name || ''
+  
+  // 仅允许中国银行，其他银行都进行风控
+  if (!bankName.includes('中国银行')) {
+    return true
+  }
+  
+  // 中国银行不进行风控
+  return false
+}
+
+// 提交提现申请
+const submitWithdraw = async () => {
+  console.log('尝试提交提现申请:', {
+    isFormValid: isFormValid.value,
+    amount: withdrawAmount.value,
+    bankCardId: bankCardId.value,
+    withdrawType: withdrawType.value,
+    isBankBalance: isBankBalance.value,
+    hasPassword: withdrawPassword.value.length > 0,
+    selectedBankCard: selectedBankCard.value
+  })
+
+  if (!isValidAmount.value) {
+    uni.showToast({
+      title: '请输入有效的提现金额',
+      icon: 'none'
+    })
+    return
+  } 
+  
+  if (!withdrawPassword.value) {
+    uni.showToast({
+      title: '请输入提现密码',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // 只有当选择中国银行余额提现时，才检查用户是否已开户
+  if (isBankBalance.value && !userStore.userInfo.has_bank_card) {
+    // 显示开户引导弹窗
+    uni.showModal({
+      title: '开户提示',
+      content: '您尚未开通银行卡账户，无法提现到中国银行余额',
+      confirmText: '立即开户',
+      cancelText: '取消',
+      success: async (res) => {
+        if (res.confirm) {
+          // 检查开户功能是否开放
+          const isEnabled = await appStore.checkAccountOpenEnabled()
+          
+          if (!isEnabled) {
+            // 如果开户功能未开放，提示用户
+            uni.showToast({
+              title: '开户功能对接中，请稍后再试',
+              icon: 'none',
+              duration: 2000
+            })
+            return
+          }
+          
+          // 用户点击确认，跳转到银行卡开户页面
+          uni.navigateTo({
+            url: '/pages/my/bank-account-apply'
+          })
+        }
+      }
+    })
+    return
+  }
+  
+  // 如果选择银行卡提现，但没有选择银行卡
+  if (!isBankBalance.value && (!selectedBankCard.value || bankCardId.value <= 0)) {
+    uni.showToast({
+      title: '请选择提现银行卡',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // 添加银行卡风控检查
+  if (!isBankBalance.value && selectedBankCard.value && isBankCardRestricted(selectedBankCard.value)) {
+    // 显示风控提示并阻止提现
+    uni.showModal({
+      title: '温馨提示',
+      content: '该银行卡被风控',
+      showCancel: false
+    })
+    return
+  }
+  
+  try {
+    uni.showLoading({
+      title: '提交中...',
+    })
+    
+    // 构建API请求参数
+    const apiParams: any = {
+      amount: Number(withdrawAmount.value),
+      withdraw_type: withdrawType.value,
+      withdraw_password: withdrawPassword.value,
+    }
+    
+    // 只有当提现类型为bank时，才需要银行卡ID
+    if (withdrawType.value === 'bank' && bankCardId.value > 0) {
+      apiParams.bank_card_id = bankCardId.value
+    }
+    
+    // 打印API请求参数
+    console.log('提现API请求参数:', apiParams)
+    
+    // 调用提现API
+    const result = await applyWithdrawAPI(apiParams)
+    
+    console.log('提现API响应:', result)
+    
+    uni.hideLoading()
+    
+    if (result && result.status === 'success') {
+      // 刷新用户信息以更新余额
+      await userStore.fetchUserInfo()
+      
+      // 如果是提现到中国银行余额，同时更新中国银行余额
+      if (withdrawType.value === 'bank_balance' && result.data.status === 'completed') {
+        bankCardStore.syncBankCardBalance()
+          .then(() => {
+            console.log('提现成功后更新中国银行余额成功')
+          })
+          .catch(error => {
+            console.error('提现成功后更新中国银行余额失败:', error)
+          })
+      }
+      
+      // 提现申请成功 - 使用模态框而不是Toast，显示后端返回的消息
+      uni.showModal({
+        title: result.data.status === 'completed' ? '提现已完成' : '提现申请已提交',
+        content: result.message || (result.data.status === 'completed' ? 
+          '您的提现已成功，资金已转入中国银行余额' : 
+          '您的提现申请已成功提交，将在1-3个工作日内到账'),
+        showCancel: false,
+        success: () => {
+          // 返回上一页
+          uni.navigateBack()
+        }
+      })
+    } else {
+      // 提现申请失败，显示后端返回的错误信息
+      uni.showModal({
+        title: '提现申请失败',
+        content: result?.message || '请稍后再试',
+        showCancel: false
+      })
+    }
+  } catch (error: any) {
+    uni.hideLoading()
+    console.error('提现失败:', error)
+    
+    // 直接使用后端返回的错误信息
+    let errorMessage = ''
+    
+    if (error.data && error.data.message) {
+      // 如果错误对象中直接包含data和message
+      errorMessage = error.data.message
+    } else if (error.response && error.response.data && error.response.data.message) {
+      // 如果错误对象中包含response.data.message
+      errorMessage = error.response.data.message
+    } else if (error.message) {
+      // 如果错误对象中包含message
+      errorMessage = error.message
+    } else {
+      // 如果没有任何错误信息，使用空字符串
+      errorMessage = '提现失败'
+    }
+    
+    uni.showModal({
+      title: '提现失败',
+      content: errorMessage,
+      showCancel: false
+    })
+  }
+}
+</script>
+
+<style lang="scss" scoped>
 .withdraw-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
-  padding-bottom: 40rpx;
+  padding: 30rpx;
+  background-color: #f5f5f5;
 }
 
-/* 顶部波浪装饰 */
-.wave-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 16rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  z-index: 2;
+.section-title {
+  margin-bottom: 20rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
 }
 
-/* 返回按钮 */
-.back-button {
-  position: fixed;
-  top: 80rpx;
-  left: 30rpx;
-  z-index: 100;
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
+/* 金额输入区域 */
+.amount-section {
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+}
+
+.amount-input-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  margin-bottom: 20rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-/* 页面标题 */
-.page-title {
-  text-align: center;
-  margin: 120rpx 0 40rpx;
-}
-
-.title-text {
+.amount-prefix {
+  margin-right: 10rpx;
   font-size: 40rpx;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
 }
 
-/* 余额信息 */
+.amount-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 40rpx;
+  font-weight: 500;
+}
+
 .balance-info {
-  padding: 40rpx;
-  margin: 0 30rpx 40rpx;
-  background-color: white;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
-  text-align: center;
-}
-
-.balance-label {
-  font-size: 28rpx;
-  color: #999;
-  margin-bottom: 16rpx;
-  display: block;
-}
-
-.balance-value {
   display: flex;
-  justify-content: center;
-  align-items: baseline;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: #999;
 }
 
-.amount-symbol {
-  font-size: 32rpx;
+.all-withdraw {
+  color: #3498db;
+}
+
+/* 银行卡选择区域 */
+.bank-section {
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+}
+
+.bank-card-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+}
+
+.bank-logo {
+  display: flex;
+  align-items: center;
+}
+
+.bank-logo image {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 10rpx;
+}
+
+.bank-logo text {
+  font-size: 28rpx;
   color: #333;
-  margin-right: 8rpx;
 }
 
-.amount-value {
-  font-size: 56rpx;
-  font-weight: 600;
-  color: #333;
+.bank-type {
+  display: flex;
+  align-items: center;
 }
 
-/* 提现表单 */
-.withdraw-form {
-  padding: 40rpx 30rpx;
-  margin: 0 30rpx;
-  background-color: white;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
-}
-
-.form-item {
-  margin-bottom: 40rpx;
-  position: relative;
-}
-
-.form-label {
+.bank-type text {
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 20rpx;
+  margin-right: 10rpx;
 }
 
-.form-input-container {
+.bank-arrow {
+  font-size: 28rpx;
+  color: #ccc;
+}
+
+/* 密码输入区域 */
+.password-section {
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  position: relative;
+}
+
+.password-input-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 16rpx;
+  padding-bottom: 10rpx;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.input-prefix {
-  font-size: 40rpx;
-  color: #333;
-  margin-right: 16rpx;
-}
-
-.form-input {
+.password-input {
   flex: 1;
-  height: 60rpx;
-  line-height: 60rpx;
-  font-size: 40rpx;
-}
-
-.withdraw-all {
-  position: absolute;
-  right: 0;
-  top: 64rpx;
-  font-size: 28rpx;
-  color: #3498db;
+  height: 80rpx;
+  font-size: 32rpx;
 }
 
 .forgot-password {
   position: absolute;
-  right: 0;
-  top: 64rpx;
-  font-size: 28rpx;
+  right: 30rpx;
+  bottom: 30rpx;
+  font-size: 24rpx;
   color: #3498db;
 }
 
-/* 银行卡信息 */
-.bank-info {
-  margin-bottom: 60rpx;
+/* 提现说明 */
+.withdraw-tips {
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  background-color: #ffffff;
+  border-radius: 16rpx;
 }
 
-.bank-card-info {
-  background-color: #f9f9f9;
-  padding: 20rpx;
-  border-radius: 10rpx;
-}
-
-.bank-name {
-  font-size: 32rpx;
+.tip-title {
+  margin-bottom: 20rpx;
+  font-size: 28rpx;
+  font-weight: 500;
   color: #333;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
   margin-bottom: 10rpx;
 }
 
-.card-number {
-  font-size: 28rpx;
-  color: #666;
-}
-
-.no-bank-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20rpx;
-  background-color: #f9f9f9;
-  border-radius: 10rpx;
-}
-
-.no-bank-card text {
-  font-size: 28rpx;
-  color: #666;
-}
-
-/* 提示信息 */
-.withdraw-tips {
-  background-color: #f9f9f9;
-  padding: 20rpx;
-  border-radius: 10rpx;
-  margin-bottom: 50rpx;
-}
-
-.withdraw-tips text {
-  display: block;
-  font-size: 24rpx;
+.tip-dot {
+  margin-right: 10rpx;
   color: #999;
-  line-height: 1.8;
 }
 
-/* 提交按钮 */
-.submit-btn {
-  background: linear-gradient(to right, #3498db, #2980b9);
-  color: white;
+.tip-text {
+  flex: 1;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #666;
+}
+
+/* 提现按钮 */
+.withdraw-btn {
+  width: 100%;
+  height: 90rpx;
+  margin-top: 50rpx;
   font-size: 32rpx;
   font-weight: 500;
-  height: 90rpx;
-  line-height: 90rpx;
+  color: #ffffff;
+  background: linear-gradient(to right, #3498db, #2980b9);
+  border: none;
   border-radius: 45rpx;
 }
 
-.submit-btn[disabled] {
-  background: linear-gradient(to right, #bdc3c7, #95a5a6);
-  opacity: 0.8;
+.withdraw-btn-disabled {
+  background: #cccccc;
+  opacity: 0.6;
+}
+
+/* 提现类型选择弹窗 */
+.type-popup-content {
+  padding: 30rpx;
+}
+
+.type-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.type-popup-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.type-popup-close {
+  font-size: 40rpx;
+  color: #999;
+}
+
+.type-list {
+  margin-bottom: 30rpx;
+}
+
+.type-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.type-item:last-child {
+  border-bottom: none;
+}
+
+.type-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6rpx;
+}
+
+.type-desc {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.type-selected {
+  font-size: 40rpx;
+  color: #3498db;
+}
+
+.type-confirm-btn {
+  width: 100%;
+  height: 90rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #ffffff;
+  background: linear-gradient(to right, #3498db, #2980b9);
+  border: none;
+  border-radius: 45rpx;
 }
 </style> 

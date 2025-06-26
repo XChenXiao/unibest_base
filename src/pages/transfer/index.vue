@@ -16,21 +16,22 @@
       <!-- 主要转账选项 -->
       <view class="main-options-card">
         <view class="main-options">
-          <view class="option-item" @click="navigateTo('/pages/transfer/bank')">
+          <!-- 隐藏转到银行账户按钮 -->
+          <!-- <view class="option-item" @click="navigateTo('/pages/transfer/bank')">
             <view class="option-icon">
               <image class="icon-image" src="@/static/images/tran1-1.png" mode="aspectFit"></image>
             </view>
             <text class="option-text">转到银行账户</text>
-          </view>
+          </view> -->
   
-          <view class="option-item" @click="navigateTo('/pages/transfer/alipay')">
+          <view class="option-item" @click="navigateToWithCheck('/pages/transfer/alipay')">
             <view class="option-icon">
               <image class="icon-image" src="@/static/images/tran1-2.png" mode="aspectFit"></image>
             </view>
             <text class="option-text">转到支付宝</text>
           </view>
   
-          <view class="option-item" @click="navigateTo('/pages/transfer/wechat')">
+          <view class="option-item" @click="navigateToWithCheck('/pages/transfer/wechat')">
             <view class="option-icon">
               <image class="icon-image" src="@/static/images/tran1-3.png" mode="aspectFit"></image>
             </view>
@@ -134,12 +135,18 @@
   import { useUserStore } from '@/store/user'
   import { useAppStore } from '@/store/app'
   import { checkBankCardStatusAPI, getDepositTipsAPI, IDepositTip } from '@/service/index/bankcard'
+  import { useBankCardStore } from '@/store'
+  import { onShow } from '@dcloudio/uni-app'
   
   const userStore = useUserStore()
   const appStore = useAppStore()
+  const bankCardStore = useBankCardStore()
   
   // 用户余额
-  const userBalance = computed(() => userStore.userInfo.balance || 0)
+  const userBalance = computed(() => {
+    const balance = userStore.userInfo.balance || 0
+    return typeof balance === 'string' ? parseFloat(balance) : balance
+  })
   
   // 返回上一页
   const goBack = () => {
@@ -208,7 +215,7 @@
   }
   
   // 页面跳转
-  const navigateTo = async (url: string) => {
+  const navigateTo = (url: string) => {
     // 检查余额，如果为0则提示用户
     if (userBalance.value <= 0) {
       uni.showToast({
@@ -218,9 +225,74 @@
       })
       return
     }
-  
+
     // 余额大于0，直接跳转到目标页面
     uni.navigateTo({ url })
+  }
+
+  // 带银行卡检查的页面跳转
+  const navigateToWithCheck = (url: string) => {
+    // 检查余额，如果为0则提示用户
+    if (userBalance.value <= 0) {
+      uni.showToast({
+        title: '没有余额',
+        icon: 'none',
+        duration: 2000,
+      })
+      return
+    }
+
+    // 如果是转账到微信或支付宝，直接跳转，不需要检查银行卡状态
+    if (url.includes('/pages/transfer/wechat') || url.includes('/pages/transfer/alipay')) {
+      uni.navigateTo({ url })
+      return
+    }
+
+    // 如果是转账到银行账户，需要检查银行卡状态
+    checkBankCardStatusAPI().then(res => {
+      if (res && res.status === 'success') {
+        // 如果用户已开通银行卡，直接跳转
+        if (res.data && 'has_bank_card' in res.data && res.data.has_bank_card) {
+          uni.navigateTo({ url })
+        } else {
+          // 如果未开通银行卡，显示原生弹窗
+          uni.showModal({
+            title: '开户提示',
+            content: '您尚未开通银行卡账户，开通后即可进行转账提现操作',
+            confirmText: '立即开户',
+            cancelText: '稍后再说',
+            success: async (result) => {
+              if (result.confirm) {
+                // 检查开户功能是否开放
+                const isEnabled = await appStore.checkAccountOpenEnabled()
+                
+                if (!isEnabled) {
+                  // 如果开户功能未开放，提示用户
+                  uni.showToast({
+                    title: '开户功能对接中，请稍后再试',
+                    icon: 'none',
+                    duration: 2000
+                  })
+                  return
+                }
+                
+                // 跳转到银行卡开户页面
+                uni.navigateTo({
+                  url: '/pages/my/bank-account-apply'
+                })
+              }
+            }
+          })
+        }
+      } else {
+        // API调用失败，仍然允许跳转
+        uni.navigateTo({ url })
+      }
+    }).catch(error => {
+      console.error('检查银行卡状态失败:', error)
+      // 发生错误时，仍然允许跳转
+      uni.navigateTo({ url })
+    })
   }
   
   // 显示"敬请期待"提示
@@ -244,6 +316,15 @@
     await userStore.fetchUserInfo()
   })
   
+  // 页面显示时更新余额
+  onShow(async () => {
+    console.log('转账页面显示，更新用户余额和银行卡余额')
+    // 更新用户余额
+    await userStore.fetchUserInfo()
+    // 更新银行卡余额
+    await bankCardStore.fetchBankCardBalance()
+  })
+  
   // 获取预存服务提示
   const fetchDepositTips = async () => {
     try {
@@ -254,9 +335,11 @@
       if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
         // 安全地访问data字段
         const data = res.data
-        if (data && typeof data === 'object' && 'deposit_tips' in data) {
+        if (data && typeof data === 'object' && 'deposit_tips' in data && Array.isArray(data.deposit_tips)) {
           depositTips.value = data.deposit_tips
           console.log('获取预存服务提示成功:', depositTips.value)
+        } else {
+          depositTips.value = []
         }
       }
     } catch (error) {

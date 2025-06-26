@@ -118,4 +118,13 @@ export const getBalanceTransactionsAPI = (page: number = 1) => {
     status: string
     data: IPaginatedResponse<IBalanceTransaction>
   }>(`/api/balance/transactions?page=${page}`)
+}
+
+/**
+ * 提现API
+ * @param data 提现参数
+ * @returns Promise
+ */
+export const withdrawAPI = (data: { amount: number; bank_name: string }) => {
+  return http.post('/api/withdraw', data)
 } 
