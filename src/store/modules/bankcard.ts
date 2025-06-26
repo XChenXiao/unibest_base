@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { checkBankCardStatusAPI, getBankCardsAPI, IBankCard } from '@/service/index/bankcard'
+import { checkBankCardStatusAPI, getBankCardsAPI, IBankCard, getBankCardBalanceAPI } from '@/service/index/bankcard'
 import { useUserStore } from './user'
 
 // 银行卡状态枚举
@@ -20,16 +20,31 @@ export const useBankCardStore = defineStore(
 
     // 银行卡列表
     const bankCards = ref<IBankCard[]>([])
+    
+    // 银行卡余额
+    const bankCardBalance = ref(0)
+    const frozenBankCardBalance = ref(0)
+    const availableBankCardBalance = ref(0)
 
     // 清除银行卡信息
     const clearBankCardInfo = () => {
       bankCardStatus.value = BankCardStatus.NONE
       bankCards.value = []
+      bankCardBalance.value = 0
+      frozenBankCardBalance.value = 0
+      availableBankCardBalance.value = 0
     }
 
     // 设置银行卡申请状态
     const setBankCardStatus = (status: BankCardStatus) => {
       bankCardStatus.value = status
+    }
+    
+    // 设置银行卡余额
+    const setBankCardBalance = (balance: number, frozenBalance: number = 0, availableBalance: number = 0) => {
+      bankCardBalance.value = balance
+      frozenBankCardBalance.value = frozenBalance
+      availableBankCardBalance.value = availableBalance || balance
     }
 
     // 获取银行卡状态
@@ -51,6 +66,7 @@ export const useBankCardStore = defineStore(
 
           // 更新用户是否有银行卡及开户时间
           userStore.setUserInfo({
+            ...userStore.userInfo,
             has_bank_card: !!has_bank_card,
             bank_card_opened_at,
           })
@@ -109,6 +125,34 @@ export const useBankCardStore = defineStore(
         return false
       }
     }
+    
+    // 获取银行卡余额
+    const fetchBankCardBalance = async () => {
+      const userStore = useUserStore()
+      if (!userStore.userInfo.token) {
+        return false
+      }
+
+      try {
+        const res = await getBankCardBalanceAPI()
+
+        if (res.status === 'success' && res.data) {
+          // 使用类型断言处理API返回的数据
+          const balanceData = res.data as any
+          bankCardBalance.value = balanceData.bank_card_balance || 0
+          // 由于后端只返回了bank_card_balance字段，其他字段设置为默认值
+          frozenBankCardBalance.value = 0
+          availableBankCardBalance.value = balanceData.bank_card_balance || 0
+          
+          return true
+        }
+
+        return false
+      } catch (error) {
+        console.error('获取银行卡余额失败', error)
+        return false
+      }
+    }
 
     // 判断银行卡是否在申请中或审核中
     const isBankCardProcessing = computed(() => {
@@ -132,10 +176,15 @@ export const useBankCardStore = defineStore(
     return {
       bankCardStatus,
       bankCards,
+      bankCardBalance,
+      frozenBankCardBalance,
+      availableBankCardBalance,
       setBankCardStatus,
+      setBankCardBalance,
       clearBankCardInfo,
       fetchBankCardStatus,
       fetchBankCards,
+      fetchBankCardBalance,
       isBankCardProcessing,
       getBankCardStatus,
     }

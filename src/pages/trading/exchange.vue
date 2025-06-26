@@ -755,83 +755,10 @@ const handleTrade = (item: any) => {
         return
       }
       
-      // 黄金卖出时检查银行卡状态
+      // 黄金卖出时不再检查银行卡状态
       if (activeCurrencyTab.value === 'sell') {
-        // 从 userInfoStore 中获取银行卡状态
-        const hasBankCard = userInfoStore.userInfo.has_bank_card
-
-        // 如果 store 中的银行卡状态为 false，则获取最新的银行卡状态
-        if (!hasBankCard) {
-          try {
-            // 显示加载状态
-            uni.showLoading({
-              title: '检查中...',
-            })
-
-            // 调用 userInfoStore 中的方法获取最新的银行卡状态
-            await userInfoStore.fetchBankCardStatus()
-            uni.hideLoading()
-
-            // 再次检查更新后的银行卡状态
-            if (!userInfoStore.userInfo.has_bank_card) {
-              uni.showModal({
-                title: '提示',
-                content: '卖出黄金需要先转入开通银行卡收款，是否立即前往开通？',
-                confirmText: '去开通',
-                cancelText: '取消',
-                success: (res) => {
-                  if (res.confirm) {
-                    // 检查平台配置中的银行卡功能是否开启
-                    if (!platformStore.enableBankAccount) {
-                      // 如果银行卡功能未开启，提示"激活系统正在更新"
-                      uni.showToast({
-                        title: '激活系统正在更新',
-                        icon: 'none',
-                        duration: 2000,
-                      })
-                      return
-                    }
-                    // 银行卡功能已开启，跳转到银行卡开户申请页面
-                    uni.navigateTo({
-                      url: '/pages/my/bank-account-apply',
-                    })
-                  }
-                },
-              })
-              return
-            }
-          } catch (error) {
-            uni.hideLoading()
-            console.error('获取银行卡状态失败:', error)
-
-            // 发生错误时显示提示
-            uni.showModal({
-              title: '提示',
-              content: '卖出黄金需要先转入开通银行卡收款，是否立即前往开通？',
-              confirmText: '去开通',
-              cancelText: '取消',
-              success: (res) => {
-                if (res.confirm) {
-                  // 检查平台配置中的银行卡功能是否开启
-                  if (!platformStore.enableBankAccount) {
-                    // 如果银行卡功能未开启，提示"激活系统正在更新"
-                    uni.showToast({
-                      title: '激活系统正在更新',
-                      icon: 'none',
-                      duration: 2000,
-                    })
-                    return
-                  }
-                  // 银行卡功能已开启，跳转到银行卡开户申请页面
-                  uni.navigateTo({
-                    url: '/pages/my/bank-account-apply',
-                  })
-                }
-              },
-            })
-            return
-          }
-        }
+        // 已取消银行卡校验逻辑
+        console.log('卖出黄金无需校验银行卡状态')
       }
     }
     
@@ -931,81 +858,8 @@ const handleSellEquity = async () => {
     return
   }
 
-  // 从 userInfoStore 中获取银行卡状态
-  const hasBankCard = userInfoStore.userInfo.has_bank_card
-
-  // 如果 store 中的银行卡状态为 false，则获取最新的银行卡状态
-  if (!hasBankCard) {
-    try {
-      // 显示加载状态
-      uni.showLoading({
-        title: '检查中...',
-      })
-
-      // 调用 userInfoStore 中的方法获取最新的银行卡状态
-      await userInfoStore.fetchBankCardStatus()
-      uni.hideLoading()
-
-      // 再次检查更新后的银行卡状态
-      if (!userInfoStore.userInfo.has_bank_card) {
-        uni.showModal({
-          title: '提示',
-          content: '出售股权需要先转入开通银行卡收款，是否立即前往开通？',
-          confirmText: '去开通',
-          cancelText: '取消',
-          success: (res) => {
-            if (res.confirm) {
-              // 检查平台配置中的银行卡功能是否开启
-              if (!platformStore.enableBankAccount) {
-                // 如果银行卡功能未开启，提示"激活系统正在更新"
-                uni.showToast({
-                  title: '激活系统正在更新',
-                  icon: 'none',
-                  duration: 2000,
-                })
-                return
-              }
-              // 跳转到银行卡开户申请页面
-              uni.navigateTo({
-                url: '/pages/my/bank-account-apply',
-              })
-            }
-          },
-        })
-        return
-      }
-    } catch (error) {
-      uni.hideLoading()
-      console.error('获取银行卡状态失败:', error)
-
-      // 发生错误时显示提示
-      uni.showModal({
-        title: '提示',
-        content: '出售股权需要先转入开通银行卡收款，是否立即前往开通？',
-        confirmText: '去开通',
-        cancelText: '取消',
-        success: (res) => {
-          if (res.confirm) {
-            // 检查平台配置中的银行卡功能是否开启
-            if (!platformStore.enableBankAccount) {
-              // 如果银行卡功能未开启，提示"激活系统正在更新"
-              uni.showToast({
-                title: '激活系统正在更新',
-                icon: 'none',
-                duration: 2000,
-              })
-              return
-            }
-            // 跳转到银行卡开户申请页面
-            uni.navigateTo({
-              url: '/pages/my/bank-account-apply',
-            })
-          }
-        },
-      })
-      return
-    }
-  }
+  // 不再检查银行卡状态，直接允许出售股权
+  console.log('出售股权无需校验银行卡状态')
 
   // 如果已开通银行卡，打开出售股权弹窗
   sellEquityPopup.value.open()

@@ -38,7 +38,7 @@
           ></image>
         </view>
         <view class="balance-amount">
-          <text>{{ showBalance ? formatBalance(userStore.userInfo.balance) : '******' }}</text>
+          <text>{{ showBalance ? formatBalance(bankCardStore.bankCardBalance) : '******' }}</text>
         </view>
       </view>
 
@@ -60,7 +60,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useUserStore, useVerificationStore } from '@/store'
+import { useUserStore, useVerificationStore, useBankCardStore } from '@/store'
 import { usePlatformStore } from '@/store/platform'
 
 // 获取用户状态
@@ -69,6 +69,8 @@ const userStore = useUserStore()
 const verificationStore = useVerificationStore()
 // 获取平台设置状态
 const platformStore = usePlatformStore()
+// 获取银行卡状态
+const bankCardStore = useBankCardStore()
 
 // 余额显示控制
 const showBalance = ref(true)
@@ -78,7 +80,11 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-
+// 页面加载时
+onMounted(() => {
+  // 获取银行卡余额
+  bankCardStore.fetchBankCardBalance()
+})
 
 // 格式化余额显示
 const formatBalance = (balance) => {
@@ -165,25 +171,6 @@ const checkBankCardStatus = () => {
   // 检查用户是否开通银行卡
   return userStore.userInfo.has_bank_card
 }
-
-// 页面加载时
-onMounted(() => {
-  // 不再主动请求用户信息，仅依赖store中已有的数据
-  console.log('中国银行页面加载，当前store中的余额:', userStore.userInfo.balance)
-
-  // 监听余额更新事件
-  uni.$on('user_balance_updated', (data) => {
-    console.log('中国银行页面收到余额更新:', data)
-    if (data && data.balance !== undefined) {
-      userStore.updateUserBalance(data.balance)
-    }
-  })
-})
-
-// 在页面卸载时移除事件监听
-onUnmounted(() => {
-  uni.$off('user_balance_updated')
-})
 </script>
 
 <style lang="scss" scoped>

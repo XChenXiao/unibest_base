@@ -240,6 +240,24 @@ export const getBankCardsAPI = () => {
 }
 
 /**
+ * 银行卡余额信息接口
+ */
+export interface IBankCardBalance {
+  bank_card_balance: number
+}
+
+/**
+ * 获取银行卡余额信息API
+ * @returns Promise
+ */
+export const getBankCardBalanceAPI = () => {
+  return http.get<{
+    status: string
+    data: IBankCardBalance
+  }>('/api/bank-card/balance')
+}
+
+/**
  * 添加银行卡
  */
 export const addBankCardAPI = (data: {

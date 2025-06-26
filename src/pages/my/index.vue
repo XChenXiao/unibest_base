@@ -306,12 +306,14 @@
   const depositTips = ref<DepositTip[]>([])
   
   // 使用UniApp的onShow生命周期函数
-  onShow(() => {
+  onShow(async () => {
     console.log('我的页面显示，刷新数据')
     // 强制刷新用户信息，不考虑缓存时间
     if (userStore.isLogined) {
       console.log('强制刷新用户信息')
-      userStore.fetchUserInfo()
+      await userStore.fetchUserInfo()
+      // 检查并更新用户余额
+      await checkUserInfo()
     }
   })
   
@@ -347,7 +349,7 @@
       // 如果距离上次更新超过5分钟，则重新获取用户信息
       if (timeElapsed > 5 * 60 * 1000) {
         console.log('用户数据已过期，重新获取')
-        userStore.fetchUserInfo()
+        await userStore.fetchUserInfo()
       } else {
         console.log('用户数据在有效期内，无需重新获取')
       }
