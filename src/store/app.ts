@@ -20,7 +20,7 @@ export const useAppStore = defineStore('app', () => {
       return bankCardOpenFee.value
     }
 
-    // 直接使用默认值，不再发送API请求
+    // 使用默认值，不发送API请求
     bankCardOpenFee.value = 10
     hasFetchedBankCardOpenFee.value = true
     console.log('使用默认银行卡开户预存金:', bankCardOpenFee.value)
