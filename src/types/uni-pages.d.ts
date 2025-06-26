@@ -18,6 +18,7 @@ interface NavigateToOptions {
        "/pages/my/announcements" |
        "/pages/my/bank-account-apply" |
        "/pages/my/bank-cards" |
+       "/pages/my/bank" |
        "/pages/my/customer-service" |
        "/pages/my/identity-info" |
        "/pages/my/identity-verify" |

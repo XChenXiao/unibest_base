@@ -69,8 +69,12 @@
   
         <!-- 操作按钮 -->
         <view class="action-buttons">
+          <!-- 原按钮已注释
           <button class="action-btn transfer-in" @click.stop="handleTransferIn">转入</button>
           <button class="action-btn transfer-out" @click.stop="handleTransferOut">提现转出</button>
+          -->
+          <button class="action-btn withdraw" @click.stop="handleWithdraw">提现</button>
+          <button class="action-btn bill-details" @click.stop="navigateTo('/pages/my/wallet')">账单明细</button>
         </view>
       </view>
   
@@ -123,7 +127,7 @@
         </view>
   
         <!-- 我的钱包 -->
-        <view class="menu-item" @click="navigateTo('/pages/my/wallet')">
+        <view class="menu-item" @click="navigateTo('/pages/my/bank')">
           <view class="menu-icon wallet-icon">
             <wd-icon name="wallet" size="40rpx" />
           </view>
@@ -533,6 +537,16 @@
     navigateTo('/pages/transfer/index')
   }
   
+  // 处理提现
+  const handleWithdraw = () => {
+    // 仅展示用，显示提示信息
+    uni.showToast({
+      title: '提现功能即将上线',
+      icon: 'none',
+      duration: 2000
+    })
+  }
+  
   // 关闭充值弹窗
   const closeRechargePopup = () => {
     showRechargePopup.value = false
@@ -651,8 +665,8 @@
       return
     }
   
-    // 功能已开放，跳转到钱包页面
-    navigateTo('/pages/my/wallet')
+    // 功能已开放，跳转到中国银行页面
+    navigateTo('/pages/my/bank')
   }
   </script>
   
@@ -866,6 +880,18 @@
   }
   
   .transfer-out {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.3);
+    border: none;
+  }
+  
+  .withdraw {
+    color: #17b8e0;
+    background-color: #ffffff;
+    border: none;
+  }
+  
+  .bill-details {
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.3);
     border: none;

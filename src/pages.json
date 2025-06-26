@@ -180,6 +180,13 @@
       }
     },
     {
+      "path": "pages/my/bank",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "中国银行"
+      }
+    },
+    {
       "path": "pages/my/customer-service",
       "type": "page",
       "style": {
