@@ -981,7 +981,7 @@ page {
 /* 银行卡列表样式 */
 .bank-card-list {
   margin-top: 40rpx;
-  // padding: 0 30rpx;
+  padding: 0 30rpx;
 }
 
 .section-title {
@@ -1059,7 +1059,7 @@ page {
 
 .visa-number {
   padding-left: 60rpx;
-  font-size: 40rpx;
+  font-size: 25rpx;
   letter-spacing: 3rpx;
   color: #ffffff;
   position: relative;
