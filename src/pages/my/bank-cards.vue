@@ -132,9 +132,12 @@
               'selected-card': selectedCardId === card.id
             }"
           >
-            <view class="card-watermark">
-              <image :src="`/static/images/bank/${getBankIconByName(card.bank_name)}.png`" mode="widthFix" style="width: 30%;position: absolute;top: 0;right: 250rpx;" @error="handleImageError"></image>
-            </view>
+          <view class="card-watermark">
+            <image 
+            :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" 
+            :style="getBankIconByName(card.bank_name)  !== 'default-card' ? 'width: 30%;position: absolute;top: 0;right: 300rpx;' : 'width: 20%;position: absolute;top: 70rpx;right: 340rpx;'">
+            </image>
+          </view>
             <view class="card-bank-name">
               {{ card.bank_name }}
             </view>
@@ -142,8 +145,8 @@
               <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
             </view>
             <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
-              <image :src="`/static/images/bank/${getBankIconByName(card.bank_name)}.png`" mode="widthFix" style="width: 80%;" @error="handleImageError"></image>
-            </view>
+              <image :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" :style="getBankIconByName(card.bank_name) !== 'default-card' ? 'width: 80%;' : 'width: 60%;'"></image>
+             </view>
             
             <!-- 卡片操作区域 - 仅在非提现模式下显示 -->
             <view class="card-actions" v-if="!isFromWithdraw">
@@ -308,8 +311,6 @@ const handleBankInputBlur = () => {
   }, 200)
 }
 
-// 不再需要单独的获取银行图标路径函数
-
 // 根据银行名称获取对应的BankEnum枚举键
 const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null => {
   // 遍历BankEnum查找匹配的银行名称
@@ -321,7 +322,7 @@ const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null =>
 const getBankIconByName = (bankName: string): string => {
   const bankKey = getBankEnumKeyByName(bankName)
   // 如果找不到对应的银行枚举，直接返回空字符串，让@error事件触发
-  return bankKey ? bankKey : ''
+  return bankKey ? bankKey : 'default-card'
 }
 
 // 根据银行名称获取卡片渐变色
@@ -910,7 +911,7 @@ const toggleSelectMode = () => {
 .card-watermark image {
   width: 120%;
   height: auto;
-  transform: rotate(-5deg) scale(2.2);
+  transform: scale(2.2);
   filter: brightness(0) invert(1);
   margin-right: -25%;
   margin-bottom: -15%;
@@ -930,7 +931,7 @@ const toggleSelectMode = () => {
 
 .visa-number {
   padding-left: 60rpx;
-  font-size: 25px;
+  font-size: 20px;
   letter-spacing: 3px;
   color: #ffffff;
   position: relative;

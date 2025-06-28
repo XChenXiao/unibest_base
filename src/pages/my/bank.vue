@@ -401,8 +401,6 @@ const handleBankInputBlur = () => {
   }, 200)
 }
 
-// 不再需要单独的获取银行图标路径函数
-
 // 获取银行Logo
 const getBankLogo = (bankName: string) => {
   // 根据银行名称返回对应的logo
@@ -1041,7 +1039,7 @@ page {
 .card-watermark image {
   width: 120%;
   height: auto;
-  transform: rotate(-5deg) scale(2.2);
+  transform: scale(2.2);
   filter: brightness(0) invert(1);
   margin-right: -25%;
   margin-bottom: -15%;
@@ -1062,7 +1060,7 @@ page {
 
 .visa-number {
   padding-left: 60rpx;
-  font-size: 25px;
+  font-size: 20px;
   letter-spacing: 3px;
   color: #ffffff;
   position: relative;
