@@ -58,7 +58,10 @@
         </view>
         <view class="visa-card" v-for="card in bankCardStore.bankCards" :key="card.id" :style="{ background: getBankCardGradient(card.bank_name) }">
           <view class="card-watermark">
-            <image :src="getBankIconByName(card.bank_name)" mode="widthFix" style="width: 30%;position: absolute;top: 0;right: 250rpx;"></image>
+            <image 
+            :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" 
+            :style="getBankIconByName(card.bank_name)  !== 'default-card' ? 'width: 30%;position: absolute;top: 0;right: 300rpx;' : 'width: 20%;position: absolute;top: 70rpx;right: 340rpx;'">
+          </image>
           </view>
           <view class="card-bank-name" style="height: 40rpx;align-items: center;">
             {{ card.bank_name }}
@@ -67,7 +70,7 @@
             <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
           </view>
           <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
-            <image :src="getBankIconByName(card.bank_name)" mode="widthFix" style="width: 80%;"></image>
+            <image :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" :style="getBankIconByName(card.bank_name) !== 'default-card' ? 'width: 80%;' : 'width: 60%;'"></image>
           </view>
         </view>
       </view>
@@ -120,7 +123,7 @@
                     :key="bank.key"
                     @click="selectBank(bank)"
                   >
-                    <image class="bank-icon" :src="getBankIconPath(bank.key)" mode="aspectFit"></image>
+                    <image class="bank-icon" :src="bank.key ? `/static/images/bank/${bank.key}.png` : '/static/images/bank-icon.png'" mode="aspectFit"></image>
                     <text class="bank-name">{{ bank.value }}</text>
                   </view>
                   <view class="empty-tip" v-if="filteredBanks.length === 0">
@@ -251,10 +254,11 @@ const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null =>
   return entry ? entry[0] as keyof typeof BankEnum : null
 }
 
-// 根据银行名称获取图标路径
+// 根据银行名称获取图标文件名
 const getBankIconByName = (bankName: string): string => {
   const bankKey = getBankEnumKeyByName(bankName)
-  return bankKey ? getBankIconPath(bankKey) : '/static/images/bank-icon.png'
+  // 如果找不到对应的银行枚举，直接返回空字符串，让@error事件触发
+  return bankKey ? bankKey : 'default-card'
 }
 
 // 根据银行名称获取卡片渐变色
@@ -397,10 +401,7 @@ const handleBankInputBlur = () => {
   }, 200)
 }
 
-// 获取银行图标路径
-const getBankIconPath = (bankKey: keyof typeof BankEnum): string => {
-  return `/src/static/images/bank/${bankKey}.png`
-}
+// 不再需要单独的获取银行图标路径函数
 
 // 获取银行Logo
 const getBankLogo = (bankName: string) => {
@@ -548,6 +549,7 @@ const deleteBankCard = async (cardId: number) => {
 const goBack = () => {
   uni.navigateBack()
 }
+
 
 // 页面加载时
 onMounted(() => {

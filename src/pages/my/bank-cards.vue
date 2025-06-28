@@ -86,7 +86,7 @@
                   :key="bank.key"
                   @click="selectBank(bank)"
                 >
-                  <image class="bank-icon" :src="getBankIconPath(bank.key)" mode="aspectFit"></image>
+                  <image class="bank-icon" :src="`/static/images/bank/${bank.key}.png`" mode="aspectFit" @error="handleImageError"></image>
                   <text class="bank-name">{{ bank.value }}</text>
                 </view>
                 <view class="empty-tip" v-if="filteredBanks.length === 0">
@@ -133,7 +133,7 @@
             }"
           >
             <view class="card-watermark">
-              <image :src="getBankIconByName(card.bank_name)" mode="widthFix" style="width: 30%;position: absolute;top: 0;right: 250rpx;"></image>
+              <image :src="`/static/images/bank/${getBankIconByName(card.bank_name)}.png`" mode="widthFix" style="width: 30%;position: absolute;top: 0;right: 250rpx;" @error="handleImageError"></image>
             </view>
             <view class="card-bank-name">
               {{ card.bank_name }}
@@ -142,7 +142,7 @@
               <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
             </view>
             <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
-              <image :src="getBankIconByName(card.bank_name)" mode="widthFix" style="width: 80%;"></image>
+              <image :src="`/static/images/bank/${getBankIconByName(card.bank_name)}.png`" mode="widthFix" style="width: 80%;" @error="handleImageError"></image>
             </view>
             
             <!-- 卡片操作区域 - 仅在非提现模式下显示 -->
@@ -271,6 +271,15 @@ const bankList = computed<BankItem[]>(() => {
 // 根据搜索关键词过滤银行列表
 const filteredBanks = ref<BankItem[]>([] as BankItem[])
 
+// 处理图片加载错误
+const handleImageError = (e: any) => {
+  // 当图片加载失败时，将src替换为中国银行图标
+  const target = e.target || e.currentTarget
+  if (target) {
+    target.src = '/static/images/bank-icon.png'
+  }
+}
+
 // 过滤银行列表
 const filterBanks = () => {
   if (!bankSearchKeyword.value) {
@@ -299,10 +308,7 @@ const handleBankInputBlur = () => {
   }, 200)
 }
 
-// 获取银行图标路径
-const getBankIconPath = (bankKey: keyof typeof BankEnum): string => {
-  return `/static/images/bank/${bankKey}.png`
-}
+// 不再需要单独的获取银行图标路径函数
 
 // 根据银行名称获取对应的BankEnum枚举键
 const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null => {
@@ -311,10 +317,11 @@ const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null =>
   return entry ? entry[0] as keyof typeof BankEnum : null
 }
 
-// 根据银行名称获取图标路径
+// 根据银行名称获取图标文件名
 const getBankIconByName = (bankName: string): string => {
   const bankKey = getBankEnumKeyByName(bankName)
-  return bankKey ? getBankIconPath(bankKey) : '/static/images/bank-icon.png'
+  // 如果找不到对应的银行枚举，直接返回空字符串，让@error事件触发
+  return bankKey ? bankKey : ''
 }
 
 // 根据银行名称获取卡片渐变色
