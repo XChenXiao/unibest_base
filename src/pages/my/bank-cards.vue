@@ -34,13 +34,7 @@
     </view>
      -->
     <!-- 激活区域 - 未激活且未申请中 -->
-    <view class="card-activation" v-if="!isActivated && !isProcessing">
-      <view class="activation-title">激活银行卡</view>
-      <view class="activation-fee">
-        激活银行卡需要缴纳 {{ bankCardStatus.open_fee || 10 }} 人民币作为预存金
-      </view>
-      <button class="btn-activate" @click="goToApply">立即激活</button>
-    </view>
+    <!-- 删除激活区域 -->
 
     <!-- 审核中状态提示 -->
     <view class="review-status" v-if="isProcessing">
@@ -55,7 +49,7 @@
     </view>
 
     <!-- 卡片管理区域 -->
-    <view class="card-container" v-if="isActivated">
+    <view class="card-container">
       <!-- 添加卡片表单 -->
       <view class="card-form" v-if="showAddCardForm">
         <view class="form-title">添加银行卡</view>
@@ -71,13 +65,36 @@
         </view>
         <view class="form-group">
           <text class="form-label">银行名称</text>
+          <view class="bank-selector">
+            <view class="bank-search-input">
           <input
-            type="text"
             class="form-input"
-            v-model="newCard.bank_name"
+                v-model="bankSearchKeyword"
             placeholder="请输入银行名称"
             placeholder-class="input-placeholder"
-          />
+                @input="filterBanks"
+                @focus="showBankDropdown = true"
+                @blur="handleBankInputBlur"
+              />
+              <text class="search-icon uni-icons uniui-search"></text>
+            </view>
+            <view class="bank-dropdown" v-if="showBankDropdown">
+              <scroll-view scroll-y style="max-height: 300rpx;">
+                <view 
+                  class="bank-item" 
+                  v-for="bank in filteredBanks" 
+                  :key="bank.key"
+                  @click="selectBank(bank)"
+                >
+                  <image class="bank-icon" :src="getBankIconPath(bank.key)" mode="aspectFit"></image>
+                  <text class="bank-name">{{ bank.value }}</text>
+                </view>
+                <view class="empty-tip" v-if="filteredBanks.length === 0">
+                  <text>未找到匹配的银行</text>
+                </view>
+              </scroll-view>
+            </view>
+          </view>
         </view>
         <view class="form-group">
           <text class="form-label">银行卡号</text>
@@ -103,42 +120,50 @@
       <button class="add-card-btn" @click="showAddCardForm = true" v-else>+ 添加银行卡</button>
 
       <!-- 卡片列表区域 -->
-      <view class="card-list" v-if="cards.length > 0">
-        <view 
-          class="bank-card" 
-          v-for="card in cards" 
-          :key="card.id" 
-          @click="isFromWithdraw ? selectCardForWithdraw(card) : null"
-          :class="{
-            'selectable-card': isFromWithdraw,
-            'default-card': card.is_default,
-            'selected-card': isFromWithdraw && selectedCardId === card.id
-          }"
-        >
-          <view class="card-header">
-            <view class="card-bank-name">{{ card.bank_name }}</view>
-            <text class="card-default-tag" v-if="card.is_default">默认</text>
-          </view>
-          <view class="card-holder-name">{{ card.card_holder }}</view>
-          <view class="card-number">{{ card.masked_card_number }}</view>
-          
-          <!-- 卡片操作区域 -->
-          <view class="card-actions">
-            <!-- 从提现页面进入时显示选择按钮 -->
-            <button v-if="isFromWithdraw" class="btn-select" @click.stop="selectCardForWithdraw(card)">
-              {{ selectedCardId === card.id ? '已选择' : '选择此卡' }}
-            </button>
-            <!-- 正常银行卡管理功能，无论是否从提现页面进入都显示 -->
-            <view :class="{'normal-actions': true, 'full-width': !isFromWithdraw}">
-              <button class="btn-default" @click.stop="setAsDefault(card.id)" :disabled="card.is_default">
-                设为默认
-              </button>
-              <button class="btn-delete" @click.stop="confirmDeleteCard(card.id)">删除</button>
+      <view class="bank-card-list" v-if="cards.length > 0">
+        <view class="card-list">
+          <view 
+            class="visa-card" 
+            v-for="card in cards" 
+            :key="card.id" 
+            @click="selectCardForWithdraw(card)"
+            :style="{ background: getBankCardGradient(card.bank_name) }"
+            :class="{
+              'selected-card': selectedCardId === card.id
+            }"
+          >
+            <view class="card-watermark">
+              <image :src="getBankIconByName(card.bank_name)" mode="widthFix" style="width: 30%;position: absolute;top: 0;right: 250rpx;"></image>
+            </view>
+            <view class="card-bank-name">
+              {{ card.bank_name }}
+            </view>
+            <view class="visa-number">
+              <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
+            </view>
+            <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
+              <image :src="getBankIconByName(card.bank_name)" mode="widthFix" style="width: 80%;"></image>
+            </view>
+            
+            <!-- 卡片操作区域 - 仅在非提现模式下显示 -->
+            <view class="card-actions" v-if="!isFromWithdraw">
+              <view class="normal-actions full-width">
+                <button class="btn-default" @click.stop="setAsDefault(card.id)" :disabled="card.is_default">
+                  设为默认
+                </button>
+                <button class="btn-delete" @click.stop="confirmDeleteCard(card.id)">删除</button>
+              </view>
             </view>
           </view>
         </view>
       </view>
       
+      <!-- 页面内容占位，确保底部按钮不会覆盖内容 -->
+      <view class="content-spacer"></view>
+    </view>
+    
+    <!-- 底部固定按钮区域 -->
+    <view class="fixed-bottom-buttons">
       <!-- 返回按钮 - 仅在从提现页面进入时显示 -->
       <button v-if="isFromWithdraw" class="return-btn" @click="goBack">
         返回提现页面
@@ -166,6 +191,7 @@ import {
   IBankCard,
 } from '@/service/index/bankcard'
 import { useBankCardStore } from '@/store'
+import { BankEnum } from '@/enums/BankEnum'
 
 // 用户数据
 const userStore = useUserStore()
@@ -221,8 +247,140 @@ const newCard = ref({
   branch_name: '',
 })
 
+// 银行搜索和选择相关
+const bankSearchKeyword = ref('')
+const showBankDropdown = ref(false)
+const selectedBankKey = ref<keyof typeof BankEnum | null>(null)
+
+// 银行列表
+interface BankItem {
+  key: keyof typeof BankEnum;
+  value: string;
+}
+
+// 将BankEnum转换为数组以便于处理
+const bankList = computed<BankItem[]>(() => {
+  return Object.entries(BankEnum)
+    .filter(([key]) => isNaN(Number(key))) // 过滤掉枚举的数字键
+    .map(([key, value]) => ({
+      key: key as keyof typeof BankEnum,
+      value: value as string
+    }))
+})
+
+// 根据搜索关键词过滤银行列表
+const filteredBanks = ref<BankItem[]>([] as BankItem[])
+
+// 过滤银行列表
+const filterBanks = () => {
+  if (!bankSearchKeyword.value) {
+    filteredBanks.value = bankList.value
+    return
+  }
+  
+  filteredBanks.value = bankList.value.filter(bank => 
+    bank.value.toLowerCase().includes(bankSearchKeyword.value.toLowerCase())
+  )
+}
+
+// 选择银行
+const selectBank = (bank: BankItem) => {
+  bankSearchKeyword.value = bank.value
+  newCard.value.bank_name = bank.value
+  selectedBankKey.value = bank.key
+  showBankDropdown.value = false
+}
+
+// 处理银行输入框失去焦点事件
+const handleBankInputBlur = () => {
+  // 使用setTimeout延迟关闭下拉框，以便点击事件能够先触发
+  setTimeout(() => {
+    showBankDropdown.value = false
+  }, 200)
+}
+
+// 获取银行图标路径
+const getBankIconPath = (bankKey: keyof typeof BankEnum): string => {
+  return `/static/images/bank/${bankKey}.png`
+}
+
+// 根据银行名称获取对应的BankEnum枚举键
+const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null => {
+  // 遍历BankEnum查找匹配的银行名称
+  const entry = Object.entries(BankEnum).find(([_, value]) => value === bankName)
+  return entry ? entry[0] as keyof typeof BankEnum : null
+}
+
+// 根据银行名称获取图标路径
+const getBankIconByName = (bankName: string): string => {
+  const bankKey = getBankEnumKeyByName(bankName)
+  return bankKey ? getBankIconPath(bankKey) : '/static/images/bank-icon.png'
+}
+
+// 根据银行名称获取卡片渐变色
+const getBankCardGradient = (bankName: string): string => {
+  // 根据银行类型分类设置渐变色
+  const bankKey = getBankEnumKeyByName(bankName)
+  if (!bankKey) return 'linear-gradient(135deg, #467bec 0%, #214da5 100%)' // 默认蓝色渐变
+  
+  // 根据银行图标的主色调设置渐变色
+  switch (bankKey) {
+    // 国有银行
+    case 'BANK_OF_CHINA': // 中国银行 - 红色
+      return 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'
+    case 'ICBC': // 工商银行 - 红色
+      return 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
+    case 'CCB': // 建设银行 - 蓝色
+      return 'linear-gradient(135deg, #1976d2 0%, #0d47a1 100%)'
+    case 'ABC': // 农业银行 - 绿色
+      return 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)'
+    case 'BOCOM': // 交通银行 - 蓝色
+      return 'linear-gradient(135deg, #0288d1 0%, #01579b 100%)'
+    case 'PSBC': // 邮储银行 - 绿色
+      return 'linear-gradient(135deg, #00897b 0%, #004d40 100%)'
+    
+    // 股份制商业银行
+    case 'CMB': // 招商银行 - 红色
+      return 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)'
+    case 'CITIC': // 中信银行 - 红色
+      return 'linear-gradient(135deg, #c62828 0%, #8e0000 100%)'
+    case 'SPDB': // 浦发银行 - 蓝色
+      return 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)'
+    case 'CIB': // 兴业银行 - 蓝色
+      return 'linear-gradient(135deg, #0277bd 0%, #01579b 100%)'
+    case 'CMBC': // 民生银行 - 绿色
+      return 'linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%)'
+    case 'CEB': // 光大银行 - 黄色
+      return 'linear-gradient(135deg, #fdd835 0%, #f57f17 100%)'
+    case 'PAB': // 平安银行 - 橙色
+      return 'linear-gradient(135deg, #f57c00 0%, #e65100 100%)'
+    case 'GDB': // 广发银行 - 红色
+      return 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)'
+    case 'HXB': // 华夏银行 - 红色
+      return 'linear-gradient(135deg, #c62828 0%, #8e0000 100%)'
+    
+    // 其他银行分类
+    default:
+      // 城市商业银行 - 多为绿色系
+      if (bankKey.startsWith('BO') && !['BOCOM'].includes(bankKey)) {
+        return 'linear-gradient(135deg, #388e3c 0%, #1b5e20 100%)'
+      }
+      
+      // 农商行/农信社/农合行 - 多为橙色或绿色系
+      if (bankKey.includes('RCB') || bankKey.endsWith('RCB')) {
+        return 'linear-gradient(135deg, #f57c00 0%, #e65100 100%)'
+      }
+      
+      // 其他银行 - 默认蓝紫色系
+      return 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)'
+  }
+}
+
 // 在页面加载时获取银行卡状态和卡片列表
 onMounted(async () => {
+  // 初始化过滤后的银行列表
+  filteredBanks.value = bankList.value
+  
   // 检查是否从提现页面进入
   const pages = getCurrentPages()
   console.log('当前页面栈:', pages.map(p => p.route || '未知路由'))
@@ -278,7 +436,7 @@ onMounted(async () => {
   }
 
   await fetchBankCardStatus()
-  if (isActivated.value) {
+  // 无论是否已激活，都获取银行卡列表
     await fetchBankCards()
     
     // 如果是从提现页面进入，检查是否有默认选中的银行卡
@@ -314,7 +472,6 @@ onMounted(async () => {
             selectedCardId.value = defaultCard.id
           } else if (cards.value.length > 0) {
             selectedCardId.value = cards.value[0].id
-          }
         }
       }
     }
@@ -331,10 +488,8 @@ onUnmounted(() => {
 
 // 选择银行卡并返回提现页面
 const selectCardForWithdraw = (card: IBankCard) => {
-  if (!isFromWithdraw.value) return
-  
   try {
-    console.log('尝试选择银行卡:', card)
+    console.log('选择银行卡:', card)
     
     // 更新选中的银行卡ID
     selectedCardId.value = card.id
@@ -342,27 +497,52 @@ const selectCardForWithdraw = (card: IBankCard) => {
     // 使用Pinia store存储选中的银行卡
     bankCardStore.setSelectedBankCard(card)
     
-    uni.showToast({
-      title: '已选择银行卡',
-      icon: 'success',
-      duration: 1500
-    })
-    
-    // 延迟返回，让用户看到提示
-    setTimeout(() => {
-      uni.navigateBack({
-        success: () => {
-          console.log('成功返回提现页面')
-        },
-        fail: (err) => {
-          console.error('返回提现页面失败:', err)
-          // 如果返回失败，尝试直接跳转到提现页面
-          uni.redirectTo({
-            url: '/pages/my/withdraw'
-          })
-        }
+    // 如果是从提现页面进入，显示提示并返回
+    if (isFromWithdraw.value) {
+      uni.showToast({
+        title: '已选择银行卡',
+        icon: 'success',
+        duration: 1500
       })
-    }, 1500)
+      
+      // 延迟返回，让用户看到提示
+      setTimeout(() => {
+        // 构建URL参数，包含必要的银行卡信息
+        const params = {
+          selectedCardId: card.id,
+          withdrawType: 'bank', // 明确指定提现类型为银行卡
+          isBankBalance: 'false', // 明确指定不是银行余额
+          timestamp: new Date().getTime() // 添加时间戳避免缓存问题
+        }
+        
+        // 将参数对象转换为URL查询字符串
+        const queryString = Object.entries(params)
+          .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+          .join('&')
+        
+        // 使用重定向方式返回提现页面，并携带参数
+        uni.redirectTo({
+          url: `/pages/my/withdraw?${queryString}`,
+          success: () => {
+            console.log('成功跳转到提现页面，并传递了参数:', params)
+          },
+          fail: (err) => {
+            console.error('跳转提现页面失败:', err)
+            // 如果跳转失败，尝试使用reLaunch
+            uni.reLaunch({
+              url: `/pages/my/withdraw?${queryString}`
+            })
+          }
+        })
+      }, 1500)
+    } else {
+      // 如果不是从提现页面进入，只显示选择成功提示
+      uni.showToast({
+        title: '已选择银行卡',
+        icon: 'success',
+        duration: 1500
+      })
+    }
   } catch (error) {
     console.error('选择银行卡失败:', error)
     uni.showToast({
@@ -376,9 +556,8 @@ const selectCardForWithdraw = (card: IBankCard) => {
 const refreshData = async () => {
   console.log('正在刷新银行卡数据...')
   await fetchBankCardStatus()
-  if (isActivated.value) {
+  // 无论是否已激活，都获取银行卡列表
     await fetchBankCards()
-  }
 }
 
 // 返回上一页
@@ -448,14 +627,6 @@ const fetchBankCards = async () => {
   } finally {
     loading.value = false
   }
-}
-
-// 跳转到开户申请页面
-const goToApply = () => {
-  // 传递当前银行卡开户费用
-  uni.navigateTo({
-    url: `/pages/my/bank-account-apply?fee=${bankCardStatus.open_fee || 0}`,
-  })
 }
 
 // 取消添加卡片
@@ -622,7 +793,9 @@ const toggleSelectMode = () => {
   background-color: #f5f5f5;
   min-height: 100vh;
   padding: 30rpx;
+  padding-bottom: 160rpx; /* 为底部固定按钮留出空间 */
   box-sizing: border-box;
+  position: relative; /* 为固定定位的元素提供参考 */
 }
 
 .card-top {
@@ -665,120 +838,140 @@ const toggleSelectMode = () => {
   font-size: 24rpx;
 }
 
-.card-activation {
-  width: 100%;
-  background-color: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-sizing: border-box;
-}
-
-.activation-title {
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 20rpx;
-}
-
-.activation-fee {
-  background-color: #fffbeb;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
-  text-align: center;
-  border-radius: 12rpx;
-}
-
-.btn-activate {
-  width: 100%;
-  background-color: #3b82f6;
-  color: white;
-  padding: 20rpx 0;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  box-shadow: 0 4rpx 6rpx rgba(59, 130, 246, 0.3);
-}
-
 .card-container {
   width: 100%;
 }
 
-.bank-card {
-  background-color: white;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+/* 银行卡列表样式 */
+.bank-card-list {
+  margin-top: 20px;
+  padding: 0 15px;
 }
 
-.selectable-card {
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.card-list {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 10px 0;
+  margin-bottom: 15px;
+}
+
+.empty-tip {
+  padding: 30px 0;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 银行卡样式 */
+.visa-card {
+  border-radius: 10px;
+  padding: 20px;
+  margin: 15px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
-  border: 2rpx solid transparent;
-  transition: all 0.3s;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
 }
 
-.selectable-card::after {
-  content: '';
+.card-watermark {
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
-  bottom: 0;
-  background-color: rgba(59, 130, 246, 0.05);
-  border-radius: 16rpx;
+  width: 100%;
+  height: 100%;
+  opacity: 0.07;
+  overflow: hidden;
+  border-radius: 10px;
   pointer-events: none;
-}
-
-.selectable-card:active {
-  border-color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-.default-card {
-  border: 2rpx solid #10b981;
-  box-shadow: 0 4rpx 8rpx rgba(16, 185, 129, 0.1);
-}
-
-.selected-card {
-  border: 2rpx solid #3b82f6;
-  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.2);
-  background-color: rgba(59, 130, 246, 0.05);
-}
-
-.card-header {
+  z-index: 1;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 12rpx;
+}
+
+.card-watermark image {
+  width: 120%;
+  height: auto;
+  transform: rotate(-5deg) scale(2.2);
+  filter: brightness(0) invert(1);
+  margin-right: -25%;
+  margin-bottom: -15%;
 }
 
 .card-bank-name {
+  padding-left: 60rpx;
+  vertical-align: middle;
+  height: 30rpx;
+  line-height: 30rpx;
+  font-size: 18px;
+  color: #ffffff;
   font-weight: bold;
-  font-size: 28rpx;
+  position: relative;
+  z-index: 2;
 }
 
-.card-default-tag {
-  color: #10b981;
-  font-size: 24rpx;
+.visa-number {
+  padding-left: 60rpx;
+  font-size: 25px;
+  letter-spacing: 3px;
+  color: #ffffff;
+  position: relative;
+  z-index: 2;
 }
 
-.card-holder-name {
-  color: #6b7280;
-  margin-bottom: 4rpx;
-  font-size: 24rpx;
+.card-icon {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 30px;
+  height: 30px;
+  background-color: rgb(255, 255, 255, 0.5);
+  border-radius: 50%;
+  z-index: 2;
 }
 
-.card-number {
-  color: #6b7280;
-  margin-bottom: 16rpx;
+.selected-card {
+  border: 3rpx solid #ffffff;
+  box-shadow: 0 4rpx 16rpx rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.selected-card::after {
+  content: "✓";
+  position: absolute;
+  top: 15rpx;
+  right: 15rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background-color: #ffffff;
+  color: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
   font-size: 24rpx;
+  z-index: 3;
 }
 
 .card-actions {
   display: flex;
   flex-direction: column;
   gap: 10rpx;
+  position: relative;
+  z-index: 2;
+  margin-top: 10px;
 }
 
 .normal-actions {
@@ -796,14 +989,14 @@ const toggleSelectMode = () => {
   padding: 10rpx 0;
   border-radius: 8rpx;
   border: none;
-  background-color: #eff6ff;
+  background-color: rgba(255, 255, 255, 0.8);
   color: #3b82f6;
   font-size: 24rpx;
   text-align: center;
 }
 
 .btn-default:disabled {
-  background-color: #f3f4f6;
+  background-color: rgba(255, 255, 255, 0.5);
   color: #9ca3af;
 }
 
@@ -812,34 +1005,25 @@ const toggleSelectMode = () => {
   padding: 10rpx 0;
   border-radius: 8rpx;
   border: none;
-  background-color: #fee2e2;
+  background-color: rgba(255, 255, 255, 0.8);
   color: #ef4444;
   font-size: 24rpx;
   text-align: center;
 }
 
-.btn-select {
-  width: 100%;
-  padding: 10rpx 0;
-  margin-bottom: 10rpx;
-  border-radius: 8rpx;
-  border: none;
-  background-color: #3b82f6;
-  color: #ffffff;
-  font-size: 24rpx;
-  text-align: center;
-}
-
 .add-card-btn {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 10px;
+  position: relative;
+  margin-top: 20px;
   width: 100%;
-  border: 2rpx dashed #d1d5db;
-  padding: 24rpx 0;
-  border-radius: 16rpx;
-  text-align: center;
+  justify-content: center;
+  border: none;
+  font-size: 16px;
   color: #6b7280;
-  background-color: #ffffff;
-  margin-bottom: 20rpx;
-  font-size: 28rpx;
 }
 
 .card-form {
@@ -964,6 +1148,19 @@ const toggleSelectMode = () => {
   content: '\e65f';
 }
 
+/* 底部固定按钮区域 */
+.fixed-bottom-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 30rpx;
+  background-color: #f5f5f5;
+  box-sizing: border-box;
+  z-index: 100;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
 .return-btn {
   width: 100%;
   padding: 12rpx 0;
@@ -973,7 +1170,6 @@ const toggleSelectMode = () => {
   border-radius: 12rpx;
   font-size: 28rpx;
   text-align: center;
-  margin-top: 20rpx;
 }
 
 .debug-btn {
@@ -985,6 +1181,77 @@ const toggleSelectMode = () => {
   border-radius: 12rpx;
   font-size: 28rpx;
   text-align: center;
-  margin-top: 20rpx;
+}
+
+/* 内容占位，确保底部按钮不会覆盖内容 */
+.content-spacer {
+  height: 100rpx; /* 与底部按钮高度匹配 */
+}
+
+/* 银行选择器样式 */
+.bank-selector {
+  position: relative;
+  width: 100%;
+}
+
+.bank-search-input {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  right: 20rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 28rpx;
+}
+
+.bank-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  margin-top: 8rpx;
+  max-height: 300rpx;
+  overflow-y: auto;
+}
+
+.bank-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.bank-item:last-child {
+  border-bottom: none;
+}
+
+.bank-item:active {
+  background-color: #f9f9f9;
+}
+
+.bank-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 16rpx;
+}
+
+.bank-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.empty-tip {
+  padding: 30rpx;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
 }
 </style>

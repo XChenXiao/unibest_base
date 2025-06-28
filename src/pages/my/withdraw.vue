@@ -118,6 +118,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useUserStore, useBankCardStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { applyWithdrawAPI } from '@/service/index/withdraw'
+import { onLoad } from '@dcloudio/uni-app'
 
 // 获取用户数据存储
 const userStore = useUserStore()
@@ -142,6 +143,89 @@ const withdrawType = ref<'bank' | 'bank_balance' | 'alipay' | 'wechat'>('bank')
 const isBankBalance = ref(true)
 // 提现类型弹窗显示控制
 const showTypePopup = ref(false)
+
+// 接收页面参数
+onLoad((options) => {
+  console.log('提现页面接收到参数:', options)
+  
+  // 检查是否有选中的银行卡ID
+  if (options.selectedCardId) {
+    const cardId = parseInt(options.selectedCardId)
+    if (!isNaN(cardId) && cardId > 0) {
+      console.log('从URL参数获取到银行卡ID:', cardId)
+      
+      // 立即设置银行卡ID
+      bankCardId.value = cardId
+      
+      // 从URL参数中获取提现类型和是否银行余额
+      if (options.withdrawType) {
+        withdrawType.value = options.withdrawType as any
+      } else {
+        // 默认设置为银行卡提现
+        withdrawType.value = 'bank'
+      }
+      
+      // 设置是否银行余额
+      if (options.isBankBalance) {
+        isBankBalance.value = options.isBankBalance === 'true'
+      } else {
+        // 如果提现类型是bank，则设置为false
+        isBankBalance.value = withdrawType.value !== 'bank'
+      }
+      
+      console.log('从URL参数设置提现方式:', {
+        withdrawType: withdrawType.value,
+        isBankBalance: isBankBalance.value
+      })
+      
+      // 从store中获取对应的银行卡信息
+      // 先检查store中是否已有选中的银行卡
+      if (bankCardStore.selectedBankCard && bankCardStore.selectedBankCardId === cardId) {
+        selectedBankCard.value = bankCardStore.selectedBankCard
+        console.log('从store中获取到选中的银行卡:', selectedBankCard.value)
+      } else {
+        // 如果store中没有，则从银行卡列表中查找
+        fetchAndSetBankCard(cardId)
+      }
+      
+      // 打印当前设置的提现方式，用于调试
+      console.log('当前提现方式最终设置为:', {
+        withdrawType: withdrawType.value,
+        isBankBalance: isBankBalance.value,
+        bankCardId: bankCardId.value,
+        selectedBankCard: selectedBankCard.value
+      })
+    }
+  }
+})
+
+// 获取并设置银行卡信息
+const fetchAndSetBankCard = async (cardId: number) => {
+  try {
+    // 先尝试获取银行卡列表
+    if (!bankCardStore.bankCards || bankCardStore.bankCards.length === 0) {
+      await bankCardStore.fetchBankCards()
+    }
+    
+    // 从列表中查找对应ID的银行卡
+    if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
+      const card = bankCardStore.bankCards.find(c => c.id === cardId)
+      if (card) {
+        selectedBankCard.value = card
+        console.log('从银行卡列表中找到对应的银行卡:', card)
+        
+        // 同时更新store中的选中银行卡
+        bankCardStore.setSelectedBankCard(card)
+      } else {
+        console.error('未找到ID为', cardId, '的银行卡')
+      }
+    } else {
+      console.error('银行卡列表为空')
+    }
+  } catch (error) {
+    console.error('获取银行卡信息失败:', error)
+  }
+}
 
 // 提现类型显示文本
 const withdrawTypeText = computed(() => {
@@ -175,7 +259,8 @@ const isFormValid = computed(() => {
     return false
   }
   
-  if (!isBankBalance.value && (!selectedBankCard.value || bankCardId.value <= 0)) {
+  // 如果是银行卡提现方式，必须选择了银行卡
+  if (withdrawType.value === 'bank' && (!selectedBankCard.value || bankCardId.value <= 0)) {
     return false
   }
   
@@ -188,40 +273,50 @@ onMounted(async () => {
     // 获取用户银行卡列表
     await bankCardStore.fetchBankCards()
     
-    // 检查是否有从银行卡管理页面选择的银行卡
-    if (bankCardStore.selectedBankCard) {
-      // 使用选中的银行卡
-      bankCardId.value = bankCardStore.selectedBankCardId!
-      selectedBankCard.value = bankCardStore.selectedBankCard
-      // 设置提现方式为银行卡
-      withdrawType.value = 'bank'
-      isBankBalance.value = false
-      console.log('使用store中选中的银行卡:', bankCardStore.selectedBankCard)
-    }
-    // 如果没有选中的银行卡，但有银行卡列表，使用默认卡或第一张卡
-    else if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
-      // 查找默认银行卡
-      const defaultCard = bankCardStore.bankCards.find(card => card.is_default)
-      
-      if (defaultCard) {
-        bankCardId.value = defaultCard.id
-        selectedBankCard.value = defaultCard
-        console.log('使用默认银行卡:', defaultCard)
-      } else {
-        // 没有默认卡，使用第一张卡
-        bankCardId.value = bankCardStore.bankCards[0].id
-        selectedBankCard.value = bankCardStore.bankCards[0]
-        console.log('使用第一张银行卡:', bankCardStore.bankCards[0])
+    // 注意：onLoad会在onMounted之前执行，如果URL参数中有银行卡ID，
+    // 则不需要在这里设置默认值，避免覆盖onLoad中的设置
+    
+    // 如果没有从URL参数设置银行卡（即用户不是从银行卡选择页面返回的）
+    if (bankCardId.value === 0) {
+      // 检查是否有从银行卡管理页面选择的银行卡
+      if (bankCardStore.selectedBankCard) {
+        // 使用选中的银行卡
+        bankCardId.value = bankCardStore.selectedBankCardId!
+        selectedBankCard.value = bankCardStore.selectedBankCard
+        // 设置提现方式为银行卡
+        withdrawType.value = 'bank'
+        isBankBalance.value = false
+        console.log('使用store中选中的银行卡:', bankCardStore.selectedBankCard)
       }
+      // 如果没有选中的银行卡，但有银行卡列表，使用默认卡或第一张卡
+      else if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
+        // 查找默认银行卡
+        const defaultCard = bankCardStore.bankCards.find(card => card.is_default)
+        
+        if (defaultCard) {
+          bankCardId.value = defaultCard.id
+          selectedBankCard.value = defaultCard
+          console.log('使用默认银行卡:', defaultCard)
+        } else {
+          // 没有默认卡，使用第一张卡
+          bankCardId.value = bankCardStore.bankCards[0].id
+          selectedBankCard.value = bankCardStore.bankCards[0]
+          console.log('使用第一张银行卡:', bankCardStore.bankCards[0])
+        }
+        
+        // 注意：这里不设置提现方式，保持默认的中国银行余额
+      }
+      
+      // 初始化时设置isValidAmount为false
+      isValidAmount.value = false
+      console.log('页面加载完成，初始化表单状态')
+      
+      // 默认选择提现到银行卡余额
+      withdrawType.value = 'bank_balance'
+      isBankBalance.value = true
+    } else {
+      console.log('onMounted: 使用从URL参数获取的银行卡ID:', bankCardId.value)
     }
-    
-    // 初始化时设置isValidAmount为false
-    isValidAmount.value = false
-    console.log('页面加载完成，初始化表单状态')
-    
-    // 默认选择提现到银行卡余额
-    withdrawType.value = 'bank_balance'
-    isBankBalance.value = true
   } catch (error) {
     console.error('获取银行卡信息失败:', error)
   }
