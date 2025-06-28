@@ -1059,7 +1059,7 @@ page {
 
 .visa-number {
   padding-left: 60rpx;
-  font-size: 25rpx;
+  font-size: 40rpx;
   letter-spacing: 3rpx;
   color: #ffffff;
   position: relative;
