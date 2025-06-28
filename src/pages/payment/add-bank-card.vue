@@ -1,3 +1,10 @@
+<route lang="json5" type="page">
+  {
+    style: {
+      navigationStyle: "custom"
+    }
+  }
+</route> 
 <template>
   <view class="add-bank-card-container">
     <!-- 顶部导航栏 -->
@@ -282,11 +289,3 @@ const submitForm = () => {
 }
 </style>
 
-<route-block>
-{
-  "path": "/payment/add-bank-card",
-  "style": {
-    "navigationStyle": "custom"
-  }
-}
-</route-block> 

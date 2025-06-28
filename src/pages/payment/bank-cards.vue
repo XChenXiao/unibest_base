@@ -1,3 +1,10 @@
+<route lang="json5" type="page">
+  {
+    style: {
+      navigationStyle: "custom"
+    }
+  }
+</route> 
 <template>
   <view class="bank-cards-container">
     <!-- 顶部导航栏 -->
@@ -254,12 +261,4 @@ onMounted(() => {
   font-size: 14px;
 }
 </style>
-
-<route-block>
-{
-  "path": "/payment/bank-cards",
-  "style": {
-    "navigationStyle": "custom"
-  }
-}
-</route-block> 
+c

@@ -271,7 +271,9 @@
     {
       "path": "pages/payment/add-bank-card",
       "type": "page",
-      "style": {}
+      "style": {
+        "navigationStyle": "custom"
+      }
     },
     {
       "path": "pages/payment/bank-card-order",
@@ -283,7 +285,9 @@
     {
       "path": "pages/payment/bank-cards",
       "type": "page",
-      "style": {}
+      "style": {
+        "navigationStyle": "custom"
+      }
     },
     {
       "path": "pages/payment/checkout",

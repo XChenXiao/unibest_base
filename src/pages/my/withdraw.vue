@@ -462,7 +462,7 @@ const confirmType = () => {
     // 显示开户引导弹窗
     uni.showModal({
       title: '开户提示',
-      content: '您尚未开通银行卡账户，无法提现到中国银行余额',
+      content: '银行卡未预存开通收款功能',
       confirmText: '立即开户',
       cancelText: '取消',
       success: async (res) => {
@@ -548,7 +548,7 @@ const submitWithdraw = async () => {
     // 显示开户引导弹窗
     uni.showModal({
       title: '开户提示',
-      content: '您尚未开通银行卡账户，无法提现到中国银行余额',
+      content: '银行卡未预存开通收款功能',
       confirmText: '立即开户',
       cancelText: '取消',
       success: async (res) => {
@@ -590,7 +590,7 @@ const submitWithdraw = async () => {
     // 显示风控提示并阻止提现
     uni.showModal({
       title: '温馨提示',
-      content: '该银行卡被风控',
+      content: '该银行卡大额风控，请开通大额专属卡收款',
       showCancel: false
     })
     return
