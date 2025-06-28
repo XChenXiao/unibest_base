@@ -172,7 +172,7 @@
         "navigationBarTextStyle": "black",
         "app-plus": {
           "titleNView": {
-            "titleSize": "16px",
+            "titleSize": "32rpx",
             "titleWeight": "bold",
             "titleAlign": "center"
           }

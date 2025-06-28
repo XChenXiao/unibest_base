@@ -6,7 +6,7 @@
     navigationBarTextStyle: 'black',
     'app-plus': {
       titleNView: {
-        titleSize: '16px',
+        titleSize: '32rpx',
         titleWeight: 'bold',
         titleAlign: 'center',
       },
@@ -138,9 +138,9 @@
             :style="getBankIconByName(card.bank_name)  !== 'default-card' ? 'width: 30%;position: absolute;top: 0;right: 300rpx;' : 'width: 20%;position: absolute;top: 70rpx;right: 340rpx;'">
             </image>
           </view>
-            <view class="card-bank-name">
-              {{ card.bank_name }}
-            </view>
+          <view class="card-bank-name">
+            {{ card.bank_name }}
+          </view>
             <view class="visa-number">
               <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
             </view>
@@ -852,40 +852,40 @@ const toggleSelectMode = () => {
 
 /* 银行卡列表样式 */
 .bank-card-list {
-  margin-top: 20px;
-  padding: 0 15px;
+  margin-top: 40rpx;
+  padding: 0 30rpx;
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 32rpx;
   font-weight: 500;
-  margin-bottom: 10px;
+  margin-bottom: 20rpx;
   color: #333;
 }
 
 .card-list {
   background-color: #fff;
-  border-radius: 10px;
-  padding: 10px 0;
-  margin-bottom: 15px;
+  border-radius: 20rpx;
+  padding: 20rpx 0;
+  margin-bottom: 30rpx;
 }
 
 .empty-tip {
-  padding: 30px 0;
+  padding: 60rpx 0;
   text-align: center;
   color: #999;
-  font-size: 14px;
+  font-size: 28rpx;
 }
 
 /* 银行卡样式 */
 .visa-card {
-  border-radius: 10px;
-  padding: 20px;
-  margin: 15px;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin: 30rpx;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   position: relative;
-  height: 80px;
+  height: 160rpx;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -900,7 +900,7 @@ const toggleSelectMode = () => {
   height: 100%;
   opacity: 0.07;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 20rpx;
   pointer-events: none;
   z-index: 1;
   display: flex;
@@ -920,9 +920,9 @@ const toggleSelectMode = () => {
 .card-bank-name {
   padding-left: 60rpx;
   vertical-align: middle;
-  height: 30rpx;
-  line-height: 30rpx;
-  font-size: 18px;
+  height: 40rpx;
+  line-height: 40rpx;
+  font-size: 30rpx;
   color: #ffffff;
   font-weight: bold;
   position: relative;
@@ -931,8 +931,8 @@ const toggleSelectMode = () => {
 
 .visa-number {
   padding-left: 60rpx;
-  font-size: 20px;
-  letter-spacing: 3px;
+  font-size: 40rpx;
+  letter-spacing: 3rpx;
   color: #ffffff;
   position: relative;
   z-index: 2;
@@ -940,10 +940,10 @@ const toggleSelectMode = () => {
 
 .card-icon {
   position: absolute;
-  top: 15px;
-  left: 15px;
-  width: 30px;
-  height: 30px;
+  top: 30rpx;
+  left: 30rpx;
+  width: 60rpx;
+  height: 60rpx;
   background-color: rgb(255, 255, 255, 0.5);
   border-radius: 50%;
   z-index: 2;
@@ -979,7 +979,7 @@ const toggleSelectMode = () => {
   gap: 10rpx;
   position: relative;
   z-index: 2;
-  margin-top: 10px;
+  margin-top: 20rpx;
 }
 
 .normal-actions {
@@ -1023,14 +1023,14 @@ const toggleSelectMode = () => {
   display: flex;
   align-items: center;
   background-color: #fff;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 30rpx;
+  border-radius: 20rpx;
   position: relative;
-  margin-top: 20px;
+  margin-top: 40rpx;
   width: 100%;
   justify-content: center;
   border: none;
-  font-size: 16px;
+  font-size: 32rpx;
   color: #6b7280;
 }
 
@@ -1061,7 +1061,7 @@ const toggleSelectMode = () => {
 
 .form-input {
   width: 100%;
-  border: 1rpx solid #e5e7eb;
+  border: 2rpx solid #e5e7eb;
   border-radius: 8rpx;
   padding: 12rpx 16rpx;
   background-color: #ffffff;
@@ -1234,7 +1234,7 @@ const toggleSelectMode = () => {
   display: flex;
   align-items: center;
   padding: 20rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 2rpx solid #f5f5f5;
 }
 
 .bank-item:last-child {

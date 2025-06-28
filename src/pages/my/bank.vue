@@ -63,7 +63,7 @@
             :style="getBankIconByName(card.bank_name)  !== 'default-card' ? 'width: 30%;position: absolute;top: 0;right: 300rpx;' : 'width: 20%;position: absolute;top: 70rpx;right: 340rpx;'">
           </image>
           </view>
-          <view class="card-bank-name" style="height: 40rpx;align-items: center;">
+          <view class="card-bank-name" style="height: 30rpx;align-items: center;">
             {{ card.bank_name }}
           </view>
           <view class="visa-number">
@@ -751,7 +751,7 @@ page {
   margin-bottom: 20rpx;
   position: relative;
   z-index: 2;
-  padding: 0 15rpx;
+  padding: 0 30rpx;
 }
 
 .bank-logo {
@@ -815,7 +815,7 @@ page {
   font-size: 32rpx;
   line-height: 1.5;
   text-align: center;
-  border-radius: 10rpx;
+  border-radius: 20rpx;
 }
 
 .withdraw {
@@ -843,7 +843,7 @@ page {
   align-items: center;
   justify-content: space-between;
   padding: 30rpx;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 2rpx solid #f0f0f0;
 }
 
 .popup-title {
@@ -876,7 +876,7 @@ page {
 .amount-input-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 2rpx solid #e0e0e0;
   padding-bottom: 10rpx;
 }
 
@@ -980,40 +980,40 @@ page {
 
 /* 银行卡列表样式 */
 .bank-card-list {
-  margin-top: 20px;
-  padding: 0 15px;
+  margin-top: 40rpx;
+  padding: 0 30rpx;
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 32rpx;
   font-weight: 500;
-  margin-bottom: 10px;
+  margin-bottom: 20rpx;
   color: #333;
 }
 
 .card-list {
   background-color: #fff;
-  border-radius: 10px;
-  padding: 10px 0;
-  margin-bottom: 15px;
+  border-radius: 20rpx;
+  padding: 20rpx 0;
+  margin-bottom: 30rpx;
 }
 
 .empty-tip {
-  padding: 30px 0;
+  padding: 60rpx 0;
   text-align: center;
   color: #999;
-  font-size: 14px;
+  font-size: 28rpx;
 }
 
 .visa-card {
   // background: linear-gradient(135deg, #467bec 0%, #214da5 100%);
-  border-radius: 10px;
-  padding: 20px;
-  margin: 15px;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin: 30rpx;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   position: relative;
-  height: 80px;
+  height: 160rpx;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1028,7 +1028,7 @@ page {
   height: 100%;
   opacity: 0.07;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 20rpx;
   pointer-events: none;
   z-index: 1;
   display: flex;
@@ -1048,31 +1048,31 @@ page {
 .card-bank-name {
   padding-left: 60rpx;
   vertical-align: middle;
-  height: 30rpx;
-  line-height: 30rpx;
-  font-size: 18px;
+  height: 40rpx;
+  line-height: 40rpx;
+  font-size: 30rpx;
   color: #ffffff;
   font-weight: bold;
-  // margin-bottom: 20px;
   position: relative;
   z-index: 2;
 }
 
 .visa-number {
   padding-left: 60rpx;
-  font-size: 20px;
-  letter-spacing: 3px;
+  font-size: 40rpx;
+  letter-spacing: 3rpx;
   color: #ffffff;
   position: relative;
   z-index: 2;
 }
 
+
 .card-icon {
   position: absolute;
-  top: 15px;
-  left: 15px;
-  width: 30px;
-  height: 30px;
+  top: 30rpx;
+  left: 30rpx;
+  width: 60rpx;
+  height: 60rpx;
   background-color: rgb(255, 255, 255,0.5);
   border-radius: 50%;
   z-index: 2;
@@ -1082,82 +1082,82 @@ page {
   display: flex;
   align-items: center;
   background-color: #fff;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 30rpx;
+  border-radius: 20rpx;
   position: relative;
-  margin-top: 20px;
+  margin-top: 40rpx;
 }
 
 .add-icon {
-  width: 40px;
-  height: 40px;
+  width: 80rpx;
+  height: 80rpx;
   background-color: #f0f0f0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-right: 15px;
+  font-size: 48rpx;
+  margin-right: 30rpx;
   color: #666;
 }
 
 .add-text {
-  font-size: 16px;
+  font-size: 32rpx;
   font-weight: 500;
 }
 
 .promotion-text {
   position: absolute;
-  right: 15px;
+  right: 30rpx;
   color: #ff6b00;
-  font-size: 14px;
+  font-size: 28rpx;
 }
 
 /* 添加银行卡表单样式 */
 .add-card-form {
-  padding-bottom: 30px;
+  padding-bottom: 60rpx;
 }
 
 .form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 30rpx;
+  border-bottom: 2rpx solid #f0f0f0;
 }
 
 .form-title {
-  font-size: 18px;
+  font-size: 36rpx;
   font-weight: 500;
 }
 
 .form-close {
-  font-size: 24px;
+  font-size: 48rpx;
   color: #999;
 }
 
 .form-body {
-  padding: 15px;
+  padding: 30rpx;
 }
 
 .form-item {
-  margin-bottom: 15px;
+  margin-bottom: 30rpx;
 }
 
 .form-label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 15px;
+  margin-bottom: 16rpx;
+  font-size: 30rpx;
   color: #333;
 }
 
 .form-input, .form-picker {
   width: 100%;
-  height: 44px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 0 12px;
-  font-size: 15px;
+  height: 88rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
   box-sizing: border-box;
 }
 
@@ -1178,19 +1178,19 @@ page {
 }
 
 .form-tips {
-  margin: 15px 0;
-  font-size: 12px;
+  margin: 30rpx 0;
+  font-size: 24rpx;
   color: #999;
 }
 
 .submit-btn {
   width: 100%;
-  height: 44px;
+  height: 88rpx;
   background: linear-gradient(90deg, #ff9500, #ff5e3a);
   color: #fff;
-  border-radius: 22px;
-  font-size: 16px;
-  margin-top: 20px;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  margin-top: 40rpx;
 }
 
 /* 银行选择器样式 */
@@ -1231,7 +1231,7 @@ page {
   display: flex;
   align-items: center;
   padding: 20rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 2rpx solid #f5f5f5;
 }
 
 .bank-item:last-child {
