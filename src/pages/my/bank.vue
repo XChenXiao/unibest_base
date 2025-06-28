@@ -1060,7 +1060,7 @@ page {
 .visa-number {
   padding-left: 60rpx;
   font-size: 40rpx;
-  letter-spacing: 3rpx;
+  letter-spacing: 1rpx;
   color: #ffffff;
   position: relative;
   z-index: 2;
