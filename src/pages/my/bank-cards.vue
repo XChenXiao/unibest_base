@@ -4,13 +4,6 @@
     navigationBarTitleText: '银行卡管理',
     navigationBarBackgroundColor: '#f5f5f5',
     navigationBarTextStyle: 'black',
-    'app-plus': {
-      titleNView: {
-        titleSize: '32rpx',
-        titleWeight: 'bold',
-        titleAlign: 'center',
-      },
-    },
   },
 }
 </route>

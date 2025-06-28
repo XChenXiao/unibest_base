@@ -699,7 +699,7 @@ const checkBankCardStatus = () => {
 page {
   background-color: #f5f5f5;
   height: 100%;
-  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  // font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* 容器样式 */
