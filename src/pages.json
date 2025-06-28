@@ -269,11 +269,21 @@
       }
     },
     {
+      "path": "pages/payment/add-bank-card",
+      "type": "page",
+      "style": {}
+    },
+    {
       "path": "pages/payment/bank-card-order",
       "type": "page",
       "style": {
         "navigationBarTitleText": "银行卡开户支付"
       }
+    },
+    {
+      "path": "pages/payment/bank-cards",
+      "type": "page",
+      "style": {}
     },
     {
       "path": "pages/payment/checkout",
