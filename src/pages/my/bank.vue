@@ -981,7 +981,7 @@ page {
 /* 银行卡列表样式 */
 .bank-card-list {
   margin-top: 40rpx;
-  padding: 0 30rpx;
+  // padding: 0 30rpx;
 }
 
 .section-title {
