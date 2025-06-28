@@ -67,7 +67,7 @@
             {{ card.bank_name }}
           </view>
           <view class="visa-number">
-            <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
+            •••• •••• •••• {{ card.masked_card_number.slice(-4) }}
           </view>
           <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
             <image :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" :style="getBankIconByName(card.bank_name) !== 'default-card' ? 'width: 80%;' : 'width: 60%;'"></image>
@@ -1060,12 +1060,12 @@ page {
 .visa-number {
   padding-left: 60rpx;
   font-size: 40rpx;
-  letter-spacing: 0;
+  letter-spacing: 3rpx;
   color: #ffffff;
   position: relative;
   z-index: 2;
   width: 100%;
-  white-space: nowrap;
+  white-space: wrap;
 }
 
 
