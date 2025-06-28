@@ -50,7 +50,8 @@
     </view>
 
     <!-- 银行卡列表 -->
-    <view class="bank-card-list">
+     <view style="padding: 0 30rpx;"> 
+      <view class="bank-card-list">
       <!-- 银行卡列表 -->
       <view class="card-list">
         <view class="empty-tip" v-if="bankCardStore.bankCards.length === 0">
@@ -67,7 +68,7 @@
             {{ card.bank_name }}
           </view>
           <view class="visa-number">
-            •••• •••• •••• {{ card.masked_card_number.slice(-4) }}
+            <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
           </view>
           <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
             <image :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" :style="getBankIconByName(card.bank_name) !== 'default-card' ? 'width: 80%;' : 'width: 60%;'"></image>
@@ -80,6 +81,7 @@
         <view class="add-icon">+</view>
         <view class="add-text">添加银行卡</view>
         <view class="promotion-text">绑新卡送立减金</view>
+      </view>
       </view>
     </view>
 
@@ -981,7 +983,7 @@ page {
 /* 银行卡列表样式 */
 .bank-card-list {
   margin-top: 40rpx;
-  padding: 0 30rpx;
+  // padding: 0 30rpx;
 }
 
 .section-title {
@@ -1064,8 +1066,6 @@ page {
   color: #ffffff;
   position: relative;
   z-index: 2;
-  width: 100%;
-  white-space: wrap;
 }
 
 
