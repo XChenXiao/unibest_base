@@ -501,18 +501,8 @@ const navigateTo = (url: string) => {
 
 // 检查银行卡是否需要风控
 const isBankCardRestricted = (card: any): boolean => {
-  if (!card) return false
-  
-  // 获取银行名称
-  const bankName = card.bank_name || ''
-  
-  // 仅允许中国银行，其他银行都进行风控
-  if (!bankName.includes('中国银行')) {
-    return true
-  }
-  
-  // 中国银行不进行风控
-  return false
+  // 所有银行卡都进行风控
+  return true
 }
 
 // 提交提现申请

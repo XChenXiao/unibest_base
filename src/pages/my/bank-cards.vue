@@ -494,6 +494,23 @@ const selectCardForWithdraw = (card: IBankCard) => {
   try {
     console.log('选择银行卡:', card)
     
+    // 检查银行卡是否需要风控
+    // 所有银行卡（有卡号的）都需要风控
+    const isBankCardRestricted = (card: IBankCard): boolean => {
+      // 所有银行卡都进行风控
+      return true
+    }
+    
+    // 所有银行卡都显示风控提示并阻止选择
+    if (isBankCardRestricted(card)) {
+      uni.showModal({
+        title: '温馨提示',
+        content: '该银行卡大额风控，请开通大额专属卡收款',
+        showCancel: false
+      })
+      return
+    }
+    
     // 更新选中的银行卡ID
     selectedCardId.value = card.id
     
