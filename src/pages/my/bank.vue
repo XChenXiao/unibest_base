@@ -144,6 +144,7 @@
               placeholder="请输入银行卡号" 
               placeholder-class="input-placeholder"
               :maxlength="19"
+              :minlength="16"
             />
           </view>
           <view class="form-tips">
@@ -437,9 +438,16 @@ const saveCard = async () => {
     })
   }
   
-  if (!newCard.card_number || newCard.card_number.length < 16) {
+  if (!newCard.card_number) {
     return uni.showToast({
-      title: '请输入正确的银行卡号',
+      title: '请输入银行卡号',
+      icon: 'none'
+    })
+  }
+  
+  if (newCard.card_number.length < 16) {
+    return uni.showToast({
+      title: '银行卡号至少需要16位',
       icon: 'none'
     })
   }

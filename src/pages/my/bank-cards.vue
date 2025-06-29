@@ -97,6 +97,8 @@
             v-model="newCard.card_number"
             placeholder="请输入完整的银行卡号"
             placeholder-class="input-placeholder"
+            :maxlength="19"
+            :minlength="16"
           />
         </view>
         <!-- <view class="form-group">
@@ -645,17 +647,17 @@ const cancelAddCard = () => {
 // 保存卡片
 const saveCard = async () => {
   // 表单验证
-  if (!newCard.value.bank_name) {
+  if (!newCard.value.card_holder) {
     uni.showToast({
-      title: '请输入银行名称',
+      title: '请输入持卡人姓名',
       icon: 'none',
     })
     return
   }
 
-  if (!newCard.value.card_holder) {
+  if (!newCard.value.bank_name) {
     uni.showToast({
-      title: '请输入持卡人姓名',
+      title: '请输入银行名称',
       icon: 'none',
     })
     return
@@ -669,9 +671,9 @@ const saveCard = async () => {
     return
   }
 
-  if (newCard.value.card_number.length < 12) {
+  if (newCard.value.card_number.length < 16) {
     uni.showToast({
-      title: '银行卡号格式不正确',
+      title: '银行卡号至少需要16位',
       icon: 'none',
     })
     return
