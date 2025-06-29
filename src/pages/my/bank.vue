@@ -86,7 +86,7 @@
     </view>
 
     <!-- 添加银行卡表单弹窗 -->
-    <wd-popup v-model="showAddCardForm" round position="bottom">
+    <wd-popup v-model="showAddCardForm" round position="bottom" :z-index="10">
       <view class="add-card-form">
         <view class="form-header">
           <text class="form-title">添加银行卡</text>
@@ -156,7 +156,7 @@
     </wd-popup>
 
     <!-- 充值弹窗 -->
-    <wd-popup v-model="showRechargePopup" round position="center">
+    <wd-popup v-model="showRechargePopup" round position="center" :z-index="10">
       <view class="popup-content">
         <view class="popup-header">
           <text class="popup-title">转入预存金</text>
@@ -425,31 +425,47 @@ const getBankLogo = (bankName: string) => {
 const saveCard = async () => {
   // 表单验证
   if (!newCard.card_holder) {
-    return uni.showToast({
-      title: '请输入持卡人姓名',
-      icon: 'none'
-    })
+    showAddCardForm.value = false;
+    setTimeout(() => {
+      uni.showToast({
+        title: '请输入持卡人姓名',
+        icon: 'none'
+      })
+    }, 100);
+    return;
   }
   
   if (!newCard.bank_name) {
-    return uni.showToast({
-      title: '请选择银行名称',
-      icon: 'none'
-    })
+    showAddCardForm.value = false;
+    setTimeout(() => {
+      uni.showToast({
+        title: '请选择银行名称',
+        icon: 'none'
+      })
+    }, 100);
+    return;
   }
   
   if (!newCard.card_number) {
-    return uni.showToast({
-      title: '请输入银行卡号',
-      icon: 'none'
-    })
+    showAddCardForm.value = false;
+    setTimeout(() => {
+      uni.showToast({
+        title: '请输入银行卡号',
+        icon: 'none'
+      })
+    }, 100);
+    return;
   }
   
   if (newCard.card_number.length < 16) {
-    return uni.showToast({
-      title: '银行卡号至少需要16位',
-      icon: 'none'
-    })
+    showAddCardForm.value = false;
+    setTimeout(() => {
+      uni.showToast({
+        title: '银行卡号至少需要16位',
+        icon: 'none'
+      })
+    }, 100);
+    return;
   }
   
   // 显示加载中
