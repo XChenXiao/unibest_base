@@ -94,8 +94,7 @@
         <view class="type-list">
           <view class="type-item" @click="selectType('bank_balance')">
             <view class="type-item-content">
-              <view class="type-name">中国银行余额</view>
-              <view class="type-desc">提现到中国银行余额</view>
+              <view class="type-name">中国银行</view>
             </view>
             <wd-icon v-if="isBankBalance" name="check" class="type-selected" />
           </view>
