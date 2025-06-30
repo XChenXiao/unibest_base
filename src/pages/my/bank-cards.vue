@@ -438,43 +438,45 @@ onMounted(async () => {
     // console.log('强制启用选择模式(测试用)')
   }
 
-  await fetchBankCardStatus()
-  // 无论是否已激活，都获取银行卡列表
-    await fetchBankCards()
+  // 注释掉获取银行卡状态的请求
+  // await fetchBankCardStatus()
+  
+  // 只获取银行卡列表
+  await fetchBankCards()
     
-    // 如果是从提现页面进入，检查是否有默认选中的银行卡
-    if (isFromWithdraw.value && cards.value.length > 0) {
-      // 获取当前页面栈
-      const pages = getCurrentPages()
-      const prevPage = pages.length > 1 ? pages[pages.length - 2] : null
-      
-      if (prevPage && prevPage.$vm) {
-        // 尝试获取提现页面的选中银行卡ID
-        try {
-          // @ts-ignore
-          const withdrawBankCardId = prevPage.$vm.bankCardId
-          if (withdrawBankCardId) {
-            selectedCardId.value = withdrawBankCardId
-            console.log('从提现页面获取到选中的银行卡ID:', withdrawBankCardId)
-          } else {
-            // 如果没有选中的银行卡，默认选中默认卡或第一张卡
-            const defaultCard = cards.value.find(card => card.is_default)
-            if (defaultCard) {
-              selectedCardId.value = defaultCard.id
-              console.log('默认选中默认银行卡:', defaultCard.id)
-            } else {
-              selectedCardId.value = cards.value[0].id
-              console.log('默认选中第一张银行卡:', cards.value[0].id)
-            }
-          }
-        } catch (error) {
-          console.error('获取提现页面选中银行卡ID失败:', error)
-          // 默认选中默认卡或第一张卡
+  // 如果是从提现页面进入，检查是否有默认选中的银行卡
+  if (isFromWithdraw.value && cards.value.length > 0) {
+    // 获取当前页面栈
+    const pages = getCurrentPages()
+    const prevPage = pages.length > 1 ? pages[pages.length - 2] : null
+    
+    if (prevPage && prevPage.$vm) {
+      // 尝试获取提现页面的选中银行卡ID
+      try {
+        // @ts-ignore
+        const withdrawBankCardId = prevPage.$vm.bankCardId
+        if (withdrawBankCardId) {
+          selectedCardId.value = withdrawBankCardId
+          console.log('从提现页面获取到选中的银行卡ID:', withdrawBankCardId)
+        } else {
+          // 如果没有选中的银行卡，默认选中默认卡或第一张卡
           const defaultCard = cards.value.find(card => card.is_default)
           if (defaultCard) {
             selectedCardId.value = defaultCard.id
-          } else if (cards.value.length > 0) {
+            console.log('默认选中默认银行卡:', defaultCard.id)
+          } else {
             selectedCardId.value = cards.value[0].id
+            console.log('默认选中第一张银行卡:', cards.value[0].id)
+          }
+        }
+      } catch (error) {
+        console.error('获取提现页面选中银行卡ID失败:', error)
+        // 默认选中默认卡或第一张卡
+        const defaultCard = cards.value.find(card => card.is_default)
+        if (defaultCard) {
+          selectedCardId.value = defaultCard.id
+        } else if (cards.value.length > 0) {
+          selectedCardId.value = cards.value[0].id
         }
       }
     }
@@ -575,9 +577,11 @@ const selectCardForWithdraw = (card: IBankCard) => {
 // 刷新数据函数
 const refreshData = async () => {
   console.log('正在刷新银行卡数据...')
-  await fetchBankCardStatus()
-  // 无论是否已激活，都获取银行卡列表
-    await fetchBankCards()
+  // 注释掉获取银行卡状态的请求
+  // await fetchBankCardStatus()
+  
+  // 只获取银行卡列表
+  await fetchBankCards()
 }
 
 // 返回上一页
@@ -707,8 +711,19 @@ const saveCard = async () => {
       icon: 'success',
     })
 
-    // 刷新卡片列表
+    // 只刷新银行卡列表，不请求银行卡状态
     await fetchBankCards()
+
+    // 如果是从提现页面进入，自动选中新添加的卡
+    if (isFromWithdraw.value && cards.value.length > 0) {
+      // 假设新添加的卡是列表中的第一张卡
+      const newCard = cards.value[0]
+      selectedCardId.value = newCard.id
+      
+      // 使用Pinia store存储选中的银行卡
+      bankCardStore.setSelectedBankCard(newCard)
+      console.log('自动选中新添加的银行卡:', newCard)
+    }
 
     // 清空表单并隐藏
     cancelAddCard()
@@ -739,7 +754,7 @@ const setAsDefault = async (id: number) => {
         icon: 'success',
       })
 
-      // 刷新卡片列表
+      // 只刷新银行卡列表，不请求银行卡状态
       await fetchBankCards()
     } else {
       uni.showToast({
@@ -782,7 +797,7 @@ const deleteCard = async (id: number) => {
         icon: 'success',
       })
 
-      // 刷新卡片列表
+      // 只刷新银行卡列表，不请求银行卡状态
       await fetchBankCards()
     } else {
       uni.showToast({
