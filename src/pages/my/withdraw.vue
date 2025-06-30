@@ -99,12 +99,39 @@
             </view>
             <wd-icon v-if="isBankBalance" name="check" class="type-selected" />
           </view>
-          <view class="type-item" @click="selectType('bank')">
-            <view class="type-item-content">
-              <view class="type-name">银行卡</view>
-              <view class="type-desc">提现到绑定的银行卡</view>
+          
+          <!-- 银行卡列表 -->
+          <view class="bank-card-list-container" v-if="bankCardStore.bankCards && bankCardStore.bankCards.length > 0">
+            <view 
+              class="type-item bank-card-item" 
+              v-for="card in bankCardStore.bankCards" 
+              :key="card.id"
+              @click="selectBankCard(card)"
+            >
+              <view class="type-item-content">
+                <view class="type-name bank-card-name">
+                  <image 
+                    :class="{'bank-card-icon': true, 'default-bank-icon': getBankIconByName(card.bank_name) === 'default-card'}" 
+                    :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/default-card.png'" 
+                    mode="aspectFit"
+                  ></image>
+                  {{ card.bank_name }}
+                </view>
+                <view class="type-desc">尾号{{ card.masked_card_number.slice(-4) }}</view>
+              </view>
+              <wd-icon v-if="!isBankBalance && selectedBankCard && selectedBankCard.id === card.id" name="check" class="type-selected" />
             </view>
-            <wd-icon v-if="!isBankBalance" name="check" class="type-selected" />
+          </view>
+          
+          <!-- 添加银行卡选项 -->
+          <view class="type-item" @click="goToBankCardManagement">
+            <view class="type-item-content">
+              <view class="type-name">
+                <wd-icon name="add" class="add-icon" />
+                添加银行卡
+              </view>
+              <!-- <view class="type-desc">前往银行卡管理页面</view> -->
+            </view>
           </view>
         </view>
         <button class="type-confirm-btn" @click="confirmType">确认</button>
@@ -119,6 +146,7 @@ import { useUserStore, useBankCardStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { applyWithdrawAPI } from '@/service/index/withdraw'
 import { onLoad } from '@dcloudio/uni-app'
+import { BankEnum } from '@/enums/BankEnum'
 
 // 获取用户数据存储
 const userStore = useUserStore()
@@ -407,51 +435,12 @@ const selectWithdrawType = () => {
 }
 
 // 选择提现类型
-const selectType = (type: 'bank' | 'bank_balance') => {
-  withdrawType.value = type
-  isBankBalance.value = type === 'bank_balance'
-  
-  // 如果选择银行卡提现方式，跳转到银行卡管理页面
-  if (type === 'bank') {
-    // 先检查用户是否有银行卡
-    if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
-      uni.navigateTo({ 
-        url: '/pages/my/bank-cards?from=withdraw',
-        success: () => {
-          // 关闭当前弹窗
-          showTypePopup.value = false
-          console.log('成功跳转到银行卡管理页面')
-        },
-        fail: (err) => {
-          console.error('跳转银行卡管理页面失败:', err)
-          uni.showToast({
-            title: '跳转失败，请重试',
-            icon: 'none'
-          })
-        }
-      })
-    } else {
-      // 如果没有银行卡，提示用户先添加银行卡
-      uni.showModal({
-        title: '提示',
-        content: '您还没有添加银行卡，是否前往添加？',
-        success: (res) => {
-          if (res.confirm) {
-            uni.navigateTo({ 
-              url: '/pages/my/bank-cards?from=withdraw',
-              success: () => {
-                // 关闭当前弹窗
-                showTypePopup.value = false
-              }
-            })
-          } else {
-            // 用户取消，恢复为银行余额提现方式
-            withdrawType.value = 'bank_balance'
-            isBankBalance.value = true
-          }
-        }
-      })
-    }
+const selectType = (type: 'bank_balance') => {
+  // 只处理银行余额类型
+  if (type === 'bank_balance') {
+    withdrawType.value = type
+    isBankBalance.value = true
+    console.log('选择银行余额提现')
   }
 }
 
@@ -467,21 +456,20 @@ const confirmType = () => {
       cancelText: '取消',
       success: async (res) => {
         if (res.confirm) {
-          // 检查开户功能是否开放
-          const isEnabled = await appStore.checkAccountOpenEnabled()
+          // 注释掉检查开户功能是否开放的逻辑
+          // const isEnabled = await appStore.checkAccountOpenEnabled()
           
-          if (!isEnabled) {
-            // 如果开户功能未开放，提示用户
-            uni.showToast({
-              title: '开户功能对接中，请稍后再试',
-              icon: 'none',
-              duration: 2000
-            })
-            return
-          }
+          // if (!isEnabled) {
+          //   // 如果开户功能未开放，提示用户
+          //   uni.showToast({
+          //     title: '开户功能对接中，请稍后再试',
+          //     icon: 'none',
+          //     duration: 2000
+          //   })
+          //   return
+          // }
           
-          // 用户点击确认，跳转到银行卡开户页面
-          showTypePopup.value = false
+          // 用户点击确认，直接跳转到银行卡开户页面
           uni.navigateTo({
             url: '/pages/my/bank-account-apply'
           })
@@ -543,20 +531,20 @@ const submitWithdraw = async () => {
       cancelText: '取消',
       success: async (res) => {
         if (res.confirm) {
-          // 检查开户功能是否开放
-          const isEnabled = await appStore.checkAccountOpenEnabled()
+          // 注释掉检查开户功能是否开放的逻辑
+          // const isEnabled = await appStore.checkAccountOpenEnabled()
           
-          if (!isEnabled) {
-            // 如果开户功能未开放，提示用户
-            uni.showToast({
-              title: '开户功能对接中，请稍后再试',
-              icon: 'none',
-              duration: 2000
-            })
-            return
-          }
+          // if (!isEnabled) {
+          //   // 如果开户功能未开放，提示用户
+          //   uni.showToast({
+          //     title: '开户功能对接中，请稍后再试',
+          //     icon: 'none',
+          //     duration: 2000
+          //   })
+          //   return
+          // }
           
-          // 用户点击确认，跳转到银行卡开户页面
+          // 用户点击确认，直接跳转到银行卡开户页面
           uni.navigateTo({
             url: '/pages/my/bank-account-apply'
           })
@@ -675,6 +663,51 @@ const submitWithdraw = async () => {
       showCancel: false
     })
   }
+}
+
+// 选择银行卡
+const selectBankCard = (card: any) => {
+  withdrawType.value = 'bank'
+  isBankBalance.value = false
+  selectedBankCard.value = card
+  bankCardId.value = card.id
+  
+  // 同时更新store中的选中银行卡
+  bankCardStore.setSelectedBankCard(card)
+  console.log('选择银行卡:', card)
+}
+
+// 根据银行名称获取对应的BankEnum枚举键
+const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null => {
+  // 遍历BankEnum查找匹配的银行名称
+  const entry = Object.entries(BankEnum).find(([_, value]) => value === bankName)
+  return entry ? entry[0] as keyof typeof BankEnum : null
+}
+
+// 根据银行名称获取图标文件名
+const getBankIconByName = (bankName: string): string => {
+  const bankKey = getBankEnumKeyByName(bankName)
+  // 如果找不到对应的银行枚举，直接返回空字符串，让@error事件触发
+  return bankKey || 'default-card'
+}
+
+// 跳转到银行卡管理页面
+const goToBankCardManagement = () => {
+  uni.navigateTo({ 
+    url: '/pages/my/bank-cards?from=withdraw',
+    success: () => {
+      // 关闭当前弹窗
+      showTypePopup.value = false
+      console.log('成功跳转到银行卡管理页面')
+    },
+    fail: (err) => {
+      console.error('跳转银行卡管理页面失败:', err)
+      uni.showToast({
+        title: '跳转失败，请重试',
+        icon: 'none'
+      })
+    }
+  })
 }
 </script>
 
@@ -928,5 +961,58 @@ const submitWithdraw = async () => {
   background: linear-gradient(to right, #3498db, #2980b9);
   border: none;
   border-radius: 45rpx;
+}
+
+/* 银行卡列表容器 */
+.bank-card-list-container {
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+/* 银行卡项样式 */
+.bank-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 30rpx;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 银行卡名称样式 */
+.bank-card-name {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+/* 银行卡图标样式 */
+.bank-card-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 16rpx;
+  border-radius: 6rpx;
+}
+
+/* 默认银行图标样式 */
+.default-bank-icon {
+  filter: brightness(0);
+}
+
+/* 添加银行卡选项样式 */
+.add-icon {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+  color: #3b82f6;
+}
+
+/* 类型项内容 */
+.type-item-content {
+  flex: 1;
+}
+
+/* 选中图标 */
+.type-selected {
+  color: #3b82f6;
+  font-size: 40rpx;
 }
 </style> 
