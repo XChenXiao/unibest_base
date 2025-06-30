@@ -133,7 +133,7 @@
         >
           {{ loading ? '处理中...' : '立即开户' }}
         </button>
-        <view class="submit-hint">确认后将跳转到支付方式选择页面</view>
+        <!-- <view class="submit-hint">确认后将跳转到支付方式选择页面</view> -->
       </view>
   
       <!-- 审核中状态 -->
@@ -334,7 +334,7 @@
     // 二次确认
     uni.showModal({
       title: '确认开户',
-      content: `您选择的开户预存金金额为 ¥${formData.amount} 元，确认后将跳转到支付方式选择页面`,
+      content: `您选择的开户预存金金额为 ¥${formData.amount} 元`,
       success: async (res) => {
         if (res.confirm) {
           await jumpToPayment()

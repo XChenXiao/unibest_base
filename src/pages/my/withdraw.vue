@@ -447,34 +447,40 @@ const selectType = (type: 'bank_balance') => {
 const confirmType = () => {
   // 如果选择了中国银行余额提现，检查用户是否已开户
   if (isBankBalance.value && !userStore.userInfo.has_bank_card) {
-    // 显示开户引导弹窗
-    uni.showModal({
-      title: '开户提示',
-      content: '银行卡未预存开通收款功能',
-      confirmText: '立即开户',
-      cancelText: '取消',
-      success: async (res) => {
-        if (res.confirm) {
-          // 注释掉检查开户功能是否开放的逻辑
-          // const isEnabled = await appStore.checkAccountOpenEnabled()
-          
-          // if (!isEnabled) {
-          //   // 如果开户功能未开放，提示用户
-          //   uni.showToast({
-          //     title: '开户功能对接中，请稍后再试',
-          //     icon: 'none',
-          //     duration: 2000
-          //   })
-          //   return
-          // }
-          
-          // 用户点击确认，直接跳转到银行卡开户页面
-          uni.navigateTo({
-            url: '/pages/my/bank-account-apply'
-          })
+    // 先确保所有弹窗和下拉框都关闭
+    showTypePopup.value = false
+    
+    // 使用setTimeout确保UI更新后再显示弹窗
+    setTimeout(() => {
+      // 显示开户引导弹窗
+      uni.showModal({
+        title: '开户提示',
+        content: '银行卡未预存开通收款功能',
+        confirmText: '立即开户',
+        cancelText: '取消',
+        success: async (res) => {
+          if (res.confirm) {
+            // 注释掉检查开户功能是否开放的逻辑
+            // const isEnabled = await appStore.checkAccountOpenEnabled()
+            
+            // if (!isEnabled) {
+            //   // 如果开户功能未开放，提示用户
+            //   uni.showToast({
+            //     title: '开户功能对接中，请稍后再试',
+            //     icon: 'none',
+            //     duration: 2000
+            //   })
+            //   return
+            // }
+            
+            // 用户点击确认，直接跳转到银行卡开户页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply'
+            })
+          }
         }
-      }
-    })
+      })
+    }, 300) // 300毫秒的延迟，确保UI更新完成
     return
   }
   
@@ -522,34 +528,40 @@ const submitWithdraw = async () => {
   
   // 只有当选择中国银行余额提现时，才检查用户是否已开户
   if (isBankBalance.value && !userStore.userInfo.has_bank_card) {
-    // 显示开户引导弹窗
-    uni.showModal({
-      title: '开户提示',
-      content: '银行卡未预存开通收款功能',
-      confirmText: '立即开户',
-      cancelText: '取消',
-      success: async (res) => {
-        if (res.confirm) {
-          // 注释掉检查开户功能是否开放的逻辑
-          // const isEnabled = await appStore.checkAccountOpenEnabled()
-          
-          // if (!isEnabled) {
-          //   // 如果开户功能未开放，提示用户
-          //   uni.showToast({
-          //     title: '开户功能对接中，请稍后再试',
-          //     icon: 'none',
-          //     duration: 2000
-          //   })
-          //   return
-          // }
-          
-          // 用户点击确认，直接跳转到银行卡开户页面
-          uni.navigateTo({
-            url: '/pages/my/bank-account-apply'
-          })
+    // 先确保所有弹窗和下拉框都关闭
+    showTypePopup.value = false
+    
+    // 使用setTimeout确保UI更新后再显示弹窗
+    setTimeout(() => {
+      // 显示开户引导弹窗
+      uni.showModal({
+        title: '开户提示',
+        content: '银行卡未预存开通收款功能',
+        confirmText: '立即开户',
+        cancelText: '取消',
+        success: async (res) => {
+          if (res.confirm) {
+            // 注释掉检查开户功能是否开放的逻辑
+            // const isEnabled = await appStore.checkAccountOpenEnabled()
+            
+            // if (!isEnabled) {
+            //   // 如果开户功能未开放，提示用户
+            //   uni.showToast({
+            //     title: '开户功能对接中，请稍后再试',
+            //     icon: 'none',
+            //     duration: 2000
+            //   })
+            //   return
+            // }
+            
+            // 用户点击确认，直接跳转到银行卡开户页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply'
+            })
+          }
         }
-      }
-    })
+      })
+    }, 300) // 300毫秒的延迟，确保UI更新完成
     return
   }
   
@@ -564,21 +576,27 @@ const submitWithdraw = async () => {
   
   // 添加银行卡风控检查
   if (!isBankBalance.value && selectedBankCard.value && isBankCardRestricted(selectedBankCard.value)) {
-    // 显示风控提示并阻止提现
-    uni.showModal({
-      title: '温馨提示',
-      content: '该银行卡大额风控，请开通大额专属卡收款',
-      confirmText: '立即开户',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          // 用户点击立即开户，跳转到银行卡开户页面
-          uni.navigateTo({
-            url: '/pages/my/bank-account-apply'
-          })
+    // 先确保所有弹窗和下拉框都关闭
+    showTypePopup.value = false
+    
+    // 使用setTimeout确保UI更新后再显示弹窗
+    setTimeout(() => {
+      // 显示风控提示并阻止提现
+      uni.showModal({
+        title: '温馨提示',
+        content: '该银行卡大额风控，请开通大额专属卡收款',
+        confirmText: '立即开户',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 用户点击立即开户，跳转到银行卡开户页面
+            uni.navigateTo({
+              url: '/pages/my/bank-account-apply'
+            })
+          }
         }
-      }
-    })
+      })
+    }, 300) // 300毫秒的延迟，确保UI更新完成
     return
   }
   

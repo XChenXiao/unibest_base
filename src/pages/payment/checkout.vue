@@ -123,7 +123,7 @@
       >
         {{ loading ? '处理中...' : '立即支付' }}
       </button>
-      <view class="submit-hint">确认后将跳转到相应的支付平台</view>
+      <!-- <view class="submit-hint">确认后将跳转到相应的支付平台</view> -->
     </view>
 
     <!-- 支付处理状态 -->

@@ -39,10 +39,21 @@
   
       <!-- 余额展示 -->
       <view class="balance-card" @click="handleBankCardClick">
+        <!-- 添加水印效果 -->
+        <view class="card-watermark">
+          <image 
+            src="/static/images/bank/BANK_OF_CHINA.png" 
+            mode="widthFix"
+            style="width: 30%;position: absolute;top: 90rpx;right: 300rpx;">
+          </image>
+        </view>
+        
         <!-- 银行卡顶部 -->
         <view class="card-header">
           <view class="bank-logo">
-            <image src="/static/images/bank-icon.png" mode="aspectFit"></image>
+            <!-- <view class="bank-logo-container">
+              <image src="/static/images/bank/BANK_OF_CHINA.png" mode="aspectFit"></image>
+            </view> -->
             <text>我的钱包</text>
           </view>
           <!-- <view class="check-account">
@@ -132,7 +143,7 @@
             <wd-icon name="wallet" size="40rpx" />
           </view>
           <view class="menu-content">
-            <text class="menu-title">中国银行</text>
+            <text class="menu-title">银行卡</text>
             <!-- 隐藏描述文字 -->
           </view>
           <wd-icon name="arrow-right" class="menu-arrow" />
@@ -835,38 +846,62 @@
     color: rgba(255, 255, 255, 0.6);
   }
   /* 余额卡片 */
-  .balance-card {
-    position: relative;
-    z-index: 1;
-    padding: 30rpx;
-    margin: 30rpx;
-    color: #ffffff;
-    background: linear-gradient(to bottom right, #35c8e6, #17b8e0);
-    border-radius: 20rpx;
-    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-  }
+.balance-card {
+  position: relative;
+  z-index: 1;
+  padding: 30rpx;
+  margin: 30rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); /* 中国银行红色渐变 */
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* 确保水印不溢出 */
+}
+  
+  .card-watermark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.07;
+  overflow: hidden;
+  border-radius: 20rpx;
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.card-watermark image {
+  width: 120%;
+  height: auto;
+  transform: scale(2.2);
+  filter: brightness(0) invert(1);
+  margin-right: -25%;
+  margin-bottom: -15%;
+}
   
   .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 30rpx;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+  position: relative;
+  z-index: 2;
+  // padding: 0 10rpx;
+}
   
   .bank-logo {
     display: flex;
     align-items: center;
   }
   
-  .bank-logo image {
-    width: 40rpx;
-    height: 40rpx;
-    margin-right: 10rpx;
-  }
-  
   .bank-logo text {
     font-size: 32rpx;
     font-weight: bold;
+    // margin-left: 15rpx;
   }
   
   .check-btn {
@@ -880,8 +915,10 @@
   }
   
   .balance-section {
-    margin-bottom: 30rpx;
-  }
+  margin-bottom: 30rpx;
+  position: relative;
+  z-index: 2;
+}
   
   .balance-label {
     display: flex;
@@ -917,10 +954,12 @@
   }
   
   .action-buttons {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
   
   .action-btn {
     flex: 1;
@@ -945,16 +984,16 @@
   }
   
   .withdraw {
-    color: #17b8e0;
-    background-color: #ffffff;
-    border: none;
-  }
-  
-  .bill-details {
-    color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.3);
-    border: none;
-  }
+  color: #c0392b; /* 匹配中国银行红色 */
+  background-color: #ffffff;
+  border: none;
+}
+
+.bill-details {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+}
   
   .statement-btn {
     display: flex;
@@ -1264,6 +1303,20 @@
     font-size: 24rpx;
     color: #999;
     text-align: center;
+  }
+  .bank-logo-container {
+    width: 60rpx;
+    height: 60rpx;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5rpx;
+  }
+  .bank-logo-container image {
+    width: 80%;
+    height: 80%;
   }
   </style>
   

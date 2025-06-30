@@ -18,6 +18,15 @@
 
     <!-- 余额卡片 -->
     <view class="balance-card">
+      <!-- 添加水印效果 -->
+      <view class="card-watermark">
+        <image 
+          src="/static/images/bank/BANK_OF_CHINA.png" 
+          mode="widthFix"
+          style="width: 30%;position: absolute;top: 90rpx;right: 300rpx;">
+        </image>
+      </view>
+      
       <!-- 银行卡顶部 -->
       <view class="card-header-container">
         <view class="bank-logo">
@@ -766,24 +775,25 @@ page {
   padding: 30rpx;
   margin: 120rpx 30rpx 30rpx;
   color: #ffffff;
-  background: linear-gradient(to bottom right, #35c8e6, #17b8e0);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); /* 中国银行红色渐变 */
   border-radius: 20rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* 确保水印不溢出 */
 }
 
 .card-header-container {
   display: flex;
   align-items: center;
-  margin-bottom: 20rpx;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
   position: relative;
   z-index: 2;
-  padding: 0 30rpx;
+  /* 去掉内边距，与index.vue保持一致 */
 }
 
 .bank-logo {
   display: flex;
   align-items: center;
-  text-align: center;
 }
 
 .bank-logo image {
@@ -795,10 +805,13 @@ page {
 .bank-logo text {
   font-size: 32rpx;
   font-weight: bold;
+  /* 去掉左边距，与index.vue保持一致 */
 }
 
 .balance-section {
   margin-bottom: 30rpx;
+  position: relative;
+  z-index: 2;
 }
 
 .balance-label {
@@ -832,6 +845,8 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 2;
 }
 
 .action-btn {
@@ -841,11 +856,11 @@ page {
   font-size: 32rpx;
   line-height: 1.5;
   text-align: center;
-  border-radius: 20rpx;
+  border-radius: 10rpx;
 }
 
 .withdraw {
-  color: #17b8e0;
+  color: #c0392b; /* 匹配中国银行红色 */
   background-color: #ffffff;
   border: none;
 }
