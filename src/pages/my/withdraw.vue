@@ -145,7 +145,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useUserStore, useBankCardStore } from '@/store'
 import { useAppStore } from '@/store/app'
 import { applyWithdrawAPI } from '@/service/index/withdraw'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { BankEnum } from '@/enums/BankEnum'
 
 // 获取用户数据存储
@@ -694,11 +694,11 @@ const getBankIconByName = (bankName: string): string => {
 // 跳转到银行卡管理页面
 const goToBankCardManagement = () => {
   uni.navigateTo({ 
-    url: '/pages/my/bank-cards?from=withdraw',
+    url: '/pages/my/bank-cards?from=withdraw&action=add',
     success: () => {
       // 关闭当前弹窗
       showTypePopup.value = false
-      console.log('成功跳转到银行卡管理页面')
+      console.log('成功跳转到银行卡管理页面，准备添加新卡')
     },
     fail: (err) => {
       console.error('跳转银行卡管理页面失败:', err)
@@ -709,6 +709,39 @@ const goToBankCardManagement = () => {
     }
   })
 }
+
+// 添加onShow生命周期函数，页面每次显示时刷新银行卡列表
+onShow(() => {
+  console.log('提现页面显示，刷新银行卡列表')
+  // 记录当前选中的银行卡ID
+  const currentSelectedCardId = bankCardId.value
+  
+  // 刷新银行卡列表
+  bankCardStore.fetchBankCards().then(() => {
+    console.log('银行卡列表刷新成功')
+    
+    // 如果当前没有选中的银行卡，或者从银行卡管理页面返回
+    if (bankCardStore.bankCards && bankCardStore.bankCards.length > 0) {
+      // 检查是否有新添加的银行卡（比较最新获取的列表长度和之前选中的卡ID）
+      const isNewCardAdded = !currentSelectedCardId || !bankCardStore.bankCards.some(card => card.id === currentSelectedCardId)
+      
+      if (isNewCardAdded) {
+        // 如果有新添加的银行卡，选择最新添加的银行卡（通常是列表中的第一张卡）
+        const latestCard = bankCardStore.bankCards[0]
+        withdrawType.value = 'bank'
+        isBankBalance.value = false
+        selectedBankCard.value = latestCard
+        bankCardId.value = latestCard.id
+        
+        // 同时更新store中的选中银行卡
+        bankCardStore.setSelectedBankCard(latestCard)
+        console.log('从银行卡管理页面返回，自动选择最新银行卡:', latestCard)
+      }
+    }
+  }).catch(error => {
+    console.error('银行卡列表刷新失败:', error)
+  })
+})
 </script>
 
 <style lang="scss" scoped>
