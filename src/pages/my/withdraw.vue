@@ -569,7 +569,16 @@ const submitWithdraw = async () => {
     uni.showModal({
       title: '温馨提示',
       content: '该银行卡大额风控，请开通大额专属卡收款',
-      showCancel: false
+      confirmText: '立即开户',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击立即开户，跳转到银行卡开户页面
+          uni.navigateTo({
+            url: '/pages/my/bank-account-apply'
+          })
+        }
+      }
     })
     return
   }
