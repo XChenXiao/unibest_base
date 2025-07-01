@@ -40,13 +40,13 @@
       <!-- 余额展示 -->
       <view class="balance-card" @click="handleBankCardClick">
         <!-- 添加水印效果 -->
-        <view class="card-watermark">
+        <!-- <view class="card-watermark">
           <image 
             src="/static/images/bank/BANK_OF_CHINA.png" 
             mode="widthFix"
             style="width: 30%;position: absolute;top: 90rpx;right: 300rpx;">
           </image>
-        </view>
+        </view> -->
         
         <!-- 银行卡顶部 -->
         <view class="card-header">
@@ -852,7 +852,7 @@
   padding: 30rpx;
   margin: 30rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); /* 中国银行红色渐变 */
+  background: linear-gradient(to bottom right, #35c8e6, #17b8e0); /* 蓝色渐变 */
   border-radius: 20rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   overflow: hidden; /* 确保水印不溢出 */
@@ -984,7 +984,7 @@
   }
   
   .withdraw {
-  color: #c0392b; /* 匹配中国银行红色 */
+  color: #17b8e0; /* 恢复原始蓝色 */
   background-color: #ffffff;
   border: none;
 }
