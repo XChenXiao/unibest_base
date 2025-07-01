@@ -156,6 +156,61 @@ export async function buyUsdt(amount: number) {
   );
 }
 
+/**
+ * 创建黄金下单支付订单
+ * @param amount 购买数量
+ * @param paymentType 支付方式 (alipay/wxpay)
+ */
+export async function createGoldPaymentOrder(amount: number, paymentType: string) {
+  return httpPost<{
+    status: string;
+    message: string;
+    data: {
+      data?: {
+        trade_no?: string;
+        out_trade_no?: string;
+        order_no?: string;
+        pay_url?: string;
+      };
+      trade_no?: string;
+      out_trade_no?: string;
+      order_no?: string;
+      pay_url?: string;
+      pay_info?: string;
+    } | {
+      trade_no?: string;
+      out_trade_no?: string;
+      order_no?: string;
+      pay_url?: string;
+      pay_info?: string;
+    };
+  }>(
+    '/api/gold/payment/create',
+    {
+      amount,
+      payment_type: paymentType
+    }
+  );
+}
+
+/**
+ * 查询黄金下单支付订单状态
+ * @param outTradeNo 订单号
+ */
+export async function queryGoldPaymentOrder(outTradeNo: string) {
+  return httpGet<{
+    status: string;
+    message?: string;
+    data?: {
+      order_status?: string;
+      status?: string;
+      paid_at?: string | null;
+    };
+  }>(
+    `/api/gold/payment/query/${outTradeNo}`
+  );
+}
+
 // 用户信息接口响应类型
 export interface UserResponse {
   status: string;

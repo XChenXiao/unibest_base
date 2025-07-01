@@ -306,6 +306,13 @@
       }
     },
     {
+      "path": "pages/payment/webview",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "支付"
+      }
+    },
+    {
       "path": "pages/register/captcha",
       "type": "page",
       "style": {
@@ -341,6 +348,13 @@
       "type": "page",
       "style": {
         "navigationBarTitleText": "交易所"
+      }
+    },
+    {
+      "path": "pages/trading/gold-payment",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "黄金支付"
       }
     },
     {

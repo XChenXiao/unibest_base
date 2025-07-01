@@ -63,10 +63,10 @@
     <!-- 提现说明 -->
     <view class="withdraw-tips">
       <view class="tip-title">提现说明</view>
-      <view class="tip-item">
+      <view class="tip-item"  v-if="!isBankBalance">
         <text class="tip-dot">•</text>
-        <text class="tip-text" v-if="isBankBalance">提现将立即到账到中国银行余额</text>
-        <text class="tip-text" v-else>提现申请提交后，将在1-3个工作日内到账</text>
+        <!-- <text class="tip-text" v-if="isBankBalance"></text> -->
+        <text class="tip-text">提现申请提交后，将在1-3个工作日内到账</text>
       </view>
       <view class="tip-item">
         <text class="tip-dot">•</text>
@@ -95,6 +95,7 @@
           <view class="type-item" @click="selectType('bank_balance')">
             <view class="type-item-content">
               <view class="type-name">中国银行</view>
+              <view class="type-desc">大额专属卡</view>
             </view>
             <wd-icon v-if="isBankBalance" name="check" class="type-selected" />
           </view>

@@ -34,11 +34,13 @@ interface NavigateToOptions {
        "/pages/payment/bank-cards" |
        "/pages/payment/checkout" |
        "/pages/payment/index" |
+       "/pages/payment/webview" |
        "/pages/register/captcha" |
        "/pages/register/index" |
        "/pages/team/index" |
        "/pages/team/invite-poster" |
        "/pages/trading/exchange" |
+       "/pages/trading/gold-payment" |
        "/pages/trading/index" |
        "/pages/trading/records" |
        "/pages/trading/trade-detail" |

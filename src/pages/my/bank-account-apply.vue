@@ -19,7 +19,7 @@
     <view class="container">
       <!-- 顶部银行卡图片 -->
       <view class="card-image-container">
-        <image class="card-image" src="/static/images/bg/card.png" mode="widthFix"></image>
+        <image class="card-image" src="/static/images/bg/re-card.png" mode="widthFix"></image>
       </view>
   
       <!-- 申请表单 -->
@@ -58,7 +58,11 @@
               </view>
             </view>
   
-            注意：预存金是预存回自己的银行账户，无任何费用，开通后即可转出使用。
+            <!-- 固定提示项，保持与其他提示一致的样式 -->
+            <view class="deposit-tip-item">
+              <text class="tip-dot">•</text>
+              <text class="tip-desc">注意：预存金是预存回自己的银行账户，无任何费用，开通后即可转出使用。</text>
+            </view>
           </view>
   
           <view class="amount-buttons">
@@ -435,6 +439,7 @@
   .card-image-container {
     width: 100vw;
     margin: -30rpx -30rpx 20rpx -30rpx;
+    padding: 0%;
     overflow: hidden;
   }
   

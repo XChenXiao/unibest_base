@@ -96,6 +96,18 @@
       <button class="confirm-button" @click="handleConfirmTrade">
         确认{{ isTypeBuy ? '买入' : '卖出' }}
       </button>
+      
+      <!-- 添加在线支付选项，仅在购买黄金时显示 -->
+      <view class="payment-options" v-if="isTypeBuy && currencySymbol === 'GOLD'">
+        <view class="payment-divider">
+          <view class="divider-line"></view>
+          <text class="divider-text">或选择</text>
+          <view class="divider-line"></view>
+        </view>
+        <button class="online-payment-button" @click="handleOnlinePayment">
+          在线支付购买
+        </button>
+      </view>
     </view>
 
     <!-- 交易须知 -->
@@ -639,6 +651,43 @@ const handleConfirmTrade = async () => {
   })
 }
 
+// 处理在线支付
+const handleOnlinePayment = () => {
+  // 输入验证
+  if (!tradeAmount.value || parseFloat(tradeAmount.value) <= 0) {
+    uni.showToast({
+      title: '请输入有效的交易数量',
+      icon: 'none',
+    });
+    return;
+  }
+
+  const amount = parseFloat(tradeAmount.value);
+
+  // 验证最小交易量
+  if (amount < minAmount.value) {
+    uni.showToast({
+      title: `最小交易数量为 ${minAmount.value}`,
+      icon: 'none',
+    });
+    return;
+  }
+
+  // 验证最大交易量
+  if (maxAmount.value > 0 && amount > maxAmount.value) {
+    uni.showToast({
+      title: `最大交易数量为 ${maxAmount.value}`,
+      icon: 'none',
+    });
+    return;
+  }
+
+  // 跳转到支付页面
+  uni.navigateTo({
+    url: `/pages/trading/gold-payment?amount=${amount}&price=${currencyPrice.value}`
+  });
+};
+
 // 页面加载
 onMounted(() => {
   // onLoad已经处理了页面参数，这里只需要获取用户余额
@@ -851,5 +900,42 @@ onMounted(() => {
   font-size: 26rpx;
   line-height: 1.5;
   color: #666;
+}
+
+/* 支付选项 */
+.payment-options {
+  margin-top: 30rpx;
+}
+
+.payment-divider {
+  display: flex;
+  align-items: center;
+  margin: 20rpx 0;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.divider-text {
+  padding: 0 20rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.online-payment-button {
+  width: 100%;
+  height: 90rpx;
+  line-height: 90rpx;
+  text-align: center;
+  background-color: #ffffff;
+  color: #f39c12;
+  font-size: 32rpx;
+  border-radius: 45rpx;
+  font-weight: 500;
+  border: 1px solid #f39c12;
+  margin-top: 20rpx;
 }
 </style>
