@@ -257,7 +257,7 @@ const fetchAndSetBankCard = async (cardId: number) => {
 // 提现类型显示文本
 const withdrawTypeText = computed(() => {
   if (isBankBalance.value) {
-    return '中国银行余额'
+    return '中国银行'
   } else if (selectedBankCard.value) {
     // 显示银行卡号后四位
     const cardNumber = selectedBankCard.value.masked_card_number || ''

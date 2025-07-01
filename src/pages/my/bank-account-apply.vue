@@ -58,10 +58,7 @@
               </view>
             </view>
   
-            <!-- 开户费用提示 -->
-            <!-- <view class="open-fee-tip-item" v-if="openFee > 0">
-              <text class="tip-desc">预存金是存到自己银行账户，无任何费用，开通后即可转出使用</text>
-            </view> -->
+            注意：预存金是预存回自己的银行账户，无任何费用，开通后即可转出使用。
           </view>
   
           <view class="amount-buttons">
