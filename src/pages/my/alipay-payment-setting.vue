@@ -19,12 +19,12 @@
     </view>
     
     <view class="page-header">
-      <text class="page-title">支付宝收款设置</text>
+      <!-- <text class="page-title">支付宝收款设置</text> -->
     </view>
     
     <view class="setting-form">
       <!-- 支付宝账号 -->
-      <view class="form-item">
+      <!-- <view class="form-item">
         <text class="form-label">支付宝账号</text>
         <input 
           class="form-input"
@@ -32,10 +32,10 @@
           v-model="formData.account"
           placeholder="请输入支付宝账号或手机号"
         />
-      </view>
+      </view> -->
 
       <!-- 真实姓名 -->
-      <view class="form-item">
+      <!-- <view class="form-item">
         <text class="form-label">真实姓名</text>
         <input 
           class="form-input"
@@ -43,7 +43,7 @@
           v-model="formData.real_name"
           placeholder="请输入支付宝实名认证的姓名"
         />
-      </view>
+      </view> -->
 
       <!-- 收款码上传 -->
       <view class="form-item qrcode-item">
@@ -119,12 +119,16 @@ onMounted(async () => {
       wechat_name: string;
       wechat_phone: string;
       wechat_qrcode_url: string;
+      alipay_account: string;
+      alipay_real_name: string;
       alipay_qrcode_url: string;
     }>('/api/payment-info');
     
     if (res.data) {
+      formData.account = res.data.alipay_account || '';
+      formData.real_name = res.data.alipay_real_name || '';
       formData.alipay_qrcode_url = res.data.alipay_qrcode_url || '';
-      console.log('获取到的支付宝二维码URL:', formData.alipay_qrcode_url);
+      console.log('获取到的支付宝信息:', formData);
     }
   } catch (error) {
     console.error('获取支付信息失败:', error);
@@ -182,6 +186,23 @@ const previewImage = () => {
 // 保存设置
 const saveSettings = async () => {
   // 验证表单
+  // 移除账号和姓名的校验
+  /* if (!formData.account) {
+    uni.showToast({
+      title: '请输入支付宝账号',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  if (!formData.real_name) {
+    uni.showToast({
+      title: '请输入真实姓名',
+      icon: 'none'
+    });
+    return;
+  } */
+  
   if (!formData.alipay_qrcode_url) {
     uni.showToast({
       title: '请上传支付宝收款码',
@@ -194,6 +215,9 @@ const saveSettings = async () => {
     isSubmitting.value = true;
     
     const res = await http.post('/api/payment-info', {
+      // 保留账号和姓名字段，但使用空值或已有值
+      alipay_account: formData.account || '',
+      alipay_real_name: formData.real_name || '',
       alipay_qrcode: formData.alipay_qrcode_url
     });
     
@@ -288,10 +312,13 @@ page {
   border-radius: 20rpx;
   padding: 30rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-item {
   margin-bottom: 30rpx;
+  width: 100%;
 }
 
 .qrcode-item {
@@ -433,6 +460,7 @@ page {
   font-size: 28rpx;
   color: #333;
   border: 2rpx solid #eee;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
