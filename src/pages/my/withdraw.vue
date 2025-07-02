@@ -64,9 +64,9 @@
     <view class="withdraw-tips">
       <view class="tip-title">提现说明</view>
       <view class="tip-item"  v-if="!isBankBalance">
-        <text class="tip-dot">•</text>
+        <!-- <text class="tip-dot">•</text> -->
         <!-- <text class="tip-text" v-if="isBankBalance"></text> -->
-        <text class="tip-text">提现申请提交后，将在1-3个工作日内到账</text>
+        <!-- <text class="tip-text">提现申请提交后，将在1-3个工作日内到账</text> -->
       </view>
       <view class="tip-item">
         <text class="tip-dot">•</text>
