@@ -21,11 +21,29 @@
         <view class="popup-body">
           <!-- 第一页：图片 -->
           <view v-if="currentPage === 1" class="custom-notification-page">
+            <!-- #ifdef H5 -->
             <image 
+              src="/static/images/notice2.jpg" 
+              class="notice-image"
+              mode="widthFix"
+            />
+            <!-- #endif -->
+            
+            <!-- #ifdef APP-PLUS -->
+            <!-- <image 
+              src="/static/images/notice.png" 
+              class="notice-image"
+              mode="widthFix"
+            /> -->
+            <!-- #endif -->
+            
+            <!-- #ifndef H5 || APP-PLUS -->
+            <image
               src="/static/images/notice.png" 
               class="notice-image"
               mode="widthFix"
             />
+            <!-- #endif -->
           </view>
 
           <!-- 第二页：文字内容 -->
