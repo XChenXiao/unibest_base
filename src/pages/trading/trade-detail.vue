@@ -93,19 +93,15 @@
         </view>
       </view>
 
-      <button class="confirm-button" @click="handleConfirmTrade">
+      <!-- 隐藏原确认买入按钮 -->
+      <!-- <button class="confirm-button" @click="handleConfirmTrade">
         确认{{ isTypeBuy ? '买入' : '卖出' }}
-      </button>
+      </button> -->
       
-      <!-- 添加在线支付选项，仅在购买黄金时显示 -->
+      <!-- 修改在线支付选项，移除分割线，直接显示确认买入按钮 -->
       <view class="payment-options" v-if="isTypeBuy && currencySymbol === 'GOLD'">
-        <view class="payment-divider">
-          <view class="divider-line"></view>
-          <text class="divider-text">或选择</text>
-          <view class="divider-line"></view>
-        </view>
-        <button class="online-payment-button" @click="handleOnlinePayment">
-          在线支付购买
+        <button class="confirm-button" @click="handleOnlinePayment">
+          确认买入
         </button>
       </view>
     </view>

@@ -158,14 +158,16 @@ export async function buyUsdt(amount: number) {
 
 /**
  * 创建黄金下单支付订单
- * @param amount 购买数量
- * @param paymentType 支付方式 (alipay/wxpay)
+ * @param params 支付订单参数
+ * @param params.amount 购买数量
+ * @param params.payment_type 支付方式 (alipay/wxpay)
  */
-export async function createGoldPaymentOrder(amount: number, paymentType: string) {
+export async function createGoldPaymentOrder(params: { amount: number; payment_type: string }) {
   return httpPost<{
     status: string;
     message: string;
     data: {
+      out_trade_no: string; // 确保包含订单号
       data?: {
         trade_no?: string;
         out_trade_no?: string;
@@ -173,13 +175,6 @@ export async function createGoldPaymentOrder(amount: number, paymentType: string
         pay_url?: string;
       };
       trade_no?: string;
-      out_trade_no?: string;
-      order_no?: string;
-      pay_url?: string;
-      pay_info?: string;
-    } | {
-      trade_no?: string;
-      out_trade_no?: string;
       order_no?: string;
       pay_url?: string;
       pay_info?: string;
@@ -187,8 +182,8 @@ export async function createGoldPaymentOrder(amount: number, paymentType: string
   }>(
     '/api/gold/payment/create',
     {
-      amount,
-      payment_type: paymentType
+      amount: params.amount,
+      payment_type: params.payment_type
     }
   );
 }

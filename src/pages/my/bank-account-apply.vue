@@ -17,10 +17,20 @@
   
   <template>
     <view class="container">
-      <!-- 顶部银行卡图片 -->
-      <view class="card-image-container">
-        <image class="card-image" src="/static/images/bg/re-card.png" mode="widthFix"></image>
+          <!-- 顶部中国银行卡片 -->
+    <view class="bank-card-header">
+      <!-- 中国银行卡片样式 -->
+      <view class="china-bank-card">
+        <!-- 添加水印效果 -->
+        <view class="card-watermark">
+          <image 
+            src="/static/images/bank/BANK_OF_CHINA.png" 
+            mode="widthFix"
+            style="width: 30%;position: absolute;top: 90rpx;right: 300rpx;">
+          </image>
+        </view>
       </view>
+    </view>
   
       <!-- 申请表单 -->
       <view class="form-container" v-if="currentStep === 'form'">
@@ -435,19 +445,45 @@
     padding: 30rpx;
     background-color: #f5f5f5;
   }
-  /* 银行卡图片样式 */
-  .card-image-container {
-    width: 100vw;
-    margin: -30rpx -30rpx 20rpx -30rpx;
-    padding: 0%;
-    overflow: hidden;
-  }
-  
-  .card-image {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
+     /* 顶部中国银行卡片样式 */
+   .bank-card-header {
+     width: 100vw;
+     margin: -30rpx -30rpx 30rpx -30rpx;
+     overflow: hidden;
+   }
+   
+   .china-bank-card {
+     position: relative;
+     width: 100%;
+     height: 400rpx;
+     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); /* 中国银行红色渐变 */
+     box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+     overflow: hidden;
+   }
+   
+   .card-watermark {
+     position: absolute;
+     top: 0;
+     right: 0;
+     width: 100%;
+     height: 100%;
+     opacity: 0.07;
+     overflow: hidden;
+     pointer-events: none;
+     z-index: 1;
+     display: flex;
+     justify-content: flex-end;
+     align-items: center;
+   }
+   
+   .card-watermark image {
+     width: 120%;
+     height: auto;
+     transform: scale(2.2);
+     filter: brightness(0) invert(1);
+     margin-right: -25%;
+     margin-bottom: -15%;
+   }
   
   .form-container {
     box-sizing: border-box;

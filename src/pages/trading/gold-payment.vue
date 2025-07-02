@@ -88,18 +88,6 @@
       </button>
     </view>
 
-    <!-- 支付结果 -->
-    <view class="payment-result" v-if="paymentStatus !== ''">
-      <view class="result-icon" :class="paymentStatus === 'success' ? 'success-icon' : 'error-icon'"></view>
-      <text class="result-text">{{ paymentStatusText }}</text>
-      <view class="result-actions">
-        <button class="action-button" @click="goBack">返回</button>
-        <button class="action-button primary" @click="goToAssets" v-if="paymentStatus === 'success'">
-          查看资产
-        </button>
-      </view>
-    </view>
-
     <!-- 支付提示 -->
     <view class="payment-notice">
       <view class="notice-title">支付须知</view>
@@ -118,7 +106,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { createGoldPaymentOrder, queryGoldPaymentOrder } from '@/service/app/currency';
 import { useCurrencyStore } from '@/store';
 import { getCurrencyList } from '@/service/app/currency';
@@ -131,8 +119,6 @@ const goldPrice = ref(0);
 const amount = ref('');
 const totalAmount = ref(0);
 const selectedMethod = ref('alipay');
-const paymentStatus = ref('');
-const paymentStatusText = ref('');
 const outTradeNo = ref('');
 const queryTimer = ref<any>(null);
 const isProcessing = ref(false);
@@ -174,6 +160,42 @@ onLoad(async (options) => {
   }
 });
 
+// 页面显示时检查支付状态（从webview返回时）
+onShow(async () => {
+  // 如果有订单号且正在轮询，立即检查一次支付状态
+  if (outTradeNo.value && queryTimer.value) {
+    console.log('从webview返回，立即检查支付状态');
+    try {
+      const result = await queryGoldPaymentOrder(outTradeNo.value);
+      
+      if (result.status === 'success' && result.data) {
+        const orderStatus = (result.data as any).order_status || (result.data as any).status || '';
+        if (orderStatus === 'paid') {
+          // 支付成功
+          clearInterval(queryTimer.value);
+          
+          // 刷新货币列表
+          await currencyStore.forceRefreshUserCurrencies();
+          
+          // 显示支付成功提示
+          uni.showToast({
+            title: '支付成功！黄金已添加到您的账户',
+            icon: 'success',
+            duration: 2000
+          });
+          
+          // 延迟返回黄金购买页面
+          setTimeout(() => {
+            uni.navigateBack();
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      console.error('立即检查支付状态失败:', error);
+    }
+  }
+});
+
 // 计算总金额
 const calculateTotal = () => {
   if (amount.value && !isNaN(parseFloat(amount.value))) {
@@ -199,42 +221,47 @@ const handleSubmit = async () => {
   
   try {
     isProcessing.value = true;
-    uni.showLoading({ title: '创建支付订单...' });
-    
-    // 调用API创建支付订单
+    uni.showLoading({
+      title: '创建支付订单...',
+      mask: true
+    });
+
     const amountValue = parseFloat(amount.value);
-    const response = await createGoldPaymentOrder(amountValue, selectedMethod.value);
     
+    const response = await createGoldPaymentOrder({
+      amount: amountValue,
+      payment_type: selectedMethod.value
+    });
+
     uni.hideLoading();
-    
-    if (response.status === 'success' && response.data) {
-      // 保存订单号，用于后续查询
-      let orderNo = '';
-      let payUrl = '';
-      const responseData = response.data;
+
+    if (response.status === 'success') {
+      console.log('支付订单创建成功，响应数据:', response);
       
-              // 处理不同结构的响应数据
-        if ('data' in responseData && responseData.data) {
-          // 嵌套结构 - 优先使用我们的订单号，而不是第三方平台的订单号
-          orderNo = (responseData.data as any).out_trade_no || (responseData.data as any).order_no || (responseData.data as any).trade_no || '';
-          payUrl = (responseData.data as any).pay_url || '';
-        } else {
-          // 直接结构 - 优先使用我们的订单号，而不是第三方平台的订单号
-          orderNo = (responseData as any).out_trade_no || (responseData as any).order_no || (responseData as any).trade_no || '';
-          payUrl = (responseData as any).pay_url || '';
-        }
+      // 保存订单号
+      if (response.data && response.data.out_trade_no) {
+        outTradeNo.value = response.data.out_trade_no;
+        console.log('订单号保存成功:', outTradeNo.value);
+      } else {
+        console.error('未找到订单号，响应数据:', response.data);
+        uni.showToast({
+          title: '获取订单号失败',
+          icon: 'none'
+        });
+        return;
+      }
       
-      outTradeNo.value = orderNo;
-      
-      if (payUrl) {
-        // 跳转到支付页面
+      // 跳转到支付页面或处理支付信息
+      if (response.data && response.data.data && response.data.data.pay_url) {
+        // 跳转到支付页面，携带返回页面参数
         uni.navigateTo({
-          url: `/pages/payment/webview?url=${encodeURIComponent(payUrl)}`
+          url: `/pages/payment/webview?url=${encodeURIComponent(response.data.data.pay_url)}&returnPage=gold-purchase`
         });
         
         // 开始轮询查询支付状态
+        console.log('开始轮询查询支付状态，订单号:', outTradeNo.value);
         startQueryPaymentStatus();
-      } else {
+      } else if (response.data.pay_info) {
         // 处理其他支付信息
         uni.showModal({
           title: '支付提示',
@@ -265,12 +292,20 @@ const handleSubmit = async () => {
 
 // 开始查询支付状态
 const startQueryPaymentStatus = () => {
-  if (!outTradeNo.value) return;
+  console.log('startQueryPaymentStatus 被调用，订单号:', outTradeNo.value);
+  
+  if (!outTradeNo.value) {
+    console.error('订单号为空，无法开始查询支付状态');
+    return;
+  }
   
   // 清除之前的定时器
   if (queryTimer.value) {
     clearInterval(queryTimer.value);
+    console.log('清除了之前的查询定时器');
   }
+  
+  console.log('开始设置支付状态查询定时器，每3秒查询一次');
   
   // 设置定时器，每3秒查询一次支付状态
   queryTimer.value = setInterval(async () => {
@@ -282,34 +317,27 @@ const startQueryPaymentStatus = () => {
         if (orderStatus === 'paid') {
           // 支付成功
           clearInterval(queryTimer.value);
-          paymentStatus.value = 'success';
-          paymentStatusText.value = '支付成功！黄金已添加到您的账户';
           
           // 刷新货币列表
           await currencyStore.forceRefreshUserCurrencies();
           
+          // 显示支付成功提示
           uni.showToast({
-            title: '支付成功',
-            icon: 'success'
+            title: '支付成功！黄金已添加到您的账户',
+            icon: 'success',
+            duration: 2000
           });
+          
+          // 延迟返回黄金购买页面
+          setTimeout(() => {
+            uni.navigateBack();
+          }, 2000);
         }
       }
     } catch (error) {
       console.error('查询支付状态失败:', error);
     }
   }, 3000);
-};
-
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack();
-};
-
-// 跳转到资产页面
-const goToAssets = () => {
-  uni.switchTab({
-    url: '/pages/assets/index'
-  });
 };
 
 // 组件卸载时清除定时器
@@ -498,61 +526,6 @@ onUnmounted(() => {
     background: #cccccc;
     color: #ffffff;
   }
-}
-
-.payment-result {
-  background-color: #fff;
-  border-radius: 12rpx;
-  padding: 40rpx;
-  margin: 30rpx 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-}
-
-.result-icon {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 60rpx;
-  margin-bottom: 30rpx;
-}
-
-.success-icon {
-  background-color: #52c41a;
-}
-
-.error-icon {
-  background-color: #ff4d4f;
-}
-
-.result-text {
-  font-size: 32rpx;
-  color: #333;
-  margin-bottom: 30rpx;
-}
-
-.result-actions {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.action-button {
-  width: 240rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  border: 1px solid #ddd;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  margin: 0 15rpx;
-}
-
-.action-button.primary {
-  background-color: #fa2c19;
-  color: #fff;
-  border: none;
 }
 
 .payment-notice {
