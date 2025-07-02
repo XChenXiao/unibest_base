@@ -21,14 +21,6 @@
     <view class="bank-card-header">
       <!-- 中国银行卡片样式 -->
       <view class="china-bank-card">
-        <!-- 添加水印效果 -->
-        <view class="card-watermark">
-          <image 
-            src="/static/images/bank/BANK_OF_CHINA.png" 
-            mode="widthFix"
-            style="width: 30%;position: absolute;top: 90rpx;right: 300rpx;">
-          </image>
-        </view>
       </view>
     </view>
   
@@ -456,34 +448,13 @@
      position: relative;
      width: 100%;
      height: 400rpx;
-     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); /* 中国银行红色渐变 */
+     background: url('@/static/images/bg/re-card.png') no-repeat center center; /* 使用re-card.png作为背景图片 */
+     background-size: contain;
      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
      overflow: hidden;
    }
    
-   .card-watermark {
-     position: absolute;
-     top: 0;
-     right: 0;
-     width: 100%;
-     height: 100%;
-     opacity: 0.07;
-     overflow: hidden;
-     pointer-events: none;
-     z-index: 1;
-     display: flex;
-     justify-content: flex-end;
-     align-items: center;
-   }
-   
-   .card-watermark image {
-     width: 120%;
-     height: auto;
-     transform: scale(2.2);
-     filter: brightness(0) invert(1);
-     margin-right: -25%;
-     margin-bottom: -15%;
-   }
+
   
   .form-container {
     box-sizing: border-box;
