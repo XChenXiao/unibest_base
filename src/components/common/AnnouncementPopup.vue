@@ -22,7 +22,7 @@
           <!-- 第一页：图片 -->
           <view v-if="currentPage === 1" class="custom-notification-page">
             <image 
-              src="/static/images/notice.jpg" 
+              src="/static/images/notice.png" 
               class="notice-image"
               mode="widthFix"
             />
