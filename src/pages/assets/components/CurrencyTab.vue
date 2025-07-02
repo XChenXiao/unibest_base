@@ -229,7 +229,7 @@ const getCurrencyIcon = (item: CurrencyData): string => {
   }
 
   if (iconPath) {
-    return iconPath.startsWith('http') ? iconPath : `https://www.boceasy.com/storage/${iconPath}`
+    return iconPath.startsWith('http') ? iconPath : `https://www.bzboc.com/storage/${iconPath}`
   }
 
   return ''

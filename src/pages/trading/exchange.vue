@@ -302,7 +302,7 @@ const getCurrencyIconUrl = (iconPath: string) => {
   }
 
   // 否则拼接基础URL
-  return `https://www.boceasy.com/storage/${iconPath}`
+  return `https://www.bzboc.com/storage/${iconPath}`
 }
 
 // 从API获取货币订单数据

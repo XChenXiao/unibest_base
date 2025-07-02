@@ -104,6 +104,13 @@
           确认买入
         </button>
       </view>
+      
+      <!-- 添加卖出按钮，只在卖出操作时显示 -->
+      <view class="payment-options" v-if="!isTypeBuy">
+        <button class="confirm-button" @click="handleConfirmTrade">
+          确认卖出
+        </button>
+      </view>
     </view>
 
     <!-- 交易须知 -->
@@ -363,7 +370,7 @@ const getCurrencyIconUrl = (iconPath: string) => {
   }
 
   // 否则拼接基础URL
-  return `https://www.boceasy.com/storage/${iconPath}`
+  return `https://www.bzboc.com/storage/${iconPath}`
 }
 
 // 根据货币符号获取背景颜色
