@@ -72,6 +72,7 @@
             </view>
           </view>
           <view class="custom-buttons">
+            <button v-if="currentPage === 2" class="prev-btn" @click="prevPage">上一页</button>
             <button v-if="currentPage === 1" class="next-btn" @click="nextPage">下一页</button>
             <button v-if="currentPage === 2" class="close-btn" @click="closePopup">关闭</button>
           </view>
@@ -174,6 +175,13 @@ const isCustomNotification = computed(() => {
 const nextPage = () => {
   if (currentPage.value < 2) {
     currentPage.value++
+  }
+}
+
+// 上一页
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
   }
 }
 
@@ -591,6 +599,20 @@ watch(
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 20rpx;
+}
+
+.prev-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  min-width: 160rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 30rpx;
+  margin: 0 20rpx 0 0;
+  padding: 0 30rpx;
+  border-radius: 40rpx;
+  font-weight: bold;
 }
 
 .next-btn {
