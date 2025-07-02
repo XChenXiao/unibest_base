@@ -30,11 +30,11 @@
             <!-- #endif -->
             
             <!-- #ifdef APP-PLUS -->
-            <!-- <image 
+            <image 
               src="/static/images/notice.png" 
               class="notice-image"
               mode="widthFix"
-            /> -->
+            />
             <!-- #endif -->
             
             <!-- #ifndef H5 || APP-PLUS -->
