@@ -12,10 +12,6 @@
     <view class="popup-content">
       <!-- 自定义通知内容 -->
       <template v-if="isCustomNotification">
-        <!-- 标题 -->
-        <view class="popup-header">
-          <text class="popup-title custom-title">重要通知！重要通知！重要通知！</text>
-        </view>
 
         <!-- 自定义通知内容 -->
         <view class="popup-body">
