@@ -99,16 +99,7 @@
         </view>
       </wd-popup>
   
-      <!-- 添加银行卡管理入口 -->
-      <view class="bank-card-entry" @click="goBankCardManagement">
-        <view class="entry-icon">
-          <text class="iconfont icon-card"></text>
-        </view>
-        <view class="entry-text">银行卡管理</view>
-        <view class="entry-arrow">
-          <text class="iconfont icon-right"></text>
-        </view>
-      </view>
+
     </view>
   </template>
   
@@ -556,12 +547,7 @@
     stopPaymentCheck()
   })
   
-  // 跳转到银行卡管理页面
-  const goBankCardManagement = () => {
-    uni.navigateTo({
-      url: '/pages/payment/bank-cards'
-    })
-  }
+
   </script>
   
   <style lang="scss" scoped>
@@ -810,40 +796,6 @@
     border-radius: 40rpx;
   }
   
-  // 添加银行卡管理入口
-  .bank-card-entry {
-    display: flex;
-    align-items: center;
-    background-color: #fff;
-    padding: 15px;
-    margin: 15px 0;
-    border-radius: 8px;
-  }
-  
-  .entry-icon {
-    width: 40px;
-    height: 40px;
-    background-color: #f0f0f0;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-    
-    .iconfont {
-      font-size: 20px;
-      color: #ff6b00;
-    }
-  }
-  
-  .entry-text {
-    flex: 1;
-    font-size: 16px;
-    font-weight: 500;
-  }
-  
-  .entry-arrow {
-    color: #999;
-  }
+
   </style>
   
