@@ -143,15 +143,7 @@
               <image :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" :style="getBankIconByName(card.bank_name) !== 'default-card' ? 'width: 80%;' : 'width: 60%;'"></image>
              </view>
             
-            <!-- 卡片操作区域 - 仅在非提现模式下显示 -->
-            <view class="card-actions" v-if="!isFromWithdraw">
-              <view class="normal-actions full-width">
-                <button class="btn-default" @click.stop="setAsDefault(card.id)" :disabled="card.is_default">
-                  设为默认
-                </button>
-                <button class="btn-delete" @click.stop="confirmDeleteCard(card.id)">删除</button>
-              </view>
-            </view>
+
           </view>
         </view>
       </view>
@@ -167,12 +159,7 @@
         返回提现页面
       </button>
       
-      <!-- 调试按钮 - 仅在开发环境显示 -->
-      <!-- #ifdef H5 -->
-      <button v-if="!isFromWithdraw" class="debug-btn" @click="toggleSelectMode">
-        {{ isFromWithdraw ? '关闭' : '开启' }}选择模式(调试用)
-      </button>
-      <!-- #endif -->
+
     </view>
   </view>
 </template>
@@ -184,8 +171,6 @@ import {
   checkBankCardStatusAPI as getBankCardStatusAPI,
   getBankCardsAPI,
   addBankCardAPI,
-  deleteBankCardAPI,
-  setDefaultBankCardAPI,
   IBankCard,
 } from '@/service/index/bankcard'
 import { useBankCardStore } from '@/store'
@@ -743,83 +728,7 @@ const saveCard = async () => {
   }
 }
 
-// 设置默认卡
-const setAsDefault = async (id: number) => {
-  loading.value = true
-  try {
-    const res = await setDefaultBankCardAPI(id)
-    if (res.status === 'success') {
-      uni.showToast({
-        title: '已设为默认卡',
-        icon: 'success',
-      })
 
-      // 只刷新银行卡列表，不请求银行卡状态
-      await fetchBankCards()
-    } else {
-      uni.showToast({
-        title: res.message || '设置失败',
-        icon: 'none',
-      })
-    }
-  } catch (error: any) {
-    console.error('设置默认卡失败:', error)
-    uni.showToast({
-      title: error.message || '设置失败',
-      icon: 'none',
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
-// 确认删除卡片
-const confirmDeleteCard = (id: number) => {
-  uni.showModal({
-    title: '确认删除',
-    content: '确定要删除这张银行卡吗？',
-    success: (res) => {
-      if (res.confirm) {
-        deleteCard(id)
-      }
-    },
-  })
-}
-
-// 删除卡片
-const deleteCard = async (id: number) => {
-  loading.value = true
-  try {
-    const res = await deleteBankCardAPI(id)
-    if (res.status === 'success') {
-      uni.showToast({
-        title: '删除成功',
-        icon: 'success',
-      })
-
-      // 只刷新银行卡列表，不请求银行卡状态
-      await fetchBankCards()
-    } else {
-      uni.showToast({
-        title: res.message || '删除失败',
-        icon: 'none',
-      })
-    }
-  } catch (error: any) {
-    console.error('删除银行卡失败:', error)
-    uni.showToast({
-      title: error.message || '删除失败',
-      icon: 'none',
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
-// 切换选择模式
-const toggleSelectMode = () => {
-  isFromWithdraw.value = !isFromWithdraw.value
-}
 </script>
 
 <style lang="scss" scoped>
@@ -1000,51 +909,9 @@ const toggleSelectMode = () => {
   z-index: 3;
 }
 
-.card-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  position: relative;
-  z-index: 2;
-  margin-top: 20rpx;
-}
 
-.normal-actions {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-}
 
-.full-width {
-  width: 100%;
-}
 
-.btn-default {
-  width: 48%;
-  padding: 10rpx 0;
-  border-radius: 8rpx;
-  border: none;
-  background-color: rgba(255, 255, 255, 0.8);
-  color: #3b82f6;
-  font-size: 24rpx;
-  text-align: center;
-}
-
-.btn-default:disabled {
-  background-color: rgba(255, 255, 255, 0.5);
-  color: #9ca3af;
-}
-
-.btn-delete {
-  width: 48%;
-  padding: 10rpx 0;
-  border-radius: 8rpx;
-  border: none;
-  background-color: rgba(255, 255, 255, 0.8);
-  color: #ef4444;
-  font-size: 24rpx;
-  text-align: center;
-}
 
 .add-card-btn {
   display: flex;
@@ -1207,16 +1074,7 @@ const toggleSelectMode = () => {
   text-align: center;
 }
 
-.debug-btn {
-  width: 100%;
-  padding: 12rpx 0;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  text-align: center;
-}
+
 
 /* 内容占位，确保底部按钮不会覆盖内容 */
 .content-spacer {

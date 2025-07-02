@@ -16,8 +16,8 @@
       <text class="uni-icons uniui-back"></text>
     </view>
 
-    <!-- 余额卡片 -->
-    <view class="balance-card">
+    <!-- 余额卡片 - 已隐藏 -->
+    <view class="balance-card" style="display: none;">
       <!-- 添加水印效果 -->
       <view class="card-watermark">
         <image 

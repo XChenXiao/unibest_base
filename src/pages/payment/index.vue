@@ -495,12 +495,12 @@
           // 刷新用户信息
           await userStore.fetchUserInfo()
   
-          // 延迟跳转
+          // 延迟返回
           setTimeout(() => {
             if (pageParams.value.type === 'bankcard') {
-              // 银行卡开户成功后跳转到银行卡页面
-              uni.reLaunch({
-                url: '/pages/my/bank-cards',
+              // 银行卡开户成功后直接返回
+              uni.navigateBack({
+                delta: 1
               })
             } else {
               // 默认跳转到个人中心

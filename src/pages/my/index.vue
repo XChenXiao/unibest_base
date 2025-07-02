@@ -578,6 +578,15 @@
   
   // 处理提现
   const handleWithdraw = () => {
+        // 显示资料上传中的提示
+        uni.showToast({
+      title: '资料正在上传中',
+      icon: 'none',
+      duration: 2000
+    })
+    
+    // 直接返回，不执行其他操作
+    return
     // 检查实名认证状态
     if (!verificationStore.isVerified) {
       uni.showModal({
