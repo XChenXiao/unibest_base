@@ -12,8 +12,8 @@
     <view class="popup-content">
       <!-- 自定义通知内容 -->
       <template v-if="isCustomNotification">
-        <!-- 标题 -->
-        <view class="popup-header">
+        <!-- 标题 - 只在第二页显示 -->
+        <view v-if="currentPage === 2" class="popup-header">
           <text class="popup-title custom-title">重要通知</text>
         </view>
 
@@ -498,6 +498,12 @@ watch(
   align-items: center;
   padding: 20rpx 0;
   min-height: 400rpx;
+}
+
+/* 第一页（图片页）特殊样式 */
+.custom-notification-page:first-child {
+  padding-top: 40rpx;
+  min-height: 500rpx;
 }
 
 .notice-image {
