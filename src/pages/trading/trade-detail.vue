@@ -120,9 +120,6 @@
         <text class="notice-text">1. 交易前请确认价格和数量无误。</text>
       </view>
       <view class="notice-item">
-        <text class="notice-text">2. 买入操作将扣除您账户中相应的人民币余额。</text>
-      </view>
-      <view class="notice-item">
         <text class="notice-text">3. 卖出操作将扣除您持有的相应数量货币，直接获得人民币收益。</text>
       </view>
       <view class="notice-item">
