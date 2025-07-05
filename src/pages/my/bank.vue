@@ -17,16 +17,16 @@
     </view>
 
     <!-- 余额卡片 - 已隐藏 -->
-    <view class="balance-card" style="display: none;">
+    <view class="balance-card" style="display: none">
       <!-- 添加水印效果 -->
       <view class="card-watermark">
-        <image 
-          src="/static/images/bank/BANK_OF_CHINA.png" 
+        <image
+          src="/static/images/bank/BANK_OF_CHINA.png"
           mode="widthFix"
-          style="width: 30%;position: absolute;top: 90rpx;right: 300rpx;">
-        </image>
+          style="position: absolute; top: 90rpx; right: 300rpx; width: 30%"
+        ></image>
       </view>
-      
+
       <!-- 银行卡顶部 -->
       <view class="card-header-container">
         <view class="bank-logo">
@@ -59,44 +59,73 @@
     </view>
 
     <!-- 银行卡列表 -->
-     <view style="padding: 0 30rpx;"> 
+    <view style="padding: 0 30rpx">
       <view class="bank-card-list">
-      <!-- 银行卡列表 -->
-      <view class="card-list">
-        <view class="empty-tip" v-if="bankCardStore.bankCards.length === 0">
-          <text>暂无银行卡，请添加银行卡</text>
+        <!-- 银行卡列表 -->
+        <view class="card-list">
+          <view class="empty-tip" v-if="bankCardStore.bankCards.length === 0">
+            <text>暂无银行卡，请添加银行卡</text>
+          </view>
+          <view
+            class="visa-card"
+            v-for="card in bankCardStore.bankCards"
+            :key="card.id"
+            :style="{ background: getBankCardGradient(card.bank_name) }"
+          >
+            <view class="card-watermark">
+              <image
+                :src="
+                  getBankIconByName(card.bank_name)
+                    ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png`
+                    : '/static/images/bank-icon.png'
+                "
+                mode="widthFix"
+                :style="
+                  getBankIconByName(card.bank_name) !== 'default-card'
+                    ? 'width: 30%;position: absolute;top: 0;right: 300rpx;'
+                    : 'width: 20%;position: absolute;top: 70rpx;right: 340rpx;'
+                "
+              ></image>
+            </view>
+            <view class="card-bank-name" style="align-items: center; height: 30rpx">
+              {{ card.bank_name }}
+            </view>
+            <view class="visa-number">
+              <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
+            </view>
+            <view
+              class="card-icon"
+              style="display: flex; align-items: center; justify-content: center"
+            >
+              <image
+                :src="
+                  getBankIconByName(card.bank_name)
+                    ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png`
+                    : '/static/images/bank-icon.png'
+                "
+                mode="widthFix"
+                :style="
+                  getBankIconByName(card.bank_name) !== 'default-card'
+                    ? 'width: 80%;'
+                    : 'width: 60%;'
+                "
+              ></image>
+            </view>
+          </view>
         </view>
-        <view class="visa-card" v-for="card in bankCardStore.bankCards" :key="card.id" :style="{ background: getBankCardGradient(card.bank_name) }">
-          <view class="card-watermark">
-            <image 
-            :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" 
-            :style="getBankIconByName(card.bank_name)  !== 'default-card' ? 'width: 30%;position: absolute;top: 0;right: 300rpx;' : 'width: 20%;position: absolute;top: 70rpx;right: 340rpx;'">
-          </image>
-          </view>
-          <view class="card-bank-name" style="height: 30rpx;align-items: center;">
-            {{ card.bank_name }}
-          </view>
-          <view class="visa-number">
-            <text>•••• •••• •••• {{ card.masked_card_number.slice(-4) }}</text>
-          </view>
-          <view class="card-icon" style="display: flex; align-items: center; justify-content: center;">
-            <image :src="getBankIconByName(card.bank_name) ? `/static/images/bank/${getBankIconByName(card.bank_name)}.png` : '/static/images/bank-icon.png'" mode="widthFix" :style="getBankIconByName(card.bank_name) !== 'default-card' ? 'width: 80%;' : 'width: 60%;'"></image>
-          </view>
+
+        <!-- 添加银行卡按钮 -->
+        <view class="add-card-btn" @click="showAddCardForm = true">
+          <view class="add-icon">+</view>
+          <view class="add-text">添加银行卡</view>
+          <view class="promotion-text">绑新卡送立减金</view>
         </view>
-      </view>
-      
-      <!-- 添加银行卡按钮 -->
-      <view class="add-card-btn" @click="showAddCardForm = true">
-        <view class="add-icon">+</view>
-        <view class="add-text">添加银行卡</view>
-        <view class="promotion-text">绑新卡送立减金</view>
-      </view>
       </view>
     </view>
 
     <!-- 添加银行卡表单弹窗 -->
     <wd-popup v-model="showAddCardForm" round position="bottom" :z-index="10">
-      <view class="add-card-form">
+      <view class="add-card-form" style="box-sizing: border-box; height: 100vh">
         <view class="form-header">
           <text class="form-title">添加银行卡</text>
           <text class="form-close" @click="showAddCardForm = false">×</text>
@@ -104,10 +133,10 @@
         <view class="form-body">
           <view class="form-item">
             <text class="form-label">持卡人</text>
-            <input 
-              class="form-input" 
-              v-model="newCard.card_holder" 
-              placeholder="请输入持卡人姓名" 
+            <input
+              class="form-input"
+              v-model="newCard.card_holder"
+              placeholder="请输入持卡人姓名"
               placeholder-class="input-placeholder"
             />
           </view>
@@ -127,14 +156,22 @@
                 <text class="search-icon uni-icons uniui-search"></text>
               </view>
               <view class="bank-dropdown" v-if="showBankDropdown">
-                <scroll-view scroll-y style="max-height: 300rpx;">
-                  <view 
-                    class="bank-item" 
-                    v-for="bank in filteredBanks" 
+                <scroll-view scroll-y style="max-height: 300rpx">
+                  <view
+                    class="bank-item"
+                    v-for="bank in filteredBanks"
                     :key="bank.key"
                     @click="selectBank(bank)"
                   >
-                    <image class="bank-icon" :src="bank.key ? `/static/images/bank/${bank.key}.png` : '/static/images/bank-icon.png'" mode="aspectFit"></image>
+                    <image
+                      class="bank-icon"
+                      :src="
+                        bank.key
+                          ? `/static/images/bank/${bank.key}.png`
+                          : '/static/images/bank-icon.png'
+                      "
+                      mode="aspectFit"
+                    ></image>
                     <text class="bank-name">{{ bank.value }}</text>
                   </view>
                   <view class="empty-tip" v-if="filteredBanks.length === 0">
@@ -146,11 +183,11 @@
           </view>
           <view class="form-item">
             <text class="form-label">银行卡号</text>
-            <input 
-              class="form-input" 
-              v-model="newCard.card_number" 
-              type="text" 
-              placeholder="请输入银行卡号" 
+            <input
+              class="form-input"
+              v-model="newCard.card_number"
+              type="text"
+              placeholder="请输入银行卡号"
               placeholder-class="input-placeholder"
               :maxlength="19"
               :minlength="16"
@@ -159,7 +196,7 @@
           <view class="form-tips">
             <text>* 请确保所填信息准确无误，银行卡需为储蓄卡</text>
           </view>
-          <button class="submit-btn" @click="saveCard">确认添加</button>
+          <button class="submit-btn" @click="saveCard" style="margin-top: 120rpx">确认添加</button>
         </view>
       </view>
     </wd-popup>
@@ -228,10 +265,10 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
-import { useUserStore, useVerificationStore, useBankCardStore } from '@/store'
+import { useUserStore, useVerificationStore, useBankCardStore, useDepositTipsStore } from '@/store'
 import { usePlatformStore } from '@/store/platform'
 import { useAppStore } from '@/store/app'
-import { useDepositTipsStore } from '@/store'
+
 import { getDepositTipsAPI, addBankCardAPI, deleteBankCardAPI } from '@/service/index/bankcard'
 import { onShow } from '@dcloudio/uni-app'
 import { BankEnum } from '@/enums/BankEnum'
@@ -263,14 +300,14 @@ const depositTipsStore = useDepositTipsStore()
 const getBankEnumKeyByName = (bankName: string): keyof typeof BankEnum | null => {
   // 遍历BankEnum查找匹配的银行名称
   const entry = Object.entries(BankEnum).find(([_, value]) => value === bankName)
-  return entry ? entry[0] as keyof typeof BankEnum : null
+  return entry ? (entry[0] as keyof typeof BankEnum) : null
 }
 
 // 根据银行名称获取图标文件名
 const getBankIconByName = (bankName: string): string => {
   const bankKey = getBankEnumKeyByName(bankName)
   // 如果找不到对应的银行枚举，直接返回空字符串，让@error事件触发
-  return bankKey ? bankKey : 'default-card'
+  return bankKey || 'default-card'
 }
 
 // 根据银行名称获取卡片渐变色
@@ -278,7 +315,7 @@ const getBankCardGradient = (bankName: string): string => {
   // 根据银行类型分类设置渐变色
   const bankKey = getBankEnumKeyByName(bankName)
   if (!bankKey) return 'linear-gradient(135deg, #467bec 0%, #214da5 100%)' // 默认蓝色渐变
-  
+
   // 根据银行图标的主色调设置渐变色
   switch (bankKey) {
     // 国有银行
@@ -294,7 +331,7 @@ const getBankCardGradient = (bankName: string): string => {
       return 'linear-gradient(135deg, #0288d1 0%, #01579b 100%)'
     case 'PSBC': // 邮储银行 - 绿色
       return 'linear-gradient(135deg, #00897b 0%, #004d40 100%)'
-    
+
     // 股份制商业银行
     case 'CMB': // 招商银行 - 红色
       return 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)'
@@ -314,19 +351,19 @@ const getBankCardGradient = (bankName: string): string => {
       return 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)'
     case 'HXB': // 华夏银行 - 红色
       return 'linear-gradient(135deg, #c62828 0%, #8e0000 100%)'
-    
+
     // 其他银行分类
     default:
       // 城市商业银行 - 多为绿色系
       if (bankKey.startsWith('BO') && !['BOCOM'].includes(bankKey)) {
         return 'linear-gradient(135deg, #388e3c 0%, #1b5e20 100%)'
       }
-      
+
       // 农商行/农信社/农合行 - 多为橙色或绿色系
       if (bankKey.includes('RCB') || bankKey.endsWith('RCB')) {
         return 'linear-gradient(135deg, #f57c00 0%, #e65100 100%)'
       }
-      
+
       // 其他银行 - 默认蓝紫色系
       return 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)'
   }
@@ -344,16 +381,16 @@ const depositTips = ref<DepositTip[]>([])
 
 // 银行卡表单相关
 interface BankCardForm {
-  card_holder: string;
-  bank_name: string;
-  card_number: string;
+  card_holder: string
+  bank_name: string
+  card_number: string
 }
 
 const showAddCardForm = ref(false)
 const newCard = reactive<BankCardForm>({
   card_holder: '',
   bank_name: '',
-  card_number: ''
+  card_number: '',
 })
 
 // 银行搜索和选择相关
@@ -363,8 +400,8 @@ const selectedBankKey = ref<keyof typeof BankEnum | null>(null)
 
 // 银行列表
 interface BankItem {
-  key: keyof typeof BankEnum;
-  value: string;
+  key: keyof typeof BankEnum
+  value: string
 }
 
 // 将BankEnum转换为数组以便于处理
@@ -373,7 +410,7 @@ const bankList = computed<BankItem[]>(() => {
     .filter(([key]) => isNaN(Number(key))) // 过滤掉枚举的数字键
     .map(([key, value]) => ({
       key: key as keyof typeof BankEnum,
-      value: value as string
+      value: value as string,
     }))
 })
 
@@ -391,9 +428,9 @@ const filterBanks = () => {
     filteredBanks.value = bankList.value
     return
   }
-  
-  filteredBanks.value = bankList.value.filter(bank => 
-    bank.value.toLowerCase().includes(bankSearchKeyword.value.toLowerCase())
+
+  filteredBanks.value = bankList.value.filter((bank) =>
+    bank.value.toLowerCase().includes(bankSearchKeyword.value.toLowerCase()),
   )
 }
 
@@ -417,16 +454,16 @@ const handleBankInputBlur = () => {
 const getBankLogo = (bankName: string) => {
   // 根据银行名称返回对应的logo
   const bankLogos: Record<string, string> = {
-    '中国银行': '/static/images/bank/bank-boc.png',
-    '中国工商银行': '/static/images/bank/bank-icbc.png',
-    '中国建设银行': '/static/images/bank/bank-ccb.png',
-    '中国农业银行': '/static/images/bank/bank-abc.png',
-    '中国民生银行': '/static/images/bank/bank-cmbc.png',
-    '招商银行': '/static/images/bank/bank-cmb.png',
-    '浦发银行': '/static/images/bank/bank-spdb.png',
-    '兴业银行': '/static/images/bank/bank-cib.png'
+    中国银行: '/static/images/bank/bank-boc.png',
+    中国工商银行: '/static/images/bank/bank-icbc.png',
+    中国建设银行: '/static/images/bank/bank-ccb.png',
+    中国农业银行: '/static/images/bank/bank-abc.png',
+    中国民生银行: '/static/images/bank/bank-cmbc.png',
+    招商银行: '/static/images/bank/bank-cmb.png',
+    浦发银行: '/static/images/bank/bank-spdb.png',
+    兴业银行: '/static/images/bank/bank-cib.png',
   }
-  
+
   return bankLogos[bankName] || '/static/images/bank-icon.png'
 }
 
@@ -434,70 +471,70 @@ const getBankLogo = (bankName: string) => {
 const saveCard = async () => {
   // 表单验证
   if (!newCard.card_holder) {
-    showAddCardForm.value = false;
+    showAddCardForm.value = false
     setTimeout(() => {
       uni.showToast({
         title: '请输入持卡人姓名',
-        icon: 'none'
+        icon: 'none',
       })
-    }, 100);
-    return;
+    }, 100)
+    return
   }
-  
+
   if (!newCard.bank_name) {
-    showAddCardForm.value = false;
+    showAddCardForm.value = false
     setTimeout(() => {
       uni.showToast({
         title: '请选择银行名称',
-        icon: 'none'
+        icon: 'none',
       })
-    }, 100);
-    return;
+    }, 100)
+    return
   }
-  
+
   if (!newCard.card_number) {
-    showAddCardForm.value = false;
+    showAddCardForm.value = false
     setTimeout(() => {
       uni.showToast({
         title: '请输入银行卡号',
-        icon: 'none'
+        icon: 'none',
       })
-    }, 100);
-    return;
+    }, 100)
+    return
   }
-  
+
   if (newCard.card_number.length < 16) {
-    showAddCardForm.value = false;
+    showAddCardForm.value = false
     setTimeout(() => {
       uni.showToast({
         title: '银行卡号至少需要16位',
-        icon: 'none'
+        icon: 'none',
       })
-    }, 100);
-    return;
+    }, 100)
+    return
   }
-  
+
   // 显示加载中
   uni.showLoading({
-    title: '添加中...'
+    title: '添加中...',
   })
-  
+
   try {
     // 调用API添加银行卡
     const response = await addBankCardAPI({
       bank_name: newCard.bank_name,
       card_number: newCard.card_number,
-      card_holder: newCard.card_holder
+      card_holder: newCard.card_holder,
     })
-    
+
     uni.hideLoading()
-    
+
     if (response && response.status === 'success') {
       uni.showToast({
         title: '添加成功',
-        icon: 'success'
+        icon: 'success',
       })
-      
+
       // 重置表单并关闭
       newCard.card_holder = ''
       newCard.bank_name = ''
@@ -505,7 +542,7 @@ const saveCard = async () => {
       selectedBankKey.value = null
       newCard.card_number = ''
       showAddCardForm.value = false
-      
+
       // 刷新银行卡列表
       bankCardStore.fetchBankCards()
     } else {
@@ -513,7 +550,7 @@ const saveCard = async () => {
       uni.showToast({
         title: response?.message || '添加失败',
         icon: 'none',
-        duration: 3000
+        duration: 3000,
       })
     }
   } catch (error) {
@@ -523,7 +560,7 @@ const saveCard = async () => {
     uni.showToast({
       title: errorMsg,
       icon: 'none',
-      duration: 3000
+      duration: 3000,
     })
     console.error('添加银行卡失败', error)
   }
@@ -538,41 +575,41 @@ const confirmDeleteCard = (cardId: number) => {
       if (res.confirm) {
         deleteBankCard(cardId)
       }
-    }
+    },
   })
 }
 
 // 删除银行卡
 const deleteBankCard = async (cardId: number) => {
   uni.showLoading({
-    title: '删除中...'
+    title: '删除中...',
   })
-  
+
   try {
     // 调用API删除银行卡
     const response = await deleteBankCardAPI(cardId)
-    
+
     uni.hideLoading()
-    
+
     if (response && response.status === 'success') {
       uni.showToast({
         title: '删除成功',
-        icon: 'success'
+        icon: 'success',
       })
-      
+
       // 刷新银行卡列表
       bankCardStore.fetchBankCards()
     } else {
       uni.showToast({
         title: response?.message || '删除失败',
-        icon: 'none'
+        icon: 'none',
       })
     }
   } catch (error) {
     uni.hideLoading()
     uni.showToast({
       title: '删除失败，请重试',
-      icon: 'none'
+      icon: 'none',
     })
     console.error('删除银行卡失败', error)
   }
@@ -582,7 +619,6 @@ const deleteBankCard = async (cardId: number) => {
 const goBack = () => {
   uni.navigateBack()
 }
-
 
 // 页面加载时
 onMounted(() => {
@@ -635,7 +671,7 @@ const handleWithdraw = () => {
   uni.showToast({
     title: '敬请期待',
     icon: 'none',
-    duration: 2000
+    duration: 2000,
   })
 }
 
@@ -670,7 +706,7 @@ const confirmRecharge = () => {
   try {
     // 关闭充值弹窗
     closeRechargePopup()
-    
+
     // 直接跳转到支付结算页面，让用户选择支付方式
     uni.navigateTo({
       url: `/pages/payment/checkout?amount=${rechargeAmount.value}&type=recharge`,
@@ -681,9 +717,9 @@ const confirmRecharge = () => {
         console.error('跳转支付结算页面失败:', err)
         uni.showToast({
           title: '跳转失败，请重试',
-          icon: 'none'
+          icon: 'none',
         })
-      }
+      },
     })
   } catch (error) {
     console.error('跳转失败:', error)
@@ -697,22 +733,24 @@ const confirmRecharge = () => {
 
 // 获取预存服务提示
 const fetchDepositTips = () => {
-  getDepositTipsAPI().then(res => {
-    console.log('预存服务提示响应:', res)
+  getDepositTipsAPI()
+    .then((res) => {
+      console.log('预存服务提示响应:', res)
 
-    // 使用安全的方式访问数据
-    if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
-      // 安全地访问data字段
-      const data = res.data
-      if (data && typeof data === 'object' && 'deposit_tips' in data) {
-        depositTips.value = (data.deposit_tips as DepositTip[]) || []
-        console.log('获取预存服务提示成功:', depositTips.value)
+      // 使用安全的方式访问数据
+      if (res && typeof res === 'object' && 'status' in res && res.status === 'success') {
+        // 安全地访问data字段
+        const data = res.data
+        if (data && typeof data === 'object' && 'deposit_tips' in data) {
+          depositTips.value = (data.deposit_tips as DepositTip[]) || []
+          console.log('获取预存服务提示成功:', depositTips.value)
+        }
       }
-    }
-  }).catch(error => {
-    console.error('获取预存服务提示失败:', error)
-    depositTips.value = [] // 确保始终有一个有效数组
-  })
+    })
+    .catch((error) => {
+      console.error('获取预存服务提示失败:', error)
+      depositTips.value = [] // 确保始终有一个有效数组
+    })
 }
 
 // 检查银行卡状态 - 仅做检查，不弹出提示
@@ -730,19 +768,17 @@ const checkBankCardStatus = () => {
 <style lang="scss" scoped>
 /* 全局重置 */
 page {
-  background-color: #f5f5f5;
   height: 100%;
+  background-color: #f5f5f5;
   // font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
 }
-
 /* 容器样式 */
 .bank-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
 }
-
 /* 顶部波浪装饰 */
 .wave-decoration {
   position: absolute;
@@ -752,42 +788,40 @@ page {
   height: 16rpx;
   background: linear-gradient(to right, #ff9c00, #fa2c19);
 }
-
 /* 返回按钮 */
 .back-button {
   position: absolute;
   top: 60rpx;
   left: 20rpx;
-  width: 80rpx;
-  height: 80rpx;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
   font-size: 40rpx;
   color: #333;
-  z-index: 10;
 }
-
 /* 余额卡片 */
 .balance-card {
   position: relative;
   z-index: 1;
   padding: 30rpx;
   margin: 120rpx 30rpx 30rpx;
+  overflow: hidden; /* 确保水印不溢出 */
   color: #ffffff;
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); /* 中国银行红色渐变 */
   border-radius: 20rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* 确保水印不溢出 */
 }
 
 .card-header-container {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 30rpx;
-  position: relative;
-  z-index: 2;
   /* 去掉内边距，与index.vue保持一致 */
 }
 
@@ -809,9 +843,9 @@ page {
 }
 
 .balance-section {
-  margin-bottom: 30rpx;
   position: relative;
   z-index: 2;
+  margin-bottom: 30rpx;
 }
 
 .balance-label {
@@ -842,11 +876,11 @@ page {
 }
 
 .action-buttons {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
-  z-index: 2;
 }
 
 .action-btn {
@@ -870,13 +904,12 @@ page {
   background-color: rgba(255, 255, 255, 0.3);
   border: none;
 }
-
 /* 充值弹窗 */
 .popup-content {
   width: 600rpx;
+  overflow: hidden;
   background-color: #ffffff;
   border-radius: 20rpx;
-  overflow: hidden;
 }
 
 .popup-header {
@@ -895,8 +928,8 @@ page {
 
 .popup-close {
   font-size: 40rpx;
-  color: #999;
   line-height: 1;
+  color: #999;
 }
 
 .popup-body {
@@ -909,22 +942,22 @@ page {
 
 .amount-label {
   display: block;
+  margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 20rpx;
 }
 
 .amount-input-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 2rpx solid #e0e0e0;
   padding-bottom: 10rpx;
+  border-bottom: 2rpx solid #e0e0e0;
 }
 
 .amount-prefix {
+  margin-right: 10rpx;
   font-size: 40rpx;
   color: #333;
-  margin-right: 10rpx;
 }
 
 .amount-input {
@@ -941,38 +974,37 @@ page {
 }
 
 .amount-btn {
-  width: 170rpx;
-  height: 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f5f5f5;
-  border-radius: 8rpx;
+  width: 170rpx;
+  height: 80rpx;
   margin-bottom: 20rpx;
   font-size: 28rpx;
   color: #666;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
 }
 
 .amount-btn-active {
-  background-color: rgba(243, 156, 18, 0.2);
-  color: #f39c12;
   font-weight: 500;
+  color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.2);
 }
-
 /* 开户预存金提示 */
 .open-fee-tip {
-  background-color: rgba(243, 156, 18, 0.1);
-  border-radius: 8rpx;
   padding: 20rpx;
   margin-bottom: 30rpx;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 8rpx;
 }
 
 .tip-title {
   display: block;
+  margin-bottom: 10rpx;
   font-size: 28rpx;
   font-weight: 500;
   color: #f39c12;
-  margin-bottom: 10rpx;
 }
 
 .deposit-tips-list {
@@ -986,10 +1018,10 @@ page {
 }
 
 .tip-dot {
-  color: #ff9800;
   margin-right: 8rpx;
   font-size: 28rpx;
   line-height: 1.3;
+  color: #ff9800;
 }
 
 .tip-desc {
@@ -1002,23 +1034,21 @@ page {
 .confirm-recharge-btn {
   width: 100%;
   height: 90rpx;
-  background: linear-gradient(to right, #f39c12, #e74c3c);
-  color: white;
   font-size: 32rpx;
   font-weight: 500;
+  color: white;
+  background: linear-gradient(to right, #f39c12, #e74c3c);
   border: none;
   border-radius: 45rpx;
 }
-
 /* 底部版权信息 */
 .bank-footer {
-  text-align: center;
   padding: 30rpx 0;
-  color: #999;
-  font-size: 24rpx;
   margin-top: auto;
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
 }
-
 /* 银行卡列表样式 */
 .bank-card-list {
   margin-top: 40rpx;
@@ -1026,120 +1056,119 @@ page {
 }
 
 .section-title {
+  margin-bottom: 20rpx;
   font-size: 32rpx;
   font-weight: 500;
-  margin-bottom: 20rpx;
   color: #333;
 }
 
 .card-list {
-  background-color: #fff;
-  border-radius: 20rpx;
   padding: 20rpx 0;
   margin-bottom: 30rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
 }
 
 .empty-tip {
   padding: 60rpx 0;
-  text-align: center;
-  color: #999;
   font-size: 28rpx;
+  color: #999;
+  text-align: center;
 }
 
 .visa-card {
-  // background: linear-gradient(135deg, #467bec 0%, #214da5 100%);
-  border-radius: 20rpx;
-  padding: 40rpx;
-  margin: 30rpx;
-  color: #fff;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   position: relative;
-  height: 160rpx;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  height: 160rpx;
+  padding: 40rpx;
+  margin: 30rpx;
   overflow: hidden;
+  color: #fff;
+  // background: linear-gradient(135deg, #467bec 0%, #214da5 100%);
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
 }
 
 .card-watermark {
   position: absolute;
   top: 0;
   right: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.07;
-  overflow: hidden;
-  border-radius: 20rpx;
-  pointer-events: none;
   z-index: 1;
   display: flex;
-  justify-content: flex-end;
   align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 20rpx;
+  opacity: 0.07;
 }
 
 .card-watermark image {
   width: 120%;
   height: auto;
-  transform: scale(2.2);
-  filter: brightness(0) invert(1);
   margin-right: -25%;
   margin-bottom: -15%;
+  filter: brightness(0) invert(1);
+  transform: scale(2.2);
 }
 
 .card-bank-name {
-  padding-left: 60rpx;
-  vertical-align: middle;
-  height: 40rpx;
-  line-height: 40rpx;
-  font-size: 30rpx;
-  color: #ffffff;
-  font-weight: bold;
   position: relative;
   z-index: 2;
+  height: 40rpx;
+  padding-left: 60rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  line-height: 40rpx;
+  color: #ffffff;
+  vertical-align: middle;
 }
 
 .visa-number {
-  padding-left: 60rpx;
-  font-size: 40rpx;
-  letter-spacing: 3rpx;
-  color: #ffffff;
   position: relative;
   z-index: 2;
+  padding-left: 60rpx;
+  font-size: 40rpx;
+  color: #ffffff;
+  letter-spacing: 3rpx;
 }
-
 
 .card-icon {
   position: absolute;
   top: 30rpx;
   left: 30rpx;
+  z-index: 2;
   width: 60rpx;
   height: 60rpx;
-  background-color: rgb(255, 255, 255,0.5);
+  background-color: rgb(255, 255, 255, 0.5);
   border-radius: 50%;
-  z-index: 2;
 }
 
 .add-card-btn {
+  position: relative;
   display: flex;
   align-items: center;
-  background-color: #fff;
   padding: 30rpx;
-  border-radius: 20rpx;
-  position: relative;
   margin-top: 40rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
 }
 
 .add-icon {
-  width: 80rpx;
-  height: 80rpx;
-  background-color: #f0f0f0;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
+  width: 80rpx;
+  height: 80rpx;
   margin-right: 30rpx;
+  font-size: 48rpx;
   color: #666;
+  background-color: #f0f0f0;
+  border-radius: 50%;
 }
 
 .add-text {
@@ -1150,10 +1179,9 @@ page {
 .promotion-text {
   position: absolute;
   right: 30rpx;
-  color: #ff6b00;
   font-size: 28rpx;
+  color: #ff6b00;
 }
-
 /* 添加银行卡表单样式 */
 .add-card-form {
   padding-bottom: 60rpx;
@@ -1161,8 +1189,8 @@ page {
 
 .form-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 30rpx;
   border-bottom: 2rpx solid #f0f0f0;
 }
@@ -1192,14 +1220,15 @@ page {
   color: #333;
 }
 
-.form-input, .form-picker {
+.form-input,
+.form-picker {
+  box-sizing: border-box;
   width: 100%;
   height: 88rpx;
-  border: 2rpx solid #e0e0e0;
-  border-radius: 8rpx;
   padding: 0 24rpx;
   font-size: 30rpx;
-  box-sizing: border-box;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 8rpx;
 }
 
 .form-picker {
@@ -1208,10 +1237,10 @@ page {
 }
 
 .picker-value {
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 .input-placeholder {
@@ -1227,13 +1256,12 @@ page {
 .submit-btn {
   width: 100%;
   height: 88rpx;
-  background: linear-gradient(90deg, #ff9500, #ff5e3a);
-  color: #fff;
-  border-radius: 44rpx;
+  margin-top: 70rpx;
   font-size: 32rpx;
-  margin-top: 40rpx;
+  color: #fff;
+  background: linear-gradient(90deg, #ff9500, #ff5e3a);
+  border-radius: 44rpx;
 }
-
 /* 银行选择器样式 */
 .bank-selector {
   position: relative;
@@ -1247,25 +1275,25 @@ page {
 
 .search-icon {
   position: absolute;
-  right: 20rpx;
   top: 50%;
-  transform: translateY(-50%);
-  color: #999;
+  right: 20rpx;
   font-size: 28rpx;
+  color: #999;
+  transform: translateY(-50%);
 }
 
 .bank-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
+  z-index: 999;
   width: 100%;
+  max-height: 300rpx;
+  margin-top: 8rpx;
+  overflow-y: auto;
   background-color: #fff;
   border-radius: 12rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  z-index: 999;
-  margin-top: 8rpx;
-  max-height: 300rpx;
-  overflow-y: auto;
 }
 
 .bank-item {
@@ -1296,8 +1324,8 @@ page {
 
 .empty-tip {
   padding: 30rpx;
-  text-align: center;
-  color: #999;
   font-size: 28rpx;
+  color: #999;
+  text-align: center;
 }
 </style>
